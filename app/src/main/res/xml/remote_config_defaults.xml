@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<defaults>
+  <entry>
+    <key>preview_document_grid_cells</key>
+    <value>2</value>
+  </entry>
+  <entry>
+    <key>use_one_tap_google_client</key>
+    <value>false</value>
+  </entry>
+</defaults>

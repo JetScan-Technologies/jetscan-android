@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cancel">रद्द करना</string>
+    <string name="ok">ठीक है</string>
+    <string name="biometrics_direction">बायोमेट्रिक्स सत्यापन</string>
+    <string name="user_verification_direction">उपयोगकर्ता सत्यापन</string>
+</resources>
