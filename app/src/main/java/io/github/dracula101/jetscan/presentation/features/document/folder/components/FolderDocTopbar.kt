@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import io.github.dracula101.jetscan.data.document.models.doc.DocumentFolder
+import io.github.dracula101.jetscan.presentation.platform.component.appbar.JetScanTopAppbar
 import io.github.dracula101.jetscan.presentation.platform.component.button.CircleButton
 import io.github.dracula101.jetscan.presentation.platform.component.dropdown.AppDropDown
 import io.github.dracula101.jetscan.presentation.platform.component.dropdown.MenuItem
@@ -37,12 +38,10 @@ fun FolderDocTopbar(
     scrollBehavior: TopAppBarScrollBehavior
 ) {
     val menuExpandedState = remember { mutableStateOf(false) }
-    TopAppBar(
+    JetScanTopAppbar(
         scrollBehavior = scrollBehavior,
-        navigationIcon = {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Rounded.ArrowBackIosNew, contentDescription = "Back")
-            }
+        onNavigationIconClick = {
+            onBack()
         },
         title = {
             Text(text = folder?.name ?: "Folder")

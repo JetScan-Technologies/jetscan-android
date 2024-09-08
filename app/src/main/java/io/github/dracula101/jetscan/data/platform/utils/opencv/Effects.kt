@@ -14,9 +14,9 @@ import org.opencv.imgproc.Imgproc
 * */
 fun Mat.hueChannel(): Mat {
     val hsvMat = Mat()
-    org.opencv.imgproc.Imgproc.cvtColor(this, hsvMat, org.opencv.imgproc.Imgproc.COLOR_RGB2HSV)
+    Imgproc.cvtColor(this, hsvMat, Imgproc.COLOR_RGB2HSV)
     val hsvChannels = mutableListOf<Mat>()
-    org.opencv.core.Core.split(hsvMat, hsvChannels)
+    Core.split(hsvMat, hsvChannels)
     return hsvChannels[0]
 }
 
@@ -25,10 +25,10 @@ fun Mat.hueChannel(): Mat {
  */
 fun Mat.saturationChannel(): Mat {
     val hsvMat = Mat()
-    org.opencv.imgproc.Imgproc.cvtColor(this, hsvMat, org.opencv.imgproc.Imgproc.COLOR_RGB2HSV)
+    Imgproc.cvtColor(this, hsvMat, Imgproc.COLOR_RGB2HSV)
     val hsvChannels = mutableListOf<Mat>()
-    org.opencv.core.Core.split(hsvMat, hsvChannels)
-    return hsvChannels[1]
+    Core.split(hsvMat, hsvChannels)
+    return hsvChannels[2]
 }
 
 /*
@@ -36,9 +36,9 @@ fun Mat.saturationChannel(): Mat {
 * */
 fun Mat.valueChannel(): Mat {
     val hsvMat = Mat()
-    org.opencv.imgproc.Imgproc.cvtColor(this, hsvMat, org.opencv.imgproc.Imgproc.COLOR_RGB2HSV)
+    Imgproc.cvtColor(this, hsvMat, Imgproc.COLOR_RGB2HSV)
     val hsvChannels = mutableListOf<Mat>()
-    org.opencv.core.Core.split(hsvMat, hsvChannels)
+    Core.split(hsvMat, hsvChannels)
     return hsvChannels[2]
 }
 
@@ -47,7 +47,7 @@ fun Mat.valueChannel(): Mat {
 * */
 fun Mat.toGrayScale(): Mat {
     val grayMat = Mat()
-    org.opencv.imgproc.Imgproc.cvtColor(this, grayMat, org.opencv.imgproc.Imgproc.COLOR_RGB2GRAY)
+    Imgproc.cvtColor(this, grayMat, Imgproc.COLOR_RGB2GRAY)
     return grayMat
 }
 
@@ -55,9 +55,9 @@ fun Mat.toGrayScale(): Mat {
 /*
 * Gaussian Blur Effect
  */
-fun Mat.toGaussianBlur(kernelSize: Float = 5.0f): Mat {
+fun Mat.toGaussianBlur(kernelSize: Float = 5.0f, sigma: Double= 0.0): Mat {
     val blurredMat = Mat()
-    org.opencv.imgproc.Imgproc.GaussianBlur(this, blurredMat, org.opencv.core.Size(kernelSize.toDouble(), kernelSize.toDouble()), 0.0)
+    Imgproc.GaussianBlur(this, blurredMat, org.opencv.core.Size(kernelSize.toDouble(), kernelSize.toDouble()), sigma)
     return blurredMat
 }
 
@@ -66,7 +66,7 @@ fun Mat.toGaussianBlur(kernelSize: Float = 5.0f): Mat {
 * */
 fun Mat.toMedianBlur(kernelSize: Float = 5.0f): Mat {
     val blurredMat = Mat()
-    org.opencv.imgproc.Imgproc.medianBlur(this, blurredMat, kernelSize.toInt())
+    Imgproc.medianBlur(this, blurredMat, kernelSize.toInt())
     return blurredMat
 }
 
@@ -75,16 +75,16 @@ fun Mat.toMedianBlur(kernelSize: Float = 5.0f): Mat {
  */
 fun Mat.normalize(alpha: Double = 0.0, beta: Double = 255.0): Mat {
     val normalizedMat = Mat()
-    org.opencv.core.Core.normalize(this, normalizedMat, alpha, beta, org.opencv.core.Core.NORM_MINMAX)
+    Core.normalize(this, normalizedMat, alpha, beta, Core.NORM_MINMAX)
     return normalizedMat
 }
 
 /*
 * Threshold Effect
 * */
-fun Mat.toThreshold(threshold: Double = 127.0, maxVal: Double = 255.0, type: Int = org.opencv.imgproc.Imgproc.THRESH_BINARY): Mat {
+fun Mat.toThreshold(threshold: Double = 127.0, maxVal: Double = 255.0, type: Int = Imgproc.THRESH_BINARY): Mat {
     val thresholdMat = Mat()
-    org.opencv.imgproc.Imgproc.threshold(this, thresholdMat, threshold, maxVal, type)
+    Imgproc.threshold(this, thresholdMat, threshold, maxVal, type)
     return thresholdMat
 }
 
@@ -94,13 +94,13 @@ fun Mat.toThreshold(threshold: Double = 127.0, maxVal: Double = 255.0, type: Int
  */
 fun Mat.toLabColorSpace(): Mat {
     val labMat = Mat()
-    org.opencv.imgproc.Imgproc.cvtColor(this, labMat, org.opencv.imgproc.Imgproc.COLOR_RGB2Lab)
+    Imgproc.cvtColor(this, labMat, Imgproc.COLOR_RGB2Lab)
     return labMat
 }
 
 fun Mat.toHSVColorSpace(): Mat {
     val hsvMat = Mat()
-    org.opencv.imgproc.Imgproc.cvtColor(this, hsvMat, org.opencv.imgproc.Imgproc.COLOR_RGB2HSV)
+    Imgproc.cvtColor(this, hsvMat, Imgproc.COLOR_RGB2HSV)
     return hsvMat
 }
 
@@ -110,7 +110,7 @@ fun Mat.toHSVColorSpace(): Mat {
  */
 fun Mat.cannyEdge(minThreshold: Double = 50.0, maxThreshold: Double = 150.0): Mat {
     val edges = Mat()
-    org.opencv.imgproc.Imgproc.Canny(this, edges, minThreshold, maxThreshold)
+    Imgproc.Canny(this, edges, minThreshold, maxThreshold)
     return edges
 }
 
@@ -119,7 +119,7 @@ fun Mat.cannyEdge(minThreshold: Double = 50.0, maxThreshold: Double = 150.0): Ma
  */
 fun Mat.harrisCornerDetection(): Mat {
     val corners = Mat()
-    org.opencv.imgproc.Imgproc.cornerHarris(this, corners, 2, 3, 0.04)
+    Imgproc.cornerHarris(this, corners, 2, 3, 0.04)
     return corners
 }
 
@@ -128,7 +128,7 @@ fun Mat.harrisCornerDetection(): Mat {
 * */
 fun Mat.houghTransform(theta: Double = Math.PI /90, threshold: Int = 65): Mat {
     val lines = Mat()
-    org.opencv.imgproc.Imgproc.HoughLinesP(this, lines, 1.0, theta, threshold)
+    Imgproc.HoughLinesP(this, lines, 1.0, theta, threshold)
     return lines
 }
 
@@ -137,7 +137,7 @@ fun Mat.houghTransform(theta: Double = Math.PI /90, threshold: Int = 65): Mat {
 * */
 fun Mat.contourDetection(hierarchy: Mat? = null): List<MatOfPoint> {
     val contours = mutableListOf<MatOfPoint>()
-    org.opencv.imgproc.Imgproc.findContours(this, contours,hierarchy?: Mat(), org.opencv.imgproc.Imgproc.RETR_LIST, org.opencv.imgproc.Imgproc.CHAIN_APPROX_SIMPLE)
+    Imgproc.findContours(this, contours,hierarchy?: Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE)
     return contours
 }
 
@@ -148,14 +148,12 @@ fun Mat.contourDetection(hierarchy: Mat? = null): List<MatOfPoint> {
 fun Mat.applyFilter(filter: ImageFilter): Mat {
     return when (filter) {
         ImageFilter.ORIGINAL -> this
-        ImageFilter.GRAYSCALE -> toGrayScale()
+        ImageFilter.VIBRANT -> toVibrant()
+        ImageFilter.NO_SHADOW -> noShadow()
+        ImageFilter.AUTO -> toAutoFilter()
         ImageFilter.COLOR_BUMP -> colorBump()
-        ImageFilter.BRIGHTEN -> brighten()
-        ImageFilter.COLOR_HALFTONE -> colorHalftone()
-        ImageFilter.COLORIZE -> colorize()
-        ImageFilter.CONTRAST -> contrast()
-        ImageFilter.DIFFUSE -> diffuse()
-        ImageFilter.SHARPEN -> sharpen()
+        ImageFilter.SHARP_BLACK -> sharpBlack()
+        ImageFilter.B_W -> toBlackAndWhite()
     }
 }
 

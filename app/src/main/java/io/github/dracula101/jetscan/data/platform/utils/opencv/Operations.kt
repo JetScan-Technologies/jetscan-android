@@ -8,6 +8,7 @@ import org.opencv.core.MatOfKeyPoint
 import org.opencv.core.MatOfPoint
 import org.opencv.core.MatOfPoint2f
 import org.opencv.core.Point
+import org.opencv.core.Size
 import org.opencv.features2d.FeatureDetector
 import org.opencv.imgproc.Imgproc
 
@@ -24,20 +25,26 @@ fun Mat.morphology(kernelSize: Double, operation: Int, anchor: Point = Point(-1.
 /*
 * Opening Operation
  */
-fun Mat.opening(kernel: Mat): Mat {
+fun Mat.opening(kernel: Mat, iterations: Int = 1): Mat {
     val openedMat = Mat()
-    org.opencv.imgproc.Imgproc.morphologyEx(this, openedMat, org.opencv.imgproc.Imgproc.MORPH_OPEN, kernel)
+    org.opencv.imgproc.Imgproc.morphologyEx(this, openedMat, org.opencv.imgproc.Imgproc.MORPH_OPEN, kernel, Point(-1.0, -1.0), iterations)
     return openedMat
 }
 
 /*
 * Closing Operation
  */
-fun Mat.closing(kernel: Mat): Mat {
+fun Mat.closing(kernel: Mat, iterations: Int = 1): Mat {
     val closedMat = Mat()
-    org.opencv.imgproc.Imgproc.morphologyEx(this, closedMat, org.opencv.imgproc.Imgproc.MORPH_CLOSE, kernel)
+    org.opencv.imgproc.Imgproc.morphologyEx(this, closedMat, org.opencv.imgproc.Imgproc.MORPH_CLOSE, kernel, Point(-1.0, -1.0), iterations)
     return closedMat
 }
+
+fun Mat.closing(kernelSize : Double = 5.0, iterations: Int = 1): Mat {
+    val kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(kernelSize, kernelSize))
+    return closing(kernel, iterations)
+}
+
 
 /*
 * Dilation Operation
@@ -51,9 +58,9 @@ fun Mat.dilation(kernel: Mat): Mat {
 /*
 * Erosion Operation
  */
-fun Mat.erosion(kernel: Mat): Mat {
+fun Mat.erosion(kernel: Mat, iterations: Int = 1): Mat {
     val erodedMat = Mat()
-    org.opencv.imgproc.Imgproc.erode(this, erodedMat, kernel)
+    org.opencv.imgproc.Imgproc.erode(this, erodedMat, kernel, Point(-1.0, -1.0), iterations)
     return erodedMat
 }
 
@@ -97,6 +104,12 @@ fun Mat.bitwiseOr(mask: Mat): Mat {
 fun Mat.bitwiseNot(): Mat {
     val result = Mat()
     Core.bitwise_not(this, result)
+    return result
+}
+
+fun Mat.bitwiseAnd(): Mat {
+    val result = Mat()
+    Core.bitwise_and(this, this, result)
     return result
 }
 
@@ -146,3 +159,13 @@ fun Mat.rotate(
     Imgproc.warpAffine(this, rotatedMat, rotationMatrix, org.opencv.core.Size(this.width().toDouble(), this.height().toDouble()))
     return rotatedMat
 }
+/**
+ * Has to be HSV image
+ */
+fun Mat.gradient(kernel: Mat? = null): Mat {
+    val gradient = Mat()
+    val gradientKernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(3.0, 3.0))
+    Imgproc.morphologyEx(this, gradient, Imgproc.MORPH_GRADIENT, kernel ?: gradientKernel)
+    return gradient
+}
+

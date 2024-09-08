@@ -7,16 +7,21 @@ import android.content.Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.Intent.FLAG_ACTIVITY_NO_HISTORY
 import android.graphics.Bitmap
+import android.graphics.Point
 import android.net.Uri
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -62,15 +67,22 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -84,6 +96,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -113,12 +126,18 @@ import io.github.dracula101.jetscan.presentation.platform.component.snackbar.uti
 import io.github.dracula101.jetscan.presentation.platform.feature.app.model.SnackbarState
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageCropCoords
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageFilter
-import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.toPath
+import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.scale
+import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.toCropOverlay
+import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.toDocumentOutline
+import io.github.dracula101.jetscan.presentation.platform.feature.scanner.imageproxy.DocumentAnalyzer
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.camera.CameraAspectRatio
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.camera.CameraFacingMode
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.camera.GridMode
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.document.DocumentType
+import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.graph.CPoint
+import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.graph.Line
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -215,7 +234,8 @@ fun ScannerScreenView(
                 state = state,
                 viewModel = viewModel,
                 previewAspectRatio = state.value.cameraAspectRatio,
-                documentCropCoords = documentCropCoords
+                onDocumentDetected = { lines ->
+                }
             )
         }
 
@@ -230,13 +250,13 @@ fun ScannerScreenView(
                 },
             )
         }
-
         ScannerView.CROP_DOCUMENT -> {
             ScannerCropView(
                 state = state.value,
-                scannedDocument = state.value.scannedDocuments[
-                    state.value.retakeDocumentIndex ?: (state.value.scannedDocuments.size - 1)
-                ],
+                scannedDocument = state.value.scannedDocuments.getOrElse(
+                    index = state.value.cropDocumentIndex,
+                    defaultValue = { state.value.scannedDocuments.last() }
+                ),
                 viewModel = viewModel,
             )
         }
@@ -250,10 +270,13 @@ private fun ScannerView(
     state: State<ScannerState>,
     viewModel: ScannerViewModel,
     previewAspectRatio: CameraAspectRatio,
-    documentCropCoords: MutableState<ImageCropCoords?>,
+    onDocumentDetected: (List<Line>) -> Unit,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
+    val context = LocalContext.current
+    val previewSize = remember { mutableStateOf<Size?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val documentOutline = remember { mutableStateOf<ImageCropCoords?>(null) }
     state.value.snackbarState?.let { snackbarState ->
         ScannerAlertSnackbar(
             snackbarHostState = snackbarHostState,
@@ -315,42 +338,27 @@ private fun ScannerView(
                     onCameraInitialized = { controller ->
                         viewModel.trySendAction(ScannerAction.OnCameraInitialized(controller))
                     },
-                    onImageAnalysisInitialized = { controller, size ->
-                        /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                    previewSize.value = size
-                                    controller.setImageAnalysisAnalyzer(
-                                        context.mainExecutor,
-                                        DocumentAnalyzer(
-                                            openCvManager = viewModel.imageProcessingManager,
-                                            onDocumentDetected = { imageCropCoords ->
-                                                documentCropCoords.value = imageCropCoords
-                                            },
-                                            imagePreviewSize = size,
-                                            onPreviewBitmapReady = { bitmap1, bitmap2 ->
-                                                originalBitmap.value = bitmap1
-                                                previewBitmap.value = bitmap2
-                                            }
-                                        )
-                                    )
-                                }*/
+                    onPreviewSize = { size ->
+                        previewSize.value = size
+                    },
+                    imageAnalyzer = {
+                        DocumentAnalyzer(
+                            openCvManager = viewModel.imageProcessingManager,
+                            onDocumentDetected = { imageCropCoords ->
+                                documentOutline.value = imageCropCoords
+                            },
+                        )
                     },
                     gridStatus = state.value.gridMode == GridMode.ON,
                     previewAspectRatio = state.value.cameraAspectRatio,
                     modifier = Modifier
                         .aspectRatio(previewAspectRatio.toFloat())
                 )
-                Box(
+                AnimatedCropCoords(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .clipToBounds()
-                        .drawWithContent {
-                            if (documentCropCoords.value != null) {
-                                val path = documentCropCoords.value!!.toPath()
-                                drawPath(path = path, alpha = 0.3f, color = Color.White)
-                                // draw a outline of the crop area
-                                drawPath(path = path, color = Color.White, style = Stroke(4f))
-                            }
-                        }
+                        .aspectRatio(3/4f)
+                        .fillMaxWidth(),
+                    coords = documentOutline.value,
                 )
                 when(state.value.documentType){
                     DocumentType.BAR_CODE -> BarCodeOverlay()
@@ -405,12 +413,22 @@ private fun ScannerView(
                     isCapturingPhoto = state.value.isCapturingPhoto,
                     onCapturePhoto = {
                         hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                        viewModel.trySendAction(ScannerAction.Ui.OnCapturePhoto)
+                        viewModel.trySendAction(
+                            ScannerAction.Ui.OnCapturePhoto(
+                                documentOutline.value?.scale(
+                                    scale = 2.2f
+                                )
+                            )
+                        )
                     },
                     onDocumentClick = {
                         hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                         viewModel.trySendAction(ScannerAction.Ui.ChangeScannerView(ScannerView.EDIT_DOCUMENT))
                     },
+                    importFromGalleryClick ={uri->
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                        viewModel.trySendAction(ScannerAction.Ui.ImportFromGallery(uri))
+                    }
                 )
             }
         }
@@ -948,6 +966,59 @@ fun ShowBarCodeBottomSheet(
     }
 }
 
+fun findIntersectionOffsets(line: Line, width: Double, height: Double): Pair<Offset, Offset>? {
+    val intersections = mutableListOf<Offset>()
+
+    val xAxisLine = Line(slope = 0.0, yIntercept = 0.0)
+    val yAxisLine = Line(slope = Double.POSITIVE_INFINITY, yIntercept = 0.0)
+    val boundXAxisLine = Line(slope = 0.0, yIntercept = width)
+    val boundYAxisLine = Line(slope = Double.POSITIVE_INFINITY, yIntercept = height)
+
+    val xIntersection = line.intersection(xAxisLine)
+    val yIntersection = line.intersection(yAxisLine)
+    val boundXIntersection = line.intersection(boundXAxisLine)
+    val boundYIntersection = line.intersection(boundYAxisLine)
+    if (xIntersection != null && xIntersection.x in 0.0..width) {
+        intersections.add(
+            Offset(
+                x = xIntersection.x.toFloat(),
+                y = xIntersection.y.toFloat()
+            )
+        )
+    }
+    if (yIntersection != null && yIntersection.y in 0.0..height) {
+        intersections.add(
+            Offset(
+                x = yIntersection.x.toFloat(),
+                y = yIntersection.y.toFloat()
+            )
+        )
+    }
+    if (boundXIntersection != null && boundXIntersection.x in 0.0..width) {
+        intersections.add(
+            Offset(
+                x = boundXIntersection.x.toFloat(),
+                y = boundXIntersection.y.toFloat()
+            )
+        )
+    }
+    if (boundYIntersection != null && boundYIntersection.y in 0.0..height) {
+        intersections.add(
+            Offset(
+                x = boundYIntersection.x.toFloat(),
+                y = boundYIntersection.y.toFloat()
+            )
+        )
+    }
+    return if (intersections.size == 2) {
+        Pair(intersections[0], intersections[1])
+    } else {
+        null
+    }
+
+
+}
+
 private fun String?.replaceAfter(i: Int, s: String): String {
     return if (this != null && this.length > i){
         this.substring(0, i) + (s.repeat(this.length - i))
@@ -1004,6 +1075,80 @@ fun ShowBarcodeInfo(
                 textAlign = TextAlign.Center
             )
         }
+    }
+}
+
+@Composable
+fun AnimatedCropCoords(
+    modifier : Modifier = Modifier,
+    coords: ImageCropCoords?,
+    animationDuration: Int = 100
+){
+    val scope = rememberCoroutineScope()
+
+    // Animatables for each coordinate of the points
+    val topLeftX = remember { Animatable((coords?.topLeft?.x ?: 0.0).toFloat()) }
+    val topLeftY = remember { Animatable((coords?.topLeft?.y ?: 0.0).toFloat()) }
+    val topRightX = remember { Animatable((coords?.topRight?.x ?: 0.0).toFloat()) }
+    val topRightY = remember { Animatable((coords?.topRight?.y ?: 0.0).toFloat()) }
+
+    val bottomLeftX = remember { Animatable((coords?.bottomLeft?.x ?: 0.0).toFloat()) }
+    val bottomLeftY = remember { Animatable((coords?.bottomLeft?.y ?: 0.0).toFloat()) }
+    val bottomRightX = remember { Animatable((coords?.bottomRight?.x ?: 0.0).toFloat()) }
+    val bottomRightY = remember { Animatable((coords?.bottomRight?.y ?: 0.0).toFloat()) }
+
+    // Update animation targets when coords change
+    LaunchedEffect(coords) {
+        coords?.topLeft?.let {
+            scope.launch {
+                topLeftX.animateTo(it.x.toFloat(), animationSpec = tween(animationDuration))
+                topLeftY.animateTo(it.y.toFloat(), animationSpec = tween(animationDuration))
+            }
+        }
+        coords?.topRight?.let {
+            scope.launch {
+                topRightX.animateTo(it.x.toFloat(), animationSpec = tween(animationDuration))
+                topRightY.animateTo(it.y.toFloat(), animationSpec = tween(animationDuration))
+            }
+        }
+        coords?.bottomLeft?.let {
+            scope.launch {
+                bottomLeftX.animateTo(it.x.toFloat(), animationSpec = tween(animationDuration))
+                bottomLeftY.animateTo(it.y.toFloat(), animationSpec = tween(animationDuration))
+            }
+        }
+        coords?.bottomRight?.let {
+            scope.launch {
+                bottomRightX.animateTo(it.x.toFloat(), animationSpec = tween(animationDuration))
+                bottomRightY.animateTo(it.y.toFloat(), animationSpec = tween(animationDuration))
+            }
+        }
+    }
+
+    Canvas(
+        modifier = modifier
+    ){
+        val path = Path().apply {
+            coords?.let {
+                moveTo(topLeftX.value, topLeftY.value)
+                lineTo(topRightX.value, topRightY.value)
+                lineTo(bottomRightX.value, bottomRightY.value)
+                lineTo(bottomLeftX.value, bottomLeftY.value)
+                close()
+            }
+        }
+        drawPath(
+            path = path,
+            color = Color.White,
+            style = Stroke(width = 2.dp.toPx()),
+            alpha = if (coords != null) 1f else 0f
+        )
+        drawPath(
+            path = path,
+            color = Color.White,
+            style = Fill,
+            alpha = if (coords != null) 0.2f else 0f
+        )
     }
 }
 

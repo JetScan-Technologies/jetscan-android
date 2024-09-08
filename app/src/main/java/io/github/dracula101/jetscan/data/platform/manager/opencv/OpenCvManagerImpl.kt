@@ -1,36 +1,31 @@
 package io.github.dracula101.jetscan.data.platform.manager.opencv
 
-import android.R.attr.bitmap
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import androidx.compose.ui.geometry.Size
+import io.github.dracula101.jetscan.data.platform.utils.LineBundler
 import io.github.dracula101.jetscan.data.platform.utils.opencv.applyFilter
 import io.github.dracula101.jetscan.data.platform.utils.opencv.bitwiseNot
 import io.github.dracula101.jetscan.data.platform.utils.opencv.cannyEdge
 import io.github.dracula101.jetscan.data.platform.utils.opencv.closing
 import io.github.dracula101.jetscan.data.platform.utils.opencv.colorAdjustment
 import io.github.dracula101.jetscan.data.platform.utils.opencv.contourDetection
-import io.github.dracula101.jetscan.data.platform.utils.opencv.convexHull
 import io.github.dracula101.jetscan.data.platform.utils.opencv.crop
+import io.github.dracula101.jetscan.data.platform.utils.opencv.detectCorners
+import io.github.dracula101.jetscan.data.platform.utils.opencv.detectDocument
 import io.github.dracula101.jetscan.data.platform.utils.opencv.dilation
 import io.github.dracula101.jetscan.data.platform.utils.opencv.erosion
-import io.github.dracula101.jetscan.data.platform.utils.opencv.houghTransform
+import io.github.dracula101.jetscan.data.platform.utils.opencv.gradient
 import io.github.dracula101.jetscan.data.platform.utils.opencv.merge
 import io.github.dracula101.jetscan.data.platform.utils.opencv.opening
 import io.github.dracula101.jetscan.data.platform.utils.opencv.rotate
+import io.github.dracula101.jetscan.data.platform.utils.opencv.saturationChannel
 import io.github.dracula101.jetscan.data.platform.utils.opencv.split
 import io.github.dracula101.jetscan.data.platform.utils.opencv.toBitmap
 import io.github.dracula101.jetscan.data.platform.utils.opencv.toGaussianBlur
-import io.github.dracula101.jetscan.data.platform.utils.opencv.toHSVColorSpace
+import io.github.dracula101.jetscan.data.platform.utils.opencv.toGrayScale
 import io.github.dracula101.jetscan.data.platform.utils.opencv.toLabColorSpace
-import io.github.dracula101.jetscan.data.platform.utils.opencv.toMSER
 import io.github.dracula101.jetscan.data.platform.utils.opencv.toMat
-import io.github.dracula101.jetscan.data.platform.utils.opencv.toMedianBlur
-import io.github.dracula101.jetscan.data.platform.utils.opencv.weightedAdd
-import io.github.dracula101.jetscan.data.platform.utils.permutations
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageCropCoords
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageFilter
-import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.scale
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.toPoint
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.graph.CPoint
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.graph.Edge
@@ -40,20 +35,17 @@ import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.graph.Node
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Mat
-import org.opencv.core.MatOfInt
 import org.opencv.core.MatOfPoint
-import org.opencv.core.MatOfPoint2f
 import org.opencv.core.Point
+import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
 import timber.log.Timber
-import java.io.ByteArrayOutputStream
 import kotlin.math.abs
-import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.hypot
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
-import kotlin.math.tan
-
 
 class OpenCvManagerImpl : OpenCvManager {
 
@@ -69,357 +61,353 @@ class OpenCvManagerImpl : OpenCvManager {
         val bChannel = channels[2]
         val lKernel = Imgproc.getStructuringElement(
             Imgproc.MORPH_ELLIPSE,
-            org.opencv.core.Size(L_KERNEL_SIZE, L_KERNEL_SIZE)
+            Size(L_KERNEL_SIZE, L_KERNEL_SIZE)
         )
         val aKernel = Imgproc.getStructuringElement(
             Imgproc.MORPH_ELLIPSE,
-            org.opencv.core.Size(A_KERNEL_SIZE, A_KERNEL_SIZE)
+            Size(A_KERNEL_SIZE, A_KERNEL_SIZE)
         )
         lChannel = lChannel.opening(lKernel)
-        aChannel = aChannel.erosion(aKernel)
+        aChannel = aChannel.erosion(aKernel, iterations = 3)
         val mergedChannels = ArrayList<Mat>()
         mergedChannels.addAll(listOf(lChannel, aChannel, bChannel))
         val mergedImage = Mat()
         mergedImage.merge(mergedChannels)
-        return mergedImage
-    }
-
-    private fun sortPoints(points: List<Point>): List<Point> {
-        val sortedPoints = mutableListOf<Point>()
-        val sortedBySum = points.sortedBy { it.x.toInt() + it.y.toInt() }
-        val sortedByDiff = points.sortedBy { it.x.toInt() - it.y.toInt() }
-        sortedPoints.add(sortedBySum[0])
-        sortedPoints.add(sortedByDiff[0])
-        sortedPoints.add(sortedBySum[1])
-        sortedPoints.add(sortedByDiff[1])
-        return sortedPoints
-    }
-
-    private fun hull2Points(hull: MatOfInt, contour: MatOfPoint): MatOfPoint {
-        val indexes = hull.toList()
-        val points: MutableList<Point> = ArrayList<Point>()
-        val ctrList: List<Point> = contour.toList()
-        for (index in indexes) {
-            points.add(ctrList[index])
+        return mergedImage.also{
+            releaseResources(listOf(lab, lChannel, aChannel, bChannel))
         }
-        val point = MatOfPoint()
-        point.fromList(points)
-        return point
     }
 
-    private fun computeLargestContours(contours: List<MatOfPoint>): List<MatOfPoint> {
-        val hullList = mutableListOf<MatOfPoint>()
-        for (contour in contours) {
-            val hullIndex = contour.convexHull()
-            val hull = hull2Points(hullIndex, contour)
-            hullList.add(hull)
-        }
-        // Sort contours by area
-        val sortedContours = hullList.sortedByDescending { Imgproc.contourArea(it) }
-        return sortedContours.take(NUM_TOP_CONTOURS)
-    }
-
-    private fun findBiggestQuadrilateral(contours: List<MatOfPoint>): MatOfPoint? {
-        for (contour in contours) {
-            val matOfPoint2f = MatOfPoint2f(*contour.toArray())
-            val peri = Imgproc.arcLength(matOfPoint2f, true)
-            val approx = MatOfPoint2f()
-            Imgproc.approxPolyDP(matOfPoint2f, approx, 0.02 * peri, true)
-            val points = approx.toArray()
-            if (points.size == 4) {
-                val sortedPoints = sortPoints(points.toList())
-                return MatOfPoint(*sortedPoints.toTypedArray())
-            }
-        }
-        return null
-    }
-
-    private fun getDistance(point1: Point, point2: Point): Double {
-        return sqrt((point1.x - point2.x).pow(2.0) + (point1.y - point2.y).pow(2.0))
-    }
-
-    private fun checkForAngle(cropCoords: ImageCropCoords): Boolean {
-        val topLeft = cropCoords.topLeft
-        val topRight = cropCoords.topRight
-        val bottomLeft = cropCoords.bottomLeft
-        val bottomRight = cropCoords.bottomRight
-        val angle1 = Math.toDegrees(atan2(topRight.y - topLeft.y, topRight.x - topLeft.x))
-        val angle2 = Math.toDegrees(atan2(bottomRight.y - topRight.y, bottomRight.x - topRight.x))
-        val angle3 =
-            Math.toDegrees(atan2(bottomLeft.y - bottomRight.y, bottomLeft.x - bottomRight.x))
-        val angle4 = Math.toDegrees(atan2(topLeft.y - bottomLeft.y, topLeft.x - bottomLeft.x))
-        return angle1 in MIN_ANGLE_THRESHOLD..MAX_ANGLE_THRESHOLD
-                && angle2 in MIN_ANGLE_THRESHOLD..MAX_ANGLE_THRESHOLD
-                && angle3 in MIN_ANGLE_THRESHOLD..MAX_ANGLE_THRESHOLD
-                && angle4 in MIN_ANGLE_THRESHOLD..MAX_ANGLE_THRESHOLD
-    }
-
-    private fun checkForSide(cropCoords: ImageCropCoords): Boolean {
-        val topLeft = cropCoords.topLeft
-        val topRight = cropCoords.topRight
-        val bottomLeft = cropCoords.bottomLeft
-        val bottomRight = cropCoords.bottomRight
-        val topDistance = getDistance(topLeft.toPoint(), topRight.toPoint())
-        val leftDistance = getDistance(topLeft.toPoint(), bottomLeft.toPoint())
-        val rightDistance = getDistance(topRight.toPoint(), bottomRight.toPoint())
-        val bottomDistance = getDistance(bottomLeft.toPoint(), bottomRight.toPoint())
-        val allDistances = listOf(topDistance, leftDistance, rightDistance, bottomDistance)
-        val firstTwo = allDistances.sorted().take(2)
-        val lastTwo = allDistances.sorted().takeLast(2)
-        val firstTwoDiff = firstTwo[1] - firstTwo[0]
-        val lastTwoDiff = lastTwo[1] - lastTwo[0]
-        return firstTwoDiff < 0.1 * (firstTwo[0] + firstTwo[1]) && lastTwoDiff < 0.1 * (lastTwo[0] + lastTwo[1])
-    }
-
-
-    private fun checkQuadrilateral(cropCoords: ImageCropCoords): Boolean {
-        val isSideValid = checkForSide(cropCoords)
-        val isQuadrilateral = cropCoords.isQuadrilateral()
-        Timber.d("isQuadrilateral: $isQuadrilateral")
-        return isQuadrilateral && isSideValid
-    }
-
-    private fun MatOfPoint.toCropPoint(): ImageCropCoords {
-        val points = this.toArray()
-        return ImageCropCoords(
-            topLeft = CPoint(points[0].x, points[0].y),
-            topRight = CPoint(points[1].x, points[1].y),
-            bottomLeft = CPoint(points[2].x, points[2].y),
-            bottomRight = CPoint(points[3].x, points[3].y)
+    private fun computeGradient(image: Mat): Mat {
+        val gradientKernel = Imgproc.getStructuringElement(
+            Imgproc.MORPH_ELLIPSE,
+            Size(GRADIENT_KERNEL_SIZE, GRADIENT_KERNEL_SIZE)
         )
-    }
-
-    private fun MatOfPoint2f.toCropPoint(): ImageCropCoords {
-        val points = this.toArray()
-        return ImageCropCoords(
-            topLeft = CPoint(points[0].x, points[0].y),
-            topRight = CPoint(points[1].x, points[1].y),
-            bottomLeft = CPoint(points[2].x, points[2].y),
-            bottomRight = CPoint(points[3].x, points[3].y)
+        val gradient = image.gradient(gradientKernel)
+        val closingKernel = Imgproc.getStructuringElement(
+            Imgproc.MORPH_ELLIPSE,
+            Size(CLOSING_SIZE, CLOSING_SIZE)
         )
+        val closing = gradient.closing(closingKernel)
+        return closing.also {
+            releaseResources(listOf(gradient))
+        }
     }
 
     override fun detectDocument(
         imageBitmap: Bitmap,
-        imageSize: Size,
-        onPreviewBitmapReady: (Bitmap, Bitmap) -> Unit
     ): ImageCropCoords? {
-        val aspectRatio = imageBitmap.width.toFloat() / imageBitmap.height.toFloat()
-        val resizedHeight = (IMAGE_WIDTH / aspectRatio).toInt()
-        val resizedBitmap =
-            Bitmap.createScaledBitmap(imageBitmap, IMAGE_WIDTH, resizedHeight, false)
-        val mat = resizedBitmap.toMat()
-        val labImage = computeLABFilter(mat)
-        val blurredImage = labImage.toGaussianBlur(kernelSize = BLUR_KERNEL_SIZE)
-        val closingKernel = Imgproc.getStructuringElement(
-            Imgproc.MORPH_RECT,
-            org.opencv.core.Size(CLOSING_SIZE, CLOSING_SIZE)
+        val mat = imageBitmap.toMat()
+        val corners = mat.detectCorners()
+        if (corners==null && (corners?.size) != 4) return null
+        val cornerPoints = corners.map { CPoint(it.x, it.y) }
+        val cropCoords = ImageCropCoords(
+            topLeft = cornerPoints[0],
+            topRight = cornerPoints[1],
+            bottomLeft = cornerPoints[3],
+            bottomRight = cornerPoints[2]
         )
-        val closedImage = blurredImage.closing(closingKernel)
-        val weightedImage = closedImage.weightedAdd(WEIGHTAGE_VALUE)
-        val cannedDetection = weightedImage.cannyEdge(
-            minThreshold = CANNY_LOWER_THRESHOLD,
-            maxThreshold = CANNY_UPPER_THRESHOLD
-        )
-        val dilatedKernel = Imgproc.getStructuringElement(
-            Imgproc.MORPH_RECT,
-            org.opencv.core.Size(DILATION_SIZE, DILATION_SIZE)
-        )
-        val dilatedImage = cannedDetection.dilation(dilatedKernel)
-        onPreviewBitmapReady(labImage.toBitmap(), dilatedImage.toBitmap())
-        val contours = dilatedImage.contourDetection()
-        val topAreaContours = if (contours.isNotEmpty()) {
-            computeLargestContours(contours)
-        } else {
-            return null
-        }
-        val bestFitContour = findBiggestQuadrilateral(topAreaContours)
-        val upscaleHeight = (imageBitmap.height.toFloat() / resizedHeight.toFloat())
-        val upscaleWidth = (imageBitmap.width.toFloat() / IMAGE_WIDTH.toFloat())
-        val cropCoords = bestFitContour?.toCropPoint()
-        // Release resources
-        releaseResources(
-            listOf(
-                mat,
-                labImage,
-                blurredImage,
-                closedImage,
-                weightedImage,
-                cannedDetection,
-                dilatedImage
-            )
-        )
-        releasePointResource(topAreaContours + listOfNotNull(bestFitContour))
-        return cropCoords?.scale(upscaleWidth, upscaleHeight)
+        return cropCoords
     }
 
-
-    private fun textRemoval(image: Mat): Mat {
-        val mserRegions = image.toMSER()
-        // Remove text regions
-        if (mserRegions.rows() == 0) return image
-        for (i in 0 until mserRegions.rows()) {
-            for (j in 0 until mserRegions.cols()) {
-                val x = mserRegions.get(i, j)[0]
-                val y = mserRegions.get(i, j)[1]
-                image.put(y.toInt(), x.toInt(), 0.0)
-            }
-        }
-        return image
-    }
-
-    private fun isDuplicateLine(line: Line, lines: List<Line>, threshold: Int): Boolean {
-        return lines.any { abs(abs(it.slope) - abs(line.slope)) < threshold }
-    }
-
-    private fun houghLinesDetection(image: Mat, uniqueLineThreshold: Int = 30): List<Line> {
-        val lines = image.houghTransform()
-        // check if not empty
-        if (lines.rows() == 0) return emptyList()
-        val linesArray = mutableListOf<Pair<Double, Double>>()
-        for (i in 0 until lines.rows()) {
-            val rho = lines.get(i, 0)[0]
-            val theta = lines.get(i, 0)[1]
-            linesArray.add(Pair(rho, theta))
-        }
-        val groupUniqueLines = mutableListOf<Line>()
-        val sortedLines = linesArray.sortedBy { it.first }
-        for (line in sortedLines) {
-            val isSimilar = isDuplicateLine(Line(line.first, line.second), groupUniqueLines, uniqueLineThreshold)
-            if (!isSimilar) {
-                val slope = -1 / tan(line.second)
-                val yIntercept = line.first / sin(line.second)
-                groupUniqueLines.add(Line(slope, yIntercept))
-            }
-        }
-        return groupUniqueLines
-    }
-
-    private fun computeIntersections(
-        lines: List<Line>,
-        height: Int,
-    ): List<Intersection> {
-        val intersections = mutableListOf<Intersection>()
-        val combinations = permutations(lines).toList().map { it.first() to it.last() }
-        var vertexIndex = 0
-        for (combination in combinations) {
-            val line1 = combination.first
-            val line2 = combination.second
-            val intersection = line1.intersection(line2)
-            val angle = line1.angle(line2)
-            val constraintCheck = (intersection.x >= 0 || intersection.x <= IMAGE_WIDTH) || (intersection.y >= 0 || intersection.y <= height)
-            val angleCheck = angle < MIN_ANGLE_THRESHOLD
-            val duplicateCheck = intersections.any { it.point == intersection }
-            Timber.d("Angle: $angle, Constraint: $constraintCheck, Duplicate: $duplicateCheck")
-            //if (!constraintCheck || !duplicateCheck) continue
-            intersections.add(
-                Intersection(vertexIndex++,Pair(line1, line2),intersection)
-            )
-        }
-        return intersections
-    }
-
-    private fun commonLineExits(line1: Line, line2: Line): Boolean {
-        val set1 = setOf(line1, line2)
-        val set2 = setOf(line2, line1)
-        return set1 == set2
-    }
-
-    private fun generateGraph(intersections: List<Intersection>): Graph {
-        val graph = Graph()
-        val nodes = intersections.map { Node(it.id, it.point) }
-        val edges = mutableListOf<Edge>()
-        for (i in intersections.indices) {
-            for (j in i + 1 until intersections.size) {
-                if (commonLineExits(intersections[i].lines.first, intersections[j].lines.first)) {
-                    edges.add(Edge(Pair(nodes[i], nodes[j])))
-                }
-            }
-        }
-        nodes.forEach { graph.addNode(it) }
-        edges.forEach { graph.addEdge(it) }
-        return graph
-    }
-
-    private fun boundedDFS(neighbors: Graph, current: Node, loops: MutableList<List<Node>>, seen: MutableSet<Node> = mutableSetOf()) {
-        if (current in seen) return
-        seen.add(current)
-        if (seen.size == 4) {
-            val dfsNeighbors = neighbors.depthFirstSearch(current, seen.last())
-            if (seen.first() in dfsNeighbors) {
-                loops.add(dfsNeighbors)
-            }
-        } else {
-            for (neighbor in neighbors.getNodes()) {
-                boundedDFS(neighbors, neighbor, loops, seen)
-            }
-        }
-        seen.remove(current)
-    }
-
-    private fun findQuadrilateral(intersections: List<Intersection>): ImageCropCoords? {
-        val graph = generateGraph(intersections)
-        val loops = mutableListOf<List<Node>>()
-        for (node in graph.getNodes()) {
-            boundedDFS(graph, node, loops)
-        }
-        val cropPoints = loops.map { loop -> loop.map { it.point } }
-        if (cropPoints.isEmpty()) return null
-        val areas = cropPoints.map { ImageCropCoords.fromList(it).area() }
-        val maxArea = areas.maxOrNull() ?: 0.0
-        val index = areas.indexOfFirst { it == maxArea }
-        return ImageCropCoords.fromList(cropPoints[index])
-    }
-
-    private fun computeQuadrilaterial(intersections: List<Intersection>): ImageCropCoords? {
-        if (intersections.size < 4) return null
-        val points = intersections.map { it.point }
-        return ImageCropCoords.fromList(points)
+    override fun getLines(imageBitmap: Bitmap): List<Line> {
+        val imageMat = imageBitmap.toMat()
+        val bitwiseNot = imageMat.bitwiseNot()
+        val edges = findEdges(bitwiseNot)
+        val lines = detectLines(edges)
+        releaseResources(listOf(imageMat, bitwiseNot, edges))
+        return lines
     }
 
     override fun detectSingleDocument(
         imageBitmap: Bitmap,
-        imageSize: Size,
         onPreviewBitmapReady: (Bitmap, Bitmap) -> Unit
     ): ImageCropCoords? {
-        val aspectRatio = imageBitmap.width.toFloat() / imageBitmap.height.toFloat()
-        val resizedHeight = (IMAGE_WIDTH / aspectRatio).toInt()
-        val resizedBitmap =
-            Bitmap.createScaledBitmap(imageBitmap, IMAGE_WIDTH, resizedHeight, true)
-        val mat = resizedBitmap.toMat()
-        val invertedImage = mat.bitwiseNot()
-        val saturationImage = invertedImage.toHSVColorSpace()
-        val blurredImage = saturationImage.toMedianBlur(kernelSize = BLUR_KERNEL_SIZE)
-        val cannyEdgeImage = blurredImage.cannyEdge(
-            minThreshold = CANNY_LOWER_THRESHOLD,
-            maxThreshold = CANNY_UPPER_THRESHOLD
+        val mat = imageBitmap.toMat()
+        val lines = mat.detectDocument()
+        val lineBundler = LineBundler(
+            minDistanceToMerge = 10.0,
+            minAngleToMerge = 30.0,
         )
-        val removedText = textRemoval(cannyEdgeImage)
-        val houghLines = houghLinesDetection(removedText)
-        onPreviewBitmapReady(blurredImage.toBitmap(), cannyEdgeImage.toBitmap())
-        val intersections = computeIntersections(houghLines, resizedHeight)
-        val quadrilateral = computeQuadrilaterial(intersections)
-        Timber.i(
-            "HoughLines: ${houghLines.size}, Intersections: ${intersections.size}, Quadrilateral: $quadrilateral"
+        val bundledLines = if (lines.size > 4) lineBundler.processLines(lines) else lines
+        if (bundledLines.size !in 4..20) return null
+        if (bundledLines.size == 4) {
+            val intersections = mutableListOf<CPoint>()
+            for (i in bundledLines.indices) {
+                val line1 = bundledLines[i]
+                for (j in i + 1 until bundledLines.size) {
+                    val line2 = bundledLines[j]
+                    val intersection = line1.intersect(line2)
+                    if (intersection != null && intersection.x in 0.0..mat.width().toDouble() && intersection.y in 0.0..mat.height().toDouble()) {
+                        intersections.add(intersection)
+                    }
+                }
+            }
+            if (intersections.size == 4) {
+                return ImageCropCoords(
+                    topLeft = intersections[0],
+                    topRight = intersections[1],
+                    bottomLeft = intersections[2],
+                    bottomRight = intersections[3]
+                )
+            }
+        }
+        val cornerIntersections = mutableListOf<CPoint>()
+        for (i in bundledLines.indices) {
+            val line1 = bundledLines[i]
+            for (j in i + 1 until bundledLines.size) {
+                val line2 = bundledLines[j]
+                val intersection = line1.intersect(line2) ?: continue
+                if (intersection.x in 0.0..mat.width().toDouble() && intersection.y in 0.0..mat.height().toDouble()) {
+                    cornerIntersections.add(intersection)
+                }
+            }
+        }
+        if (cornerIntersections.size == 4) {
+            return ImageCropCoords(
+                topLeft = cornerIntersections[0],
+                topRight = cornerIntersections[1],
+                bottomLeft = cornerIntersections[2],
+                bottomRight = cornerIntersections[3]
+            )
+        }
+        val quadrilateral = findBestQuadrilaterals(
+            bundledLines.map { it.toLine() },
+            mat.size(),
         )
-        releaseResources(listOf(mat, invertedImage, saturationImage, blurredImage, cannyEdgeImage))
-        val upscaleHeight = (imageBitmap.height.toFloat() / resizedHeight.toFloat())
-        val upscaleWidth = (imageBitmap.width.toFloat() / IMAGE_WIDTH.toFloat())
-        return quadrilateral?.scale(upscaleWidth, upscaleHeight)
+        if (quadrilateral.isNotEmpty()) {
+            return quadrilateral.maxByOrNull { it.area() }
+        }
+        return null
     }
 
-    private fun releaseResources(mats: List<Mat>) {
-        for (mat in mats) {
-            mat.release()
+    private fun findBestQuadrilaterals(lines: List<Line>, size: Size): List<ImageCropCoords> {
+        val preprocessedLine = mutableListOf<Line>()
+        for (i in lines.indices) {
+            val shouldAddLine = lines.filter { addLine(lines[i], it, size) }
+            if (shouldAddLine.isNotEmpty()) {
+                preprocessedLine.add(lines[i])
+            }
+        }
+        if (preprocessedLine.size !in 4..20) return emptyList()
+        val croppedLines = mutableListOf<ImageCropCoords>()
+        for (i in 0 until preprocessedLine.size) {
+            for (j in i + 1 until preprocessedLine.size) {
+                val line1 = preprocessedLine[i]
+                val line2 = preprocessedLine[j]
+                if (line1.isParallel(line2)) continue
+                val intersection = line1.intersection(line2) ?: continue
+                if (intersection.x !in 0.0..size.width && intersection.y !in 0.0..size.height) {
+                    continue
+                }
+                for (k in j + 1 until preprocessedLine.size) {
+                    val line3 = preprocessedLine[k]
+                    if (line2.isParallel(line3)) continue
+                    val intersection2 = line2.intersection(line3) ?: continue
+                    if (intersection2.x !in 0.0..size.width && intersection2.y !in 0.0..size.height) {
+                        continue
+                    }
+                    for (l in k + 1 until preprocessedLine.size) {
+                        val line4 = preprocessedLine[l]
+                        if (line3.isParallel(line4)) continue
+                        val intersections = getIntersections(
+                            listOf(line1, line2, line3, line4),
+                            size
+                        )
+                        if (intersections.size != 4) continue
+                        val angle1 = intersections[0].values.first().first.angle(intersections[0].values.first().second)
+                        val angle2 = intersections[1].values.first().first.angle(intersections[1].values.first().second)
+                        val angle3 = intersections[2].values.first().first.angle(intersections[2].values.first().second)
+                        val angle4 = intersections[3].values.first().first.angle(intersections[3].values.first().second)
+                        if (angle1 !in 60.0..120.0 || angle2 !in 60.0..120.0 || angle3 !in 60.0..120.0 || angle4 !in 60.0..120.0) {
+                            continue
+                        }
+                        val cropCoords = intersections.map { it.keys.first() }
+                        croppedLines.add(
+                            ImageCropCoords(
+                                topLeft = cropCoords[0],
+                                topRight = cropCoords[1],
+                                bottomLeft = cropCoords[2],
+                                bottomRight = cropCoords[3]
+                            )
+                        )
+                        if (croppedLines.size >= 3) return croppedLines
+                    }
+                }
+            }
+        }
+        return croppedLines
+    }
+
+    private fun getIntersections(lines: List<Line>, size: Size): List<Map<CPoint, Pair<Line, Line>>> {
+        val intersections = mutableListOf<Map<CPoint, Pair<Line, Line>>>()
+        for (i in lines.indices) {
+            val line1 = lines[i]
+            for (j in i + 1 until lines.size) {
+                val line2 = lines[j]
+                val intersection = line1.intersection(line2) ?: continue
+                if (intersection.x in 0.0..size.width && intersection.y in 0.0..size.height) {
+                    intersections.add(
+                        mapOf(
+                            intersection to Pair(line1, line2)
+                        )
+                    )
+                }
+            }
+        }
+        return intersections
+    }
+
+    private fun addLine(mainLine: Line, otherLine: Line, size: Size) : Boolean {
+        if (mainLine.isParallel(otherLine)) {
+            return false
+        }
+        val intersection = mainLine.intersection(otherLine) ?: return false
+        if (intersection.x < 0 || intersection.x > size.width || intersection.y < 0 || intersection.y > size.height) {
+            return false
+        }
+        val angle = abs(mainLine.angle(otherLine))
+        if (angle !in 70.0..110.0) {
+            return false
+        }
+        return true
+    }
+
+
+    private fun findEdges(
+        imageMat: Mat,
+        blurRadius: Int = 7,
+        cannyLowerLimit: Int = 100,
+        cannyUpperLimit: Int = 200
+    ): Mat {
+        val saturation = imageMat.saturationChannel()
+        val blurred = saturation.toGaussianBlur(blurRadius.toFloat())
+        val edges = blurred.cannyEdge(cannyLowerLimit.toDouble(), cannyUpperLimit.toDouble())
+        return edges.also {
+            releaseResources(listOf(saturation, blurred))
         }
     }
 
-    private fun releasePointResource(points: List<MatOfPoint>) {
-        for (point in points) {
-            point.release()
+    private fun detectLines(
+        edges: Mat,
+        theta: Double = Math.PI / 90,
+        threshold: Int = 65,
+        groupSimilarLimit: Int = 30
+    ): List<Line> {
+        val lines = Mat()
+        Imgproc.HoughLines(edges, lines, 1.0, theta, threshold)
+        if (lines.empty()) {
+            return emptyList()
+        }
+        val linesArray = mutableListOf<Line>()
+        for (i in 0 until lines.rows()) {
+            val data = lines.get(i, 0)
+            val rho = data[0]
+            val angle = data[1]
+            val slope = -cos(angle) / sin(angle)
+            val yIntercept = rho / sin(angle)
+            linesArray.add(Line(slope, yIntercept))
+        }
+        return groupSimilarLines(linesArray, groupSimilarLimit).also {
+            releaseResources(listOf(lines))
         }
     }
 
+    private fun findIntersections(lines: List<Line>, imageSize: Size): List<Intersection> {
+        val intersections = mutableListOf<Intersection>()
+        for (i in lines.indices) {
+            val line1 = lines[i]
+            for (j in i + 1 until lines.size) {
+                val line2 = lines[j]
+                val intersectionPoint = line1.intersection(line2) ?: continue
+//                val angle = line1.angleInDegrees(line2)
+//                Timber.d("Intersection Point: $intersectionPoint, Angle: $angle")
+//                if (angle < MIN_ANGLE_THRESHOLD || angle > MAX_ANGLE_THRESHOLD) continue
+                if (intersectionPoint.x < 0 || intersectionPoint.x > imageSize.width || intersectionPoint.y < 0 || intersectionPoint.y > imageSize.height) continue
+                intersections.add(Intersection(i + j, Pair(line1, line2), intersectionPoint))
+            }
+        }
+        return intersections.also {
+            Timber.d("Intersections (${it.size}")
+        }
+    }
+
+    private fun buildGraph(intersections: List<Intersection>): Graph {
+        val graph = Graph()
+        intersections.forEach {
+            graph.addNode(
+                Node(it.id, it.point)
+            )
+        }
+        intersections.forEach {
+            val current = graph.getNode(it.id)
+            intersections.forEach { other ->
+                if (it != other) {
+                    val otherNode = graph.getNode(other.id)
+                    if (current != null && otherNode != null) {
+                        val edge = Edge(Pair(current, otherNode))
+                        graph.addEdge(edge)
+                    }
+                }
+            }
+        }
+        return graph
+    }
+
+    private fun sortPointToCropCoords(points: List<CPoint>): ImageCropCoords {
+        val sortedX = points.sortedBy { it.x }
+        val sortedY = points.sortedBy { it.y }
+        val topLeft = sortedX.first { it.y == sortedY.first().y }
+        val bottomRight = sortedX.last { it.y == sortedY.last().y }
+        val topRight = sortedX.last { it.y == sortedY.first().y }
+        val bottomLeft = sortedX.first { it.y == sortedY.last().y }
+        return ImageCropCoords(topLeft, topRight, bottomLeft, bottomRight)
+    }
+
+    private fun findQuadrilateral(intersections: List<Intersection>): ImageCropCoords? {
+        val cropCoords = mutableListOf<ImageCropCoords>()
+        val graph = buildGraph(intersections)
+        val nodes = graph.getNodes()
+        for (i in nodes.indices) {
+            val start = nodes[i]
+            for (j in i + 1 until nodes.size) {
+                val end = nodes[j]
+                val path = graph.depthFirstSearch(start, end)
+                if (path.size in 4..8) {
+                    val cropCoord = sortPointToCropCoords(path.map { it.point })
+                    cropCoords.add(cropCoord)
+                }
+            }
+        }
+        return cropCoords.maxByOrNull { it.area() }
+    }
+
+
+    private fun groupSimilarLines(lines: List<Line>, groupSimilarLimit: Int): List<Line> {
+        val similarLines = mutableListOf<Line>()
+        for (i in lines.indices) {
+            val line = lines[i]
+            val similarLinesGroup = mutableListOf<Line>()
+            similarLinesGroup.add(line)
+            for (j in i + 1 until lines.size) {
+                val otherLine = lines[j]
+                if (isSimilarLine(line, otherLine, groupSimilarLimit)) {
+                    similarLinesGroup.add(otherLine)
+                }
+            }
+            if (similarLinesGroup.size > similarLines.size) {
+                similarLines.clear()
+                similarLines.addAll(similarLinesGroup)
+            }
+        }
+        return similarLines
+    }
+
+    private fun isSimilarLine(line1: Line, line2: Line, groupSimilarLimit: Int): Boolean {
+        val slopeDiff = Math.abs(line1.slope - line2.slope)
+        val interceptDiff = Math.abs(line1.yIntercept - line2.yIntercept)
+        return slopeDiff < groupSimilarLimit && interceptDiff < groupSimilarLimit
+    }
 
     override fun cropDocument(imageBitmap: Bitmap, imageCropCoords: ImageCropCoords): Bitmap {
         val mat = imageBitmap.toMat()
@@ -427,7 +415,7 @@ class OpenCvManagerImpl : OpenCvManager {
         val topRight = imageCropCoords.topRight.toPoint()
         val bottomLeft = imageCropCoords.bottomLeft.toPoint()
         val bottomRight = imageCropCoords.bottomRight.toPoint()
-        val width = maxOf(getDistance(topLeft, topRight),getDistance(bottomLeft, bottomRight))
+        val width = maxOf(getDistance(topLeft, topRight), getDistance(bottomLeft, bottomRight))
         val height = maxOf(getDistance(topLeft, bottomLeft), getDistance(topRight, bottomRight))
         val croppedImage = mat.crop(
             cropPoints = MatOfPoint(
@@ -439,7 +427,7 @@ class OpenCvManagerImpl : OpenCvManager {
             width = width,
             height = height
         )
-        return croppedImage.toBitmap().also{
+        return croppedImage.toBitmap().also {
             releaseResources(listOf(mat))
             releasePointResource(listOf(MatOfPoint(topLeft, topRight, bottomLeft, bottomRight)))
         }
@@ -485,18 +473,31 @@ class OpenCvManagerImpl : OpenCvManager {
         }
     }
 
+    private fun getDistance(p1: Point, p2: Point): Double {
+        return sqrt((p1.x - p2.x).pow(2) + (p1.y - p2.y).pow(2))
+    }
+
+    private fun releaseResources(mats: List<Mat>) {
+        mats.forEach { it.release() }
+    }
+
+    private fun releasePointResource(points: List<MatOfPoint>) {
+        points.forEach { it.release() }
+    }
+
     companion object {
-        private const val BLUR_KERNEL_SIZE = 7f
-        private const val L_KERNEL_SIZE = 7.0
-        private const val A_KERNEL_SIZE = 3.0
+        private const val BLUR_KERNEL_SIZE = 3f
+        private const val L_KERNEL_SIZE = 13.0
+        private const val A_KERNEL_SIZE = 5.0
+        private const val GRADIENT_KERNEL_SIZE = 3.0
         private const val WEIGHTAGE_VALUE = 0.8
         private const val CLOSING_SIZE = 7.0
-        private const val DILATION_SIZE = 3.0
+        private const val DILATION_SIZE = 8.0
+        private const val EROSION_SIZE = 3.0
 
         // private const val CANNY_LOWER_THRESHOLD = 60.0
-        private const val CANNY_LOWER_THRESHOLD = 100.0
-        private const val CANNY_UPPER_THRESHOLD = 200.0
-        private const val IMAGE_WIDTH = 250
+        private const val CANNY_LOWER_THRESHOLD = 150.0
+        private const val CANNY_UPPER_THRESHOLD = 400.0
         private const val NUM_TOP_CONTOURS = 10
         private const val MIN_ANGLE_THRESHOLD = 45.0
         private const val MAX_ANGLE_THRESHOLD = 150.0

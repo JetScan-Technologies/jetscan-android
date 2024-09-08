@@ -28,29 +28,25 @@ import androidx.compose.ui.unit.dp
 fun JetScanTopAppbar(
     modifier: Modifier = Modifier,
     title: @Composable () -> Unit,
-    titleStyle: TextStyle = MaterialTheme.typography.titleLarge,
     scrollBehavior: TopAppBarScrollBehavior,
-    navigationIcon: (@Composable () -> Unit)? = null,
-    navigationIconContentDescription: String = "",
-    onNavigationIconClick: () -> Unit = { },
+    onNavigationIconClick: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = { },
 ) {
     TopAppBar(
         colors = TopAppBarDefaults.largeTopAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            scrolledContainerColor = TopAppBarDefaults.largeTopAppBarColors().scrolledContainerColor,
             navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
             titleContentColor = MaterialTheme.colorScheme.onSurface,
             actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         ),
         scrollBehavior = scrollBehavior,
         navigationIcon = {
-            navigationIcon?.let {
-                IconButton(
+            if (onNavigationIconClick!=null) {
+                BackButtonIcon(
                     onClick = onNavigationIconClick,
-                    content = navigationIcon,
                 )
-            } ?: Unit
+            }
         },
         title = title,
         modifier = modifier
@@ -60,10 +56,16 @@ fun JetScanTopAppbar(
 }
 
 @Composable
-fun BackButtonIcon() {
-    Icon(
-        imageVector = Icons.AutoMirrored.Default.ArrowBackIos,
-        contentDescription = "Back",
-        modifier = Modifier.offset(x = 4.dp)
-    )
+fun BackButtonIcon(
+    onClick: () -> Unit
+) {
+    IconButton(
+        onClick = onClick,
+    ){
+        Icon(
+            imageVector = Icons.AutoMirrored.Default.ArrowBackIos,
+            contentDescription = "Back",
+            modifier = Modifier.offset(x = 4.dp)
+        )
+    }
 }

@@ -14,7 +14,12 @@ data class Line(
         return slope * x + yIntercept
     }
 
-    fun intersection(line: Line): CPoint {
+    fun angle(line: Line): Double {
+        return Math.toDegrees(atan((line.slope - slope) / (1 + line.slope * slope)))
+    }
+
+    fun intersection(line: Line): CPoint? {
+        if (isParallel(line)) return null
         val x = (line.yIntercept - yIntercept) / (slope - line.slope)
         val y = slope * x + yIntercept
         return CPoint(x, y)
@@ -28,12 +33,16 @@ data class Line(
         return slope * line.slope == -1.0
     }
 
-    fun angle(line: Line): Double {
+    fun angleInDegrees(line: Line): Double {
         return Math.toDegrees(atan((line.slope - slope) / (1 + line.slope * slope)))
     }
 
     fun onLine(point: CPoint): Boolean {
         return point.y == slope * point.x + yIntercept
+    }
+
+    override fun toString(): String {
+        return "y = $slope * x + $yIntercept"
     }
 }
 

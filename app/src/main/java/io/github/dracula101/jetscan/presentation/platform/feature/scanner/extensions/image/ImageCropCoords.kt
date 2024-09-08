@@ -66,7 +66,6 @@ data class ImageCropCoords(
 
         fun fromBitmap(bitmap: Bitmap): ImageCropCoords {
             val outerSpacingRatio = 0.90
-            val aspectRatio = bitmap.width.toDouble() / bitmap.height.toDouble()
             val width = bitmap.width
             val height = bitmap.height
             val outerSpacingHeight = height * outerSpacingRatio

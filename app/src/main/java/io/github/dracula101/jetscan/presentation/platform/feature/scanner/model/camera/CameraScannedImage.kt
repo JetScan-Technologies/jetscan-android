@@ -18,6 +18,14 @@ data class CameraScannedImage (
     val imageQuality: ImageQuality,
     val cropCoords: ImageCropCoords = ImageCropCoords.fromBitmap(originalImage),
 ) : Parcelable {
+
+    override fun toString(): String {
+        return "\nCameraScannedImage(\n" +
+                "   id='$id', \n" +
+                "   imageQuality=$imageQuality, \n" +
+                ")\n"
+    }
+
     companion object {
         val fromBitmap: (Bitmap) -> CameraScannedImage = { image ->
             val imageSizeMB = (image.byteCount / 100000).toFloat()

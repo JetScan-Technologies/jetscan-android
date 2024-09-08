@@ -49,9 +49,7 @@ import androidx.compose.material.icons.rounded.FilterHdr
 import androidx.compose.material.icons.rounded.FlipCameraIos
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PhotoFilter
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
@@ -91,10 +89,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -111,6 +107,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.saket.telephoto.zoomable.rememberZoomableState
 import me.saket.telephoto.zoomable.zoomable
+import timber.log.Timber
 
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -173,7 +170,9 @@ fun ScannerEditView(
                                     isEditingDocument.value = it.isFocused
                                 },
                             onValueChange = {
-                                viewModel.trySendAction(ScannerAction.EditAction.DocumentChangeName(it))
+                                viewModel.trySendAction(
+                                    ScannerAction.EditAction.DocumentChangeName(it)
+                                )
                             },
                             textStyle = MaterialTheme.typography.bodyLarge.copy(
                                 color = MaterialTheme.colorScheme.onSurface,
@@ -200,17 +199,15 @@ fun ScannerEditView(
                         )
                         CircleButton(
                             onClick = {
-                                if(!isEditingDocument.value){
+                                if (!isEditingDocument.value) {
                                     menuExpanded.value = !menuExpanded.value
-                                }else {
+                                } else {
                                     focusManager.clearFocus()
                                 }
                             },
-                            imageVector = if(isEditingDocument.value) Icons.Rounded.Close else Icons.Rounded.MoreVert
+                            imageVector = if (isEditingDocument.value) Icons.Rounded.Close else Icons.Rounded.MoreVert
                         )
-
                     }
-
                 }
                 Column(modifier = Modifier
                     .clickableWithoutRipple(
@@ -231,15 +228,16 @@ fun ScannerEditView(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
                     )
                     DocumentNavigator(pagerState, documents)
-                    HorizontalPager(modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(3 / 4f)
-                        .clipToBounds(),
+                    HorizontalPager(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(3 / 4f)
+                            .clipToBounds(),
                         state = pagerState,
-                        pageSpacing = 12.dp,
-                        key = { documents.getOrNull(it)?.id ?: it }) {
-
-                        val document = documents.getOrNull(it)
+                        pageSpacing = 8.dp,
+                        key = { index -> documents.getOrNull(index)?.id ?: index }
+                    ) { index ->
+                        val document = documents.getOrNull(index)
                         if (document?.croppedImage != null) {
                             Box {
                                 ScannedImageView(
@@ -249,34 +247,44 @@ fun ScannerEditView(
                                 ColorAdjustmentTab(
                                     colorAdjustmentUiAnim.value,
                                     state,
-                                    onContrastChange = {contrast->
+                                    onContrastChange = { contrast ->
                                         viewModel.trySendAction(
                                             ScannerAction.EditAction.ChangeColorAdjustment(contrast = contrast)
                                         )
                                     },
-                                    onBrightnessChange = {brightness->
+                                    onBrightnessChange = { brightness ->
                                         viewModel.trySendAction(
-                                            ScannerAction.EditAction.ChangeColorAdjustment(brightness = brightness)
+                                            ScannerAction.EditAction.ChangeColorAdjustment(
+                                                brightness = brightness
+                                            )
                                         )
                                     },
-                                    onSaturationChange = {saturation->
+                                    onSaturationChange = { saturation ->
                                         viewModel.trySendAction(
-                                            ScannerAction.EditAction.ChangeColorAdjustment(saturation = saturation)
+                                            ScannerAction.EditAction.ChangeColorAdjustment(
+                                                saturation = saturation
+                                            )
                                         )
                                     },
                                     onContrastSelected = {
                                         viewModel.trySendAction(
-                                            ScannerAction.EditAction.ChangeColorAdjustTab(ColorAdjustTab.CONTRAST)
+                                            ScannerAction.EditAction.ChangeColorAdjustTab(
+                                                ColorAdjustTab.CONTRAST
+                                            )
                                         )
                                     },
                                     onBrightnessSelected = {
                                         viewModel.trySendAction(
-                                            ScannerAction.EditAction.ChangeColorAdjustTab(ColorAdjustTab.BRIGHTNESS)
+                                            ScannerAction.EditAction.ChangeColorAdjustTab(
+                                                ColorAdjustTab.BRIGHTNESS
+                                            )
                                         )
                                     },
                                     onSaturationSelected = {
                                         viewModel.trySendAction(
-                                            ScannerAction.EditAction.ChangeColorAdjustTab(ColorAdjustTab.SATURATION)
+                                            ScannerAction.EditAction.ChangeColorAdjustTab(
+                                                ColorAdjustTab.SATURATION
+                                            )
                                         )
                                     }
                                 )
@@ -369,9 +377,17 @@ private fun ColorAdjustmentTab(
                     },
                     onValueChangeFinished = {
                         when (state.selectedColorAdjustTab) {
-                            ColorAdjustTab.BRIGHTNESS -> {onBrightnessChange(brightness.floatValue) }
-                            ColorAdjustTab.CONTRAST -> { onContrastChange(contrast.floatValue) }
-                            ColorAdjustTab.SATURATION -> { onSaturationChange(saturation.floatValue) }
+                            ColorAdjustTab.BRIGHTNESS -> {
+                                onBrightnessChange(brightness.floatValue)
+                            }
+
+                            ColorAdjustTab.CONTRAST -> {
+                                onContrastChange(contrast.floatValue)
+                            }
+
+                            ColorAdjustTab.SATURATION -> {
+                                onSaturationChange(saturation.floatValue)
+                            }
                         }
                     },
                     onValueChange = {
@@ -460,6 +476,7 @@ fun ColorAdjustOption(
                     modifier = Modifier.size(20.dp)
                 )
             }
+
             is Bitmap -> {
                 Image(
                     bitmap = icon.asImageBitmap(),
@@ -467,6 +484,7 @@ fun ColorAdjustOption(
                     modifier = Modifier.size(20.dp)
                 )
             }
+
             is Int -> {
                 Image(
                     painter = painterResource(id = icon),
@@ -520,6 +538,7 @@ fun EditOption(
                     modifier = Modifier.size(28.dp)
                 )
             }
+
             is Int -> {
                 Image(
                     painter = painterResource(id = icon),
@@ -552,18 +571,34 @@ fun DocumentEditOptions(
         verticalAlignment = Alignment.CenterVertically
     ) {
         item {
-            EditOption(icon = Icons.Rounded.Crop, title = "Crop", onClick = {
-                viewModel.trySendAction(ScannerAction.EditAction.CropDocument(currentPage))
-            })
-            EditOption(icon = Icons.Rounded.FlipCameraIos, title = "Retake", onClick = {
-                viewModel.trySendAction(ScannerAction.EditAction.RetakeDocument(currentPage))
-            })
-            EditOption(icon = Icons.AutoMirrored.Rounded.RotateRight, title = "Rotate", onClick = {
-                viewModel.trySendAction(ScannerAction.EditAction.RotateDocument(currentPage))
-            })
-            EditOption(icon = Icons.Rounded.PhotoFilter, title = "Filter", onClick = {
+            EditOption(
+                icon = Icons.Rounded.Crop,
+                title = "Crop",
+                onClick = {
+                    viewModel.trySendAction(ScannerAction.EditAction.CropDocument(currentPage))
+                },
+            )
+            EditOption(
+                icon = Icons.Rounded.FlipCameraIos,
+                title = "Retake",
+                onClick = {
+                    viewModel.trySendAction(ScannerAction.EditAction.RetakeDocument(currentPage))
+                },
+            )
+            EditOption(
+                icon = Icons.AutoMirrored.Rounded.RotateRight,
+                title = "Rotate",
+                onClick = {
+                    viewModel.trySendAction(ScannerAction.EditAction.RotateDocument(currentPage))
+                },
+            )
+            EditOption(
+                icon = Icons.Rounded.PhotoFilter,
+                title = "Filter",
+                onClick = {
                     viewModel.trySendAction(ScannerAction.Alert.ShowFilterImageAlert)
-            })
+                },
+            )
             EditOption(
                 icon = Icons.Rounded.FilterHdr,
                 title = "Adjust",
@@ -572,9 +607,13 @@ fun DocumentEditOptions(
                 },
                 isSelected = isColorAdjustSelected
             )
-            EditOption(icon = Icons.Rounded.DeleteOutline, title = "Delete", onClick = {
-                viewModel.trySendAction(ScannerAction.Alert.DeleteImageAlert)
-            })
+            EditOption(
+                icon = Icons.Rounded.DeleteOutline,
+                title = "Delete",
+                onClick = {
+                    viewModel.trySendAction(ScannerAction.Alert.DeleteImageAlert)
+                },
+            )
         }
     }
 }
@@ -675,15 +714,6 @@ private fun ScannedImageView(
     image: Bitmap,
     scannedImageEffect: ImageEffect,
 ) {
-    val animationRotation = remember {
-        Animatable(scannedImageEffect.orientation.toDegrees())
-    }
-    val animationSpec = TweenSpec<Float>(durationMillis = 500, easing = FastOutSlowInEasing)
-    LaunchedEffect(scannedImageEffect.orientation) {
-        animationRotation.animateTo(
-            scannedImageEffect.orientation.toDegrees(), animationSpec
-        )
-    }
     val zoomable = rememberZoomableState()
     Box(
         modifier = Modifier
@@ -694,7 +724,7 @@ private fun ScannedImageView(
             bitmap = image.asImageBitmap(),
             contentDescription = "Document",
             modifier = Modifier
-                .rotate(-animationRotation.value)
+                .fillMaxSize()
                 .zoomable(zoomable),
         )
     }
@@ -716,9 +746,9 @@ fun ShowFilterDialog(
         if (cachedBitmaps != null) {
             imageFilters.addAll(cachedBitmaps)
             imageFilters.removeAt(0)
-        }else {
+        } else {
             scannedDocument.croppedImage?.let {
-                val filteredImages = withContext(Dispatchers.IO){
+                val filteredImages = withContext(Dispatchers.IO) {
                     return@withContext applyFilterFunction(it)
                 }
                 imageFilters.addAll(filteredImages)

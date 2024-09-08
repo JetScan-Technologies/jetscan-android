@@ -39,11 +39,9 @@ fun ScannerTopAppBar(
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(
-            onClick = { onNavigateBack() }
-        ){
-            BackButtonIcon()
-        }
+        BackButtonIcon(
+            onClick = onNavigateBack
+        )
         FlashModeButton(
             flashMode = flashModeArgs.flashMode,
             onFlashModeChanged = flashModeArgs.onFlashModeChanged,

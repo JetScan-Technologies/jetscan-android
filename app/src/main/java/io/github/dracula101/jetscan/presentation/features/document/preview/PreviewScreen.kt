@@ -71,7 +71,6 @@ fun PreviewScreen(
                     Text(text = "Preview Screen")
                 },
                 scrollBehavior = scrollBehavior,
-                navigationIcon = { BackButtonIcon() },
                 onNavigationIconClick = onBack
             )
         },

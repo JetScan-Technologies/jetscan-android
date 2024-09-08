@@ -4,4 +4,8 @@ data class Intersection(
     val id: Int,
     val lines: Pair<Line, Line>,
     val point: CPoint
-)
+){
+    override fun toString(): String {
+        return "Intersection $id at $point"
+    }
+}

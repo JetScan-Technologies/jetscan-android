@@ -29,6 +29,21 @@ class JetScanApplication : Application() {
                 override fun log(
                     priority: Int, tag: String?, message: String, t: Throwable?
                 ) = Logger.log(priority, "-$tag", message, t)
+
+                override fun createStackElementTag(element: StackTraceElement): String {
+                    return super.createStackElementTag(element) + ":" + element.lineNumber
+                }
+
+                override fun d(message: String?, vararg args: Any?) = Logger.d(message ?: "", args)
+
+                override fun e(message: String?, vararg args: Any?) = Logger.e(message ?: "", args)
+
+                override fun i(message: String?, vararg args: Any?) = Logger.i(message ?: "", args)
+
+                override fun v(message: String?, vararg args: Any?) = Logger.v(message ?: "", args)
+
+                override fun w(message: String?, vararg args: Any?) = Logger.w(message ?: "", args)
+
             })
         }
     }

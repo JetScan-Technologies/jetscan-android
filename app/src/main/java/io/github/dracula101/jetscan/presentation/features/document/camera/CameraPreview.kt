@@ -71,22 +71,14 @@ import java.util.concurrent.Executors
 @Composable
 fun CameraPreview(
     modifier: Modifier = Modifier,
-    onCameraInitialized: (LifecycleCameraController) -> Unit = {},
-    onImageAnalysisInitialized: (LifecycleCameraController) -> Unit = {},
+    onCameraInitialized: (LifecycleCameraController, Size) -> Unit,
+    imageAnalyzer: ImageAnalysis.Analyzer?,
     cameraViewModel: CameraViewModel = hiltViewModel(),
     aspectRatio: Int = AspectRatio.RATIO_4_3,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraController = remember { LifecycleCameraController(context) }
-    // val cameraProviderFuture = remember(context) { ProcessCameraProvider.getInstance(context) }
-    // val cameraProvider = remember(cameraProviderFuture) { cameraProviderFuture.get() }
-    // val executor = remember(context) { ContextCompat.getMainExecutor(context) }
-    // var imageCapture: ImageCapture? by remember { mutableStateOf(null) }
-    // var cameraSelector: CameraSelector? by remember { mutableStateOf(null) }
-    // var camera: Camera? by remember { mutableStateOf(null) }
-    // var preview by remember { mutableStateOf<Preview?>(null) }
-
     val previewSize = remember { mutableStateOf<Size?>(null) }
     val touchCoords = remember { mutableStateOf<Pair<Float, Float>?>(null) }
     val zoomState = remember { mutableStateOf<ZoomState?>(null) }
@@ -146,7 +138,7 @@ fun CameraPreview(
                     lifecycleOwner = lifecycleOwner,
                     aspectRatio = aspectRatio,
                     maximizeQuality = true,
-                    imageAnalysisInitialized = onImageAnalysisInitialized
+                    imageAnalyzer = imageAnalyzer
                 )
                 view.initializeCameraListeners(
                     lifecycleOwner = lifecycleOwner,
@@ -155,7 +147,7 @@ fun CameraPreview(
                     onTouchEvent = { touchCoords.value = it },
                     cameraViewModel = cameraViewModel
                 )
-                onCameraInitialized.invoke(cameraController)
+                onCameraInitialized.invoke(cameraController, previewSize.value!!)
                 view
             },
         )
@@ -270,7 +262,6 @@ private fun PreviewView.initializeCameraListeners(
     setOnTouchListener { view: View, motionEvent: MotionEvent ->
         when (motionEvent.action) {
             MotionEvent.ACTION_DOWN -> {
-                Timber.i("Touch Down: ${motionEvent.x}, ${motionEvent.y}")
                 onTouchEvent.invoke(
                     Pair(
                         motionEvent.x / 1.17f,
@@ -315,9 +306,9 @@ private fun PreviewView.initializeCameraParams(
     context: Context,
     lifecycleOwner: LifecycleOwner,
     @AspectRatio.Ratio
-    aspectRatio: Int = AspectRatio.RATIO_16_9,
+    aspectRatio: Int = AspectRatio.RATIO_4_3,
     maximizeQuality: Boolean,
-    imageAnalysisInitialized: (LifecycleCameraController) -> Unit
+    imageAnalyzer: ImageAnalysis.Analyzer?,
 ) {
     // ================ Camera Controller ================
     controller = cameraController
@@ -334,9 +325,13 @@ private fun PreviewView.initializeCameraParams(
     cameraController.bindToLifecycle(lifecycleOwner)
 
     // ================ Image Analysis ================
-    initializeImageAnalysis(context, aspectRatio)
-
-    imageAnalysisInitialized.invoke(cameraController)
+    imageAnalyzer?.let {
+        initializeImageAnalysis(context, aspectRatio)
+        cameraController.setImageAnalysisAnalyzer(
+            ContextCompat.getMainExecutor(context),
+            it,
+        )
+    }
 }
 
 private fun getCameraQuality(maximizeQuality: Boolean): Int {

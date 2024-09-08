@@ -2,26 +2,22 @@ package io.github.dracula101.jetscan.presentation.platform.feature.scanner.exten
 
 enum class ImageFilter{
     ORIGINAL,
-    GRAYSCALE,
+    NO_SHADOW,
+    AUTO,
+    VIBRANT,
     COLOR_BUMP,
-    BRIGHTEN,
-    COLOR_HALFTONE,
-    COLORIZE,
-    CONTRAST,
-    DIFFUSE,
-    SHARPEN;
+    SHARP_BLACK,
+    B_W;
 
     fun toFormattedString() : String {
         return when(this){
             ORIGINAL -> "Original"
-            GRAYSCALE -> "Grayscale"
+            VIBRANT -> "Vibrant"
+            NO_SHADOW -> "No Shadow"
+            AUTO -> "Auto"
             COLOR_BUMP -> "Color Bump"
-            BRIGHTEN -> "Brighten"
-            COLOR_HALFTONE -> "Color Halftone"
-            COLORIZE -> "Colorize"
-            CONTRAST -> "Contrast"
-            DIFFUSE -> "Diffuse"
-            SHARPEN -> "Sharpen"
+            SHARP_BLACK -> "Sharp Black"
+            B_W -> "B&W"
         }
     }
 }

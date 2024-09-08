@@ -1,6 +1,7 @@
 package io.github.dracula101.jetscan.presentation.features.document.scanner.components
 
 import androidx.camera.core.AspectRatio
+import androidx.camera.core.ImageAnalysis
 import androidx.camera.view.LifecycleCameraController
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -25,6 +26,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import io.github.dracula101.jetscan.presentation.features.document.camera.CameraPreview
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.camera.CameraAspectRatio
 
@@ -32,12 +34,13 @@ import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.
 @Composable
 fun CameraPreviewContent(
     onCameraInitialized: (LifecycleCameraController) -> Unit,
-    onImageAnalysisInitialized: (LifecycleCameraController, Size) -> Unit,
+    imageAnalyzer: () -> ImageAnalysis.Analyzer?,
+    onPreviewSize: (Size) -> Unit,
     gridStatus: Boolean,
     previewAspectRatio: CameraAspectRatio,
     modifier: Modifier = Modifier,
 ) {
-    val previewSize = remember { mutableStateOf<Size?>(null) }
+    val density = LocalDensity.current.density
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
@@ -45,14 +48,11 @@ fun CameraPreviewContent(
         propagateMinConstraints = true
     ) {
         CameraPreview(
-            onCameraInitialized = {controller->
+            onCameraInitialized = { controller, _ ->
                 onCameraInitialized(controller)
+                onPreviewSize(Size(maxWidth.value * density, maxHeight.value * density))
             },
-            onImageAnalysisInitialized = {controller->
-                val size = Size(maxWidth.value, maxHeight.value)
-                previewSize.value = size
-                onImageAnalysisInitialized(controller, size)
-            },
+            imageAnalyzer = imageAnalyzer(),
             aspectRatio = previewAspectRatio.toAspectRatio(),
             modifier = Modifier
                 .width(maxWidth)

@@ -8,6 +8,10 @@ class Graph {
         return nodes
     }
 
+    fun getNode(id: Int): Node? {
+        return nodes.find { it.id == id }
+    }
+
     fun addNode(node: Node) {
         nodes.add(node)
     }

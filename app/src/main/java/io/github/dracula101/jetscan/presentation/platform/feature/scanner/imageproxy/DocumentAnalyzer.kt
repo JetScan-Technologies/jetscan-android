@@ -7,18 +7,18 @@ import androidx.compose.ui.geometry.Size
 import io.github.dracula101.jetscan.data.platform.manager.opencv.OpenCvManager
 import io.github.dracula101.jetscan.data.platform.utils.rotate
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageCropCoords
+import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.scale
+import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.graph.Line
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 
 class DocumentAnalyzer(
     private val openCvManager: OpenCvManager,
-    private val imagePreviewSize: Size,
-    private val onDocumentDetected: (ImageCropCoords) -> Unit,
-    private val onPreviewBitmapReady: (Bitmap, Bitmap) -> Unit = { _, _ -> }
+    private val onDocumentDetected: (ImageCropCoords?) -> Unit,
 ) : ImageAnalysis.Analyzer {
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -26,16 +26,16 @@ class DocumentAnalyzer(
     override fun analyze(image: ImageProxy) {
         scope.launch {
             image.use { imageProxy ->
-                val imageBitmap = imageProxy.toBitmap().rotate(imageProxy.imageInfo.rotationDegrees.toFloat())
-                val imageCropCoords = openCvManager.detectSingleDocument(
-                    imageBitmap = imageBitmap,
-                    onPreviewBitmapReady = onPreviewBitmapReady,
-                    imageSize = imagePreviewSize,
+                val imageBitmap = imageProxy.toBitmap().rotate(90f)
+                val reScaleHeight = (imageBitmap.height * IMAGE_WIDTH) / imageBitmap.width
+                val reScaledBitmap = Bitmap.createScaledBitmap(imageBitmap, IMAGE_WIDTH, reScaleHeight, true)
+                val autoCropCoords = openCvManager.detectDocument(reScaledBitmap)
+                onDocumentDetected(
+                    autoCropCoords?.scale(
+                        scale = (imageProxy.width.toFloat() / IMAGE_WIDTH) * 1/3f
+                    )
                 )
-                imageCropCoords?.let {
-                    onDocumentDetected(it)
-                }
-                delay(THROTTLE_DELAY)
+                imageBitmap.recycle()
             }
         }.invokeOnCompletion {
             if (it != null) {
@@ -45,6 +45,7 @@ class DocumentAnalyzer(
     }
 
     companion object {
-        const val THROTTLE_DELAY = 200L
+        const val THROTTLE_DELAY = 0L
+        const val IMAGE_WIDTH = 250
     }
 }

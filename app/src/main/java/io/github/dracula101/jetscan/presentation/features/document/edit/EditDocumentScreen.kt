@@ -49,7 +49,6 @@ fun EditDocumentScreen(
             JetScanTopAppbar(
                 title = { Text("Edit Document") },
                 scrollBehavior = scrollBehavior,
-                navigationIcon = { BackButtonIcon() },
                 onNavigationIconClick = onNavigateBack
             )
         },

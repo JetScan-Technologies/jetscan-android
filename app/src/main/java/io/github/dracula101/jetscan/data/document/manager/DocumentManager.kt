@@ -10,6 +10,8 @@ import java.io.File
 
 interface DocumentManager {
 
+    fun getBitmapFromUri(context: Context, uri: Uri): Bitmap?
+
     fun fromUri(context: Context, uri: Uri) : Document
 
     fun fromFile(file: File, applicationContext: Context): Document

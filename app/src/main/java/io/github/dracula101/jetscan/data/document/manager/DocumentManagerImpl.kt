@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.database.Cursor
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.Build
@@ -46,15 +47,19 @@ class DocumentManagerImpl(
     private val apkManager: ApkManager
 ) : DocumentManager {
 
+    override fun getBitmapFromUri(context: Context, uri: Uri): Bitmap? {
+        return context.contentResolver.openInputStream(uri)?.use { inputStream ->
+            Bitmap.createBitmap(BitmapFactory.decodeStream(inputStream))
+        }
+    }
+
     override fun fromUri(context: Context, uri: Uri): Document {
         val fileName = getFileName(context.contentResolver, uri)
         val mimeType = mimeTypeManager.getMimeType(context.contentResolver, uri)
         val size = getFileLength(context.contentResolver, uri)
         // Changed from lastModified to current time
         val lastModified = System.currentTimeMillis()
-        val formattedDate = formatDate(lastModified)
         val extension = extensionManager.getExtensionType(context.contentResolver, uri)
-        val readableSize = getReadableFileSize(size)
         val previewImageUri = when (extension) {
             Extension.JPEG, Extension.JPG, Extension.PNG, Extension.GIF, Extension.HEIC -> imageManager.saveImageFromUri(
                 contentResolver = context.contentResolver,

@@ -1,127 +1,121 @@
 package io.github.dracula101.jetscan.data.platform.utils.opencv
 
+import android.graphics.Bitmap
 import org.opencv.core.Core
 import org.opencv.core.CvType
 import org.opencv.core.Mat
+import org.opencv.core.MatOfFloat
+import org.opencv.core.MatOfPoint
+import org.opencv.core.Scalar
 import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
-
-/*
-
-fun Mat.colorBump(): Mat {
-    val hsvMat = Mat()
-    org.opencv.imgproc.Imgproc.cvtColor(this, hsvMat, org.opencv.imgproc.Imgproc.COLOR_RGB2HSV)
-    val hsvChannels = mutableListOf<Mat>()
-    org.opencv.core.Core.split(hsvMat, hsvChannels)
-    val hueMat = hsvChannels[0]
-    val saturationMat = hsvChannels[1]
-    val valueMat = hsvChannels[2]
-    val alpha = 0.5
-
-    val bumpMat = Mat()
-    org.opencv.core.Core.addWeighted(hueMat, alpha, saturationMat, 1.0 - alpha, 0.0, bumpMat)
-    org.opencv.core.Core.merge(listOf(bumpMat, saturationMat, valueMat), hsvMat)
-    val bumpRgbMat = Mat()
-    org.opencv.imgproc.Imgproc.cvtColor(hsvMat, bumpRgbMat, org.opencv.imgproc.Imgproc.COLOR_HSV2RGB)
-    return bumpRgbMat
-}
-
-*/
-/*
-* Brighten Effect
-* *//*
-
-fun Mat.brighten(value: Double = 50.0): Mat {
-    val hsvMat = Mat()
-    org.opencv.imgproc.Imgproc.cvtColor(this, hsvMat, org.opencv.imgproc.Imgproc.COLOR_RGB2HSV)
-    val hsvChannels = mutableListOf<Mat>()
-    org.opencv.core.Core.split(hsvMat, hsvChannels)
-    val valueMat = hsvChannels[2]
-    val alpha = 1.0
-    val beta = value
-
-    val brightenedMat = Mat()
-    org.opencv.core.Core.addWeighted(valueMat, alpha, valueMat, beta, 0.0, brightenedMat)
-    org.opencv.core.Core.merge(listOf(hsvChannels[0], hsvChannels[1], brightenedMat), hsvMat)
-    val brightenedRgbMat = Mat()
-    org.opencv.imgproc.Imgproc.cvtColor(hsvMat, brightenedRgbMat, org.opencv.imgproc.Imgproc.COLOR_HSV2RGB)
-    return brightenedRgbMat
-}
-
-*/
-/*
-* Color Filter
- *//*
-
-fun Mat.colorHalftone(): Mat {
-    val hsvMat = Mat()
-    org.opencv.imgproc.Imgproc.cvtColor(this, hsvMat, org.opencv.imgproc.Imgproc.COLOR_RGB2HSV)
-    val hsvChannels = mutableListOf<Mat>()
-    org.opencv.core.Core.split(hsvMat, hsvChannels)
-    val hueMat = hsvChannels[0]
-    val saturationMat = hsvChannels[1]
-    val valueMat = hsvChannels[2]
-
-    val halftoneMat = Mat()
-    org.opencv.core.Core.addWeighted(hueMat, 0.5, saturationMat, 0.5, 0.0, halftoneMat)
-    org.opencv.core.Core.merge(listOf(halftoneMat, halftoneMat, valueMat), hsvMat)
-    val halftoneRgbMat = Mat()
-    org.opencv.imgproc.Imgproc.cvtColor(hsvMat, halftoneRgbMat, org.opencv.imgproc.Imgproc.COLOR_HSV2RGB)
-    return halftoneRgbMat
-}
-
-fun Mat.colorize(hue: Double = 0.0, saturation: Double = 0.0, value: Double = 0.0): Mat {
-    val hsvMat = Mat()
-    org.opencv.imgproc.Imgproc.cvtColor(this, hsvMat, org.opencv.imgproc.Imgproc.COLOR_RGB2HSV)
-    val hsvChannels = mutableListOf<Mat>()
-    org.opencv.core.Core.split(hsvMat, hsvChannels)
-    val hueMat = hsvChannels[0]
-    val saturationMat = hsvChannels[1]
-    val valueMat = hsvChannels[2]
-
-    val colorizedMat = Mat()
-    org.opencv.core.Core.addWeighted(hueMat, hue, saturationMat, saturation, 0.0, colorizedMat)
-    org.opencv.core.Core.addWeighted(colorizedMat, 1.0, valueMat, value, 0.0, colorizedMat)
-    org.opencv.core.Core.merge(listOf(colorizedMat, saturationMat, valueMat), hsvMat)
-    val colorizedRgbMat = Mat()
-    org.opencv.imgproc.Imgproc.cvtColor(hsvMat, colorizedRgbMat, org.opencv.imgproc.Imgproc.COLOR_HSV2RGB)
-    return colorizedRgbMat
-}
-
-fun Mat.contrast(alpha: Double = 1.0, beta: Double = 0.0): Mat {
-    val contrastMat = Mat()
-    org.opencv.core.Core.convertScaleAbs(this, contrastMat, alpha, beta)
-    return contrastMat
-}
-
-fun Mat.diffuse(): Mat {
-    val diffuseMat = Mat()
-    org.opencv.photo.Photo.edgePreservingFilter(this, diffuseMat)
-    return diffuseMat
-}
-
-fun Mat.sharpen(): Mat {
-    val sharpenMat = Mat()
-    org.opencv.imgproc.Imgproc.GaussianBlur(this, sharpenMat, org.opencv.core.Size(0.0, 0.0), 3.0)
-    org.opencv.core.Core.addWeighted(this, 1.5, sharpenMat, -0.5, 0.0, sharpenMat)
-    return sharpenMat
-}
-
-fun Mat.vignette(): Mat {
-    val vignetteMat = Mat()
-    org.opencv.imgproc.Imgproc.GaussianBlur(this, vignetteMat, org.opencv.core.Size(0.0, 0.0), 7.0)
-    org.opencv.core.Core.addWeighted(this, 0.7, vignetteMat, 0.3, 0.0, vignetteMat)
-    return vignetteMat
-}*/
-
-fun Mat.original(): Mat {
-    return this.clone()
-}
 
 fun Mat.grayscale(): Mat {
     val grayImage = Mat()
     Imgproc.cvtColor(this, grayImage, Imgproc.COLOR_BGR2GRAY)
     return grayImage
+}
+
+fun Mat.autoEnhance(): Mat {
+    val autoEnhancedImage = Mat()
+    Core.normalize(this, autoEnhancedImage, 0.0, 255.0, Core.NORM_MINMAX, CvType.CV_8UC1)
+    return autoEnhancedImage
+}
+
+fun Mat.noShadow(): Mat {
+    val gray = this.grayscale()
+    val blurred = gray.toGaussianBlur(15.0f, 0.0)
+    val corrected = Mat()
+    Core.divide(gray, blurred, corrected, 255.0)
+    val thresholded = Mat()
+    Imgproc.adaptiveThreshold(
+        corrected,
+        thresholded,
+        255.0,
+        Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C,
+        Imgproc.THRESH_BINARY,
+        15, // Block size to adjust thresholding
+        10.0 // Constant to fine-tune shadow removal
+    )
+    val bilateralFiltered = Mat()
+    Imgproc.bilateralFilter(thresholded, bilateralFiltered, 9, 75.0, 75.0)
+    val kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(1.0, 1.0))
+    val morphCleaned = Mat()
+    Imgproc.morphologyEx(bilateralFiltered, morphCleaned, Imgproc.MORPH_CLOSE, kernel)
+    val sharpenKernel = MatOfFloat(
+        -1f, -1f, -1f,
+        -1f,  9f, -1f,
+        -1f, -1f, -1f
+    )
+    val sharpened = Mat()
+    Imgproc.filter2D(morphCleaned, sharpened, -1, sharpenKernel)
+    gray.release()
+    blurred.release()
+    corrected.release()
+    thresholded.release()
+    bilateralFiltered.release()
+    morphCleaned.release()
+    return sharpened
+}
+
+fun Mat.toVibrant(scaleFactor: Double = 2.0): Mat {
+    val hsv = Mat()
+    Imgproc.cvtColor(this, hsv, Imgproc.COLOR_BGR2HSV)
+    val channels = mutableListOf<Mat>()
+    Core.split(hsv, channels)
+    val s = channels[1]
+    Core.multiply(s, Scalar(scaleFactor), s)
+    Core.normalize(s, s, 0.0, 255.0, Core.NORM_MINMAX)
+    Core.merge(channels, hsv)
+    val vibrant = Mat()
+    Imgproc.cvtColor(hsv, vibrant, Imgproc.COLOR_HSV2BGR)
+    hsv.release()
+    return vibrant
+}
+
+
+
+fun Mat.toAutoFilter(): Mat {
+    // constrast enhancement
+    val contrastImage = Mat()
+    this.convertTo(contrastImage, -1, 2.0, 0.0)
+    // color bump
+    val bumpedImage = Mat()
+    contrastImage.convertTo(bumpedImage, -1, 1.5, 0.0)
+    // no shadow
+    val gray = bumpedImage.grayscale()
+    val blurred = gray.toGaussianBlur(15.0f, 0.0)
+    val corrected = Mat()
+    Core.divide(gray, blurred, corrected, 255.0)
+    val thresholded = Mat()
+    Imgproc.adaptiveThreshold(
+        corrected,
+        thresholded,
+        255.0,
+        Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C,
+        Imgproc.THRESH_BINARY,
+        15, // Block size to adjust thresholding
+        10.0 // Constant to fine-tune shadow removal
+    )
+    val bilateralFiltered = Mat()
+    Imgproc.bilateralFilter(thresholded, bilateralFiltered, 9, 75.0, 75.0)
+    val kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(1.0, 1.0))
+    val morphCleaned = Mat()
+    Imgproc.morphologyEx(bilateralFiltered, morphCleaned, Imgproc.MORPH_CLOSE, kernel)
+    val sharpenKernel = MatOfFloat(
+        -1f, -1f, -1f,
+        -1f,  9f, -1f,
+        -1f, -1f, -1f
+    )
+    val sharpened = Mat()
+    Imgproc.filter2D(morphCleaned, sharpened, -1, sharpenKernel)
+    gray.release()
+    blurred.release()
+    corrected.release()
+    thresholded.release()
+    bilateralFiltered.release()
+    morphCleaned.release()
+    return sharpened
 }
 
 fun Mat.colorBump(alpha: Double = 1.5, beta: Double = 0.0): Mat {
@@ -130,7 +124,26 @@ fun Mat.colorBump(alpha: Double = 1.5, beta: Double = 0.0): Mat {
     return bumpedImage
 }
 
-fun Mat.brighten(beta: Double = 50.0): Mat {
+fun Mat.toBlackAndWhite(): Mat {
+    val grayImage = this.grayscale()
+    val blackAndWhiteImage = Mat()
+    Imgproc.threshold(grayImage, blackAndWhiteImage, 128.0, 255.0, Imgproc.THRESH_BINARY)
+    return blackAndWhiteImage
+}
+
+fun Mat.sharpBlack(): Mat {
+    // sharpen and convert to grayscale
+    val sharpened = this.sharpen()
+    val gray = sharpened.grayscale()
+    sharpened.release()
+    // threshold and convert to black and white
+    val thresholded = Mat()
+    Imgproc.threshold(gray, thresholded, 128.0, 255.0, Imgproc.THRESH_BINARY)
+    gray.release()
+    return thresholded
+}
+
+fun Mat.brighten(beta: Double = 10.0): Mat {
     val brightenedImage = Mat()
     this.convertTo(brightenedImage, -1, 1.0, beta)
     return brightenedImage

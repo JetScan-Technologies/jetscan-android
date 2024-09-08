@@ -6,6 +6,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.geometry.Size
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageCropCoords
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageFilter
+import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.graph.Line
 
 @Immutable
 interface OpenCvManager {
@@ -20,16 +21,17 @@ interface OpenCvManager {
      */
     fun detectDocument(
         imageBitmap: Bitmap,
-        imageSize: Size,
-        onPreviewBitmapReady: (Bitmap, Bitmap) -> Unit
     ) : ImageCropCoords?
+
+    fun getLines(
+        imageBitmap: Bitmap
+    ) : List<Line>
 
     /*
     * Method for detecting single document.
      */
     fun detectSingleDocument(
         imageBitmap: Bitmap,
-        imageSize: Size,
         onPreviewBitmapReady: (Bitmap, Bitmap) -> Unit
     ): ImageCropCoords?
 

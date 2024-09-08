@@ -133,10 +133,12 @@ fun MainHomeScreen(
             )
         },
         floatingActionButton = {
-            MainHomeFloatingActionButton(
-                onClick = { onNavigateToScanner() },
-                isExtended = state.value.currentTab == MainHomeTabs.HOME
-            )
+            if(state.value.currentTab != MainHomeTabs.SETTINGS) {
+                MainHomeFloatingActionButton(
+                    onClick = { onNavigateToScanner() },
+                    isExtended = state.value.currentTab == MainHomeTabs.HOME
+                )
+            }
         },
         bottomBar = {
             MainHomeBottomBar(
