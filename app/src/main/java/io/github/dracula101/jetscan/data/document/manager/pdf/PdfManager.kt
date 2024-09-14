@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.ui.unit.Dp
+import io.github.dracula101.jetscan.data.document.models.Extension
 import io.github.dracula101.jetscan.data.document.models.doc.DocQuality
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import java.io.File
@@ -31,8 +32,10 @@ interface PdfManager {
         uri: Uri,
         contentResolver: ContentResolver,
         scannedImageDirectory: File,
+        fileNamePrefix: String,
+        fileExtension: Extension = Extension.JPEG,
         imageQuality: ImageQuality = ImageQuality.MEDIUM,
-        delay: Long = 25,
+        delay: Long = 16,
         onPdfPageAdded: (Int) -> Unit = {}
     ): List<Bitmap>
 

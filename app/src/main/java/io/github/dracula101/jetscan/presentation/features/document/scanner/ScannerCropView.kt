@@ -605,6 +605,7 @@ fun ScannerCropView(
                                 bottomSheetState.show()
                                 filterBitmaps.value =
                                     viewModel.applyFilters(index = state.scannedDocuments.size - 1)
+                                bottomSheetState.expand()
                                 isLoadingFilter.value = true
                             }
                         }

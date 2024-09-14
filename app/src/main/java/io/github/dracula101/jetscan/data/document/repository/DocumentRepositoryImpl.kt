@@ -118,12 +118,12 @@ class DocumentRepositoryImpl @Inject constructor(
                     dateModified = System.currentTimeMillis(),
                     size = documentManager.getFileLength(uri),
                     uri = task.data.originalFile?.toUri() ?: Uri.EMPTY,
-                    previewImageUri = task.data.previewDirectory?.toUri(),
+                    previewImageUri = task.data.previewFile?.toUri(),
                     mimeType = documentManager.getMimeType(uri),
                     extension = documentManager.getExtension(uri),
                 )
                 val documentId = documentDao.insertDocument(document.toDocumentEntity())
-                val scannedImages = task.data.imageDirectory.listFiles()?.map { ScannedImage.fromFile(it) }
+                val scannedImages = task.data.imageDir.listFiles()?.map { ScannedImage.fromFile(it) }
                     ?: emptyList()
                 documentDao.insertImages(scannedImages.map { it.toScannedImageEntity(documentId) })
                 true
@@ -135,14 +135,16 @@ class DocumentRepositoryImpl @Inject constructor(
     }
 
     override suspend fun addDocumentFromScanner(
-        bitmaps: List<Bitmap>,
+        originalBitmaps: List<Bitmap>,
+        scannedBitmaps: List<Bitmap>,
         fileName: String,
         imageQuality: Int,
         progressListener: (currentProgress: Float, totalProgress: Int) -> Unit
     ): Boolean {
         return try {
             val task = documentManager.addDocumentFromScanner(
-                bitmaps = bitmaps,
+                originalBitmaps = originalBitmaps,
+                scannedBitmaps = scannedBitmaps,
                 imageQuality = imageQuality,
                 fileName = fileName,
                 progressListener = progressListener
@@ -154,12 +156,12 @@ class DocumentRepositoryImpl @Inject constructor(
                     name = fileName,
                     dateCreated = timeCreated,
                     dateModified = System.currentTimeMillis(),
-                    size = task.data.originalFile?.length() ?: 0,
-                    uri = task.data.originalFile?.toUri() ?: Uri.EMPTY,
-                    previewImageUri = task.data.previewDirectory?.toUri()
+                    size = task.data.originalFile.length(),
+                    uri = task.data.originalFile.toUri(),
+                    previewImageUri = task.data.previewFile?.toUri()
                 )
                 val documentId = documentDao.insertDocument(document.toDocumentEntity())
-                val scannedImages = task.data.imageDirectory.listFiles()?.map { ScannedImage.fromFile(it) }
+                val scannedImages = task.data.scannedImageDir?.listFiles()?.map { ScannedImage.fromFile(it) }
                     ?: emptyList()
                 documentDao.insertImages(scannedImages.map { it.toScannedImageEntity(documentId) })
                 true

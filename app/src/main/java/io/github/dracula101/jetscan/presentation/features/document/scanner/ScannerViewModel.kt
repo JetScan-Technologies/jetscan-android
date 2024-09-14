@@ -12,24 +12,16 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.view.CameraController
-import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
-import app.cash.molecule.launchMolecule
 import com.google.mlkit.vision.barcode.common.Barcode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.github.dracula101.jetscan.data.document.manager.DocumentDirectory
 import io.github.dracula101.jetscan.data.document.manager.DocumentManager
 import io.github.dracula101.jetscan.data.document.manager.pdf.PdfManager
-import io.github.dracula101.jetscan.data.document.models.doc.DocQuality
-import io.github.dracula101.jetscan.data.document.utils.Task
 import io.github.dracula101.jetscan.data.platform.manager.opencv.OpenCvManager
-import io.github.dracula101.jetscan.data.platform.utils.bytesToReadableSize
 import io.github.dracula101.jetscan.data.platform.utils.readableSize
 import io.github.dracula101.jetscan.data.platform.utils.rotate
-import io.github.dracula101.jetscan.data.document.models.doc.Document
-import io.github.dracula101.jetscan.data.document.models.image.ScannedImage
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
 import io.github.dracula101.jetscan.presentation.platform.feature.app.model.SnackbarState
@@ -54,7 +46,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 import timber.log.Timber
-import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.Executor
@@ -548,7 +539,7 @@ class ScannerViewModel @Inject constructor(
             if (updatedDocuments[index].croppedImage == null) return@launch
             val document = updatedDocuments[index]
             if (document.imageEffect.imageFilter == filter) return@launch
-            val timesToApply = (document.originalImage.width / PREVIEW_FILTER_WIDTH) + 1
+            val timesToApply = (document.originalImage.width / PREVIEW_FILTER_WIDTH)
             var filteredBitmap: Bitmap? = null
             for (i in 0 until timesToApply) {
                 filteredBitmap = withContext(Dispatchers.IO) {
@@ -665,8 +656,9 @@ class ScannerViewModel @Inject constructor(
                     ),
                 )
             }
-            val bitmaps = state.scannedDocuments.map { (it.filteredImage ?: it.croppedImage!!) }
-            val imageQuality : Int = when(bitmaps.size){
+            val originalBitmaps = state.scannedDocuments.map { it.originalImage }
+            val filteredCroppedBitmaps = state.scannedDocuments.map { (it.filteredImage ?: it.croppedImage!!) }
+            val imageQuality : Int = when(filteredCroppedBitmaps.size){
                 in 1..3 -> 95
                 in 4..6 -> 90
                 in 7..10 -> 85
@@ -676,7 +668,8 @@ class ScannerViewModel @Inject constructor(
                 else -> 40
             }
             documentRepository.addDocumentFromScanner(
-                bitmaps = bitmaps,
+                originalBitmaps,
+                filteredCroppedBitmaps,
                 fileName = state.documentName,
                 imageQuality = imageQuality,
             ) { currentProgress: Float, totalProgress: Int ->
@@ -688,7 +681,13 @@ class ScannerViewModel @Inject constructor(
                     it.copy(
                         savingDocState = SavingDocumentState(
                             hasError = Exception("Error saving document")
-                        )
+                        ),
+                        snackbarState = SnackbarState.ShowError(
+                            title = "Error Saving Document",
+                            message = "An unexpected error occurred"
+                        ),
+                        isDocumentSaved = false,
+                        dialogState = null
                     )
                 }
                 return@launch
@@ -721,8 +720,9 @@ class ScannerViewModel @Inject constructor(
 
     suspend fun applyFilters(index: Int? = null) : List<Bitmap> {
         val currentDocument = state.scannedDocuments[index ?: state.currentDocumentIndex]
-        val rescaleHeight = PREVIEW_FILTER_WIDTH * currentDocument.originalImage.height / currentDocument.originalImage.width
-        val rescaledBitmap = Bitmap.createScaledBitmap(currentDocument.originalImage, PREVIEW_FILTER_WIDTH, rescaleHeight, false)
+        if (currentDocument.croppedImage == null) return emptyList()
+        val rescaleHeight = PREVIEW_FILTER_WIDTH * currentDocument.croppedImage.height / currentDocument.croppedImage.width
+        val rescaledBitmap = Bitmap.createScaledBitmap(currentDocument.croppedImage, PREVIEW_FILTER_WIDTH, rescaleHeight, false)
         return withContext(Dispatchers.IO) {
             val bitmaps = _cachedFilterBitmaps.value[index ?: state.currentDocumentIndex] ?: emptyList()
             if (bitmaps.isNotEmpty()) {
@@ -754,7 +754,7 @@ class ScannerViewModel @Inject constructor(
     }
 
     companion object {
-        const val PREVIEW_FILTER_WIDTH = 400
+        const val PREVIEW_FILTER_WIDTH = 250
     }
 
 }
@@ -784,7 +784,7 @@ data class ScannerState(
     val scannerView: ScannerView = ScannerView.CAMERA,
     val currentDocumentIndex: Int = 0,
     val documentName: String = "JetScan - " + SimpleDateFormat(
-        "dd/MM/yy h:mm a",
+        "dd/MM/yy h:mm:ss a",
         Locale.getDefault()
     ).format(System.currentTimeMillis()),
     val selectedColorAdjustTab: ColorAdjustTab = ColorAdjustTab.SATURATION,

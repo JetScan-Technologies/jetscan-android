@@ -9,6 +9,7 @@ import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.compose.ui.unit.Dp
+import io.github.dracula101.jetscan.data.document.models.Extension
 import io.github.dracula101.jetscan.data.document.models.doc.DocQuality
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import io.github.dracula101.jetscan.data.document.utils.getImageHeight
@@ -130,6 +131,8 @@ class PdfManagerImpl : PdfManager {
         uri: Uri,
         contentResolver: ContentResolver,
         scannedImageDirectory: File,
+        fileNamePrefix: String,
+        fileExtension: Extension,
         imageQuality: ImageQuality,
         delay: Long,
         onPdfPageAdded: (Int) -> Unit
@@ -158,9 +161,9 @@ class PdfManagerImpl : PdfManager {
                 true
             )
             page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-            val scannedImage = File(scannedImageDirectory, "Scanned Image ${i + 1}.jpeg")
-            val outputStream = withContext(Dispatchers.IO) { FileOutputStream(scannedImage) }
+            val scannedImage = File(scannedImageDirectory, "${fileNamePrefix}_$i${fileExtension.value()}")
             withContext(Dispatchers.IO) {
+                val outputStream = FileOutputStream(scannedImage)
                 bitmap.compress(
                     Bitmap.CompressFormat.JPEG,
                     imageQuality.toBitmapQuality(),

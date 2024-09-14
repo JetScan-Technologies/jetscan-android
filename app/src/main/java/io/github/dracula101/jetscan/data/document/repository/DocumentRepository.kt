@@ -30,7 +30,8 @@ interface DocumentRepository {
     ): Boolean
 
     suspend fun addDocumentFromScanner(
-        bitmaps: List<Bitmap>,
+        originalBitmaps: List<Bitmap>,
+        scannedBitmaps: List<Bitmap>,
         fileName: String,
         imageQuality: Int,
         progressListener: (currentProgress: Float, totalProgress: Int) -> Unit = { _, _ -> }

@@ -23,7 +23,8 @@ interface DocumentManager {
     ): Task<DocumentDirectory>
 
     suspend fun addDocumentFromScanner(
-        bitmaps: List<Bitmap>,
+        originalBitmaps: List<Bitmap>,
+        scannedBitmaps: List<Bitmap>,
         fileName: String,
         imageQuality: Int,
         delayDuration: Long = 50L,
@@ -54,8 +55,9 @@ interface DocumentManager {
 
 @Parcelize
 data class DocumentDirectory(
-    val mainDirectory: File,
-    val imageDirectory: File,
-    val originalFile: File?,
-    val previewDirectory: File?,
+    val mainDir: File,
+    val imageDir: File,
+    val scannedImageDir: File?,
+    val originalFile: File,
+    val previewFile: File?,
 ) : Parcelable

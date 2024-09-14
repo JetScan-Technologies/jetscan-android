@@ -41,6 +41,32 @@ enum class Extension : Parcelable {
         }
     }
 
+    fun value(): String {
+        return when (this) {
+            PDF -> ".pdf"
+            DOC -> ".doc"
+            DOCX -> ".docx"
+            XLS -> ".xls"
+            XLSX -> ".xlsx"
+            PPT -> ".ppt"
+            PPTX -> ".pptx"
+            TXT -> ".txt"
+            JPG -> ".jpg"
+            JPEG -> ".jpeg"
+            PNG -> ".png"
+            GIF -> ".gif"
+            HEIC -> ".heic"
+            MP3 -> ".mp3"
+            MP4 -> ".mp4"
+            AVI -> ".avi"
+            MKV -> ".mkv"
+            ZIP -> ".zip"
+            RAR -> ".rar"
+            APK -> ".apk"
+            OTHER -> ""
+        }
+    }
+
     companion object {
 
         fun getExtensionType(uppercase: String): Extension {
