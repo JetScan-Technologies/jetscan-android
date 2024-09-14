@@ -6,7 +6,7 @@ enum class ImageFilter{
     AUTO,
     VIBRANT,
     COLOR_BUMP,
-    SHARP_BLACK,
+    GRAYSCALE,
     B_W;
 
     fun toFormattedString() : String {
@@ -16,7 +16,7 @@ enum class ImageFilter{
             NO_SHADOW -> "No Shadow"
             AUTO -> "Auto"
             COLOR_BUMP -> "Color Bump"
-            SHARP_BLACK -> "Sharp Black"
+            GRAYSCALE -> "Grayscale"
             B_W -> "B&W"
         }
     }

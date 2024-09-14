@@ -9,6 +9,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,6 +34,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -77,7 +79,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -107,7 +108,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.saket.telephoto.zoomable.rememberZoomableState
 import me.saket.telephoto.zoomable.zoomable
-import timber.log.Timber
 
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -125,20 +125,21 @@ fun ScannerEditView(
     val isEditingDocument = remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
+    val filteredImages = remember { mutableStateOf<List<Bitmap>?>(null) }
     val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         viewModel.trySendAction(ScannerAction.Ui.ChangeEditDocumentIndex(initialDocumentIndex))
     }
-    LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.currentPage }.collect { page ->
-            viewModel.trySendAction(ScannerAction.Ui.ChangeEditDocumentIndex(page))
-        }
+    val editOption = remember { mutableStateOf<CameraEditTab?>(null) }
+    val editOptionAnim = remember { Animatable(1f) }
+    LaunchedEffect(Unit) {
+        snapshotFlow { pagerState.currentPage }
+            .collect { page ->
+                viewModel.trySendAction(ScannerAction.Ui.ChangeEditDocumentIndex(page))
+                editOption.value = null
+                filteredImages.value = null
+            }
     }
-    val colorAdjustmentUiAnim = remember {
-        Animatable(1f)
-    }
-    val isColorAdjustUiOpen = remember { mutableStateOf(false) }
-
     if (documents.isEmpty()) {
         NoDocumentFoundView(
             backToCamera = backToCamera
@@ -149,6 +150,7 @@ fun ScannerEditView(
                 modifier = Modifier
                     .statusBarsPadding()
             ) {
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -245,7 +247,7 @@ fun ScannerEditView(
                                     document.imageEffect,
                                 )
                                 ColorAdjustmentTab(
-                                    colorAdjustmentUiAnim.value,
+                                    if (editOption.value == CameraEditTab.COLOR_ADJUSTMENT) editOptionAnim.value else 1f,
                                     state,
                                     onContrastChange = { contrast ->
                                         viewModel.trySendAction(
@@ -288,6 +290,15 @@ fun ScannerEditView(
                                         )
                                     }
                                 )
+                                FilterTab(
+                                    if (editOption.value == CameraEditTab.FILTER) editOptionAnim.value else 1f,
+                                    filteredImages.value,
+                                    onFilterSelected = { filter ->
+                                        viewModel.trySendAction(
+                                            ScannerAction.EditAction.ApplyFilter(filter)
+                                        )
+                                    }
+                                )
                             }
                         }
                     }
@@ -300,16 +311,31 @@ fun ScannerEditView(
                         DocumentEditOptions(
                             viewModel = viewModel,
                             currentPage = pagerState.currentPage,
-                            isColorAdjustSelected = isColorAdjustUiOpen.value,
+                            isColorAdjustSelected = editOption.value == CameraEditTab.COLOR_ADJUSTMENT,
                             showColorAdjustUi = {
                                 coroutineScope.launch {
-                                    isColorAdjustUiOpen.value = !isColorAdjustUiOpen.value
-                                    colorAdjustmentUiAnim.animateTo(
-                                        if (!isColorAdjustUiOpen.value) 1f else 0f,
+                                    val currentTab = editOption.value
+                                    editOption.value = if (currentTab== CameraEditTab.COLOR_ADJUSTMENT) null else CameraEditTab.COLOR_ADJUSTMENT
+                                    editOptionAnim.animateTo(
+                                        if (currentTab == CameraEditTab.COLOR_ADJUSTMENT) 1f else 0f,
                                         animationSpec = TweenSpec(
                                             durationMillis = 500, easing = FastOutSlowInEasing
                                         )
                                     )
+                                }
+                            },
+                            isFilterSelected = editOption.value == CameraEditTab.FILTER,
+                            showFilterUi = {
+                                coroutineScope.launch {
+                                    val currentTab = editOption.value
+                                    editOption.value = if (currentTab == CameraEditTab.FILTER) null else CameraEditTab.FILTER
+                                    editOptionAnim.animateTo(
+                                        if (currentTab == CameraEditTab.FILTER) 1f else 0f,
+                                        animationSpec = TweenSpec(
+                                            durationMillis = 500, easing = FastOutSlowInEasing
+                                        )
+                                    )
+                                    filteredImages.value = viewModel.getCacheBitmaps(pagerState.currentPage) ?: viewModel.applyFilters()
                                 }
                             }
                         )
@@ -327,6 +353,11 @@ fun ScannerEditView(
             }
         }
     }
+}
+
+enum class CameraEditTab {
+    FILTER,
+    COLOR_ADJUSTMENT
 }
 
 @Composable
@@ -448,6 +479,81 @@ private fun ColorAdjustmentTab(
 }
 
 @Composable
+fun FilterTab(
+    filterUiAnimOffset: Float,
+    bitmaps: List<Bitmap>?,
+    onFilterSelected: (ImageFilter) -> Unit,
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.BottomCenter
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp)
+                .offset(y = 100.dp * filterUiAnimOffset)
+                .background(MaterialTheme.colorScheme.surface),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (bitmaps != null) {
+                    bitmaps.forEachIndexed { index, bitmap ->
+                        Column(
+                            modifier = Modifier
+                                .clip(MaterialTheme.shapes.medium)
+                                .padding(top = 12.dp, bottom = 4.dp)
+                                .clickable {
+                                    onFilterSelected(ImageFilter.entries[index])
+                                },
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            AsyncImage(
+                                model = bitmap,
+                                modifier = Modifier
+                                    .height(65.dp)
+                                    .aspectRatio(3 / 4f)
+                                    .clip(MaterialTheme.shapes.small),
+                                contentDescription = ImageFilter.entries[index].toFormattedString(),
+                                filterQuality = FilterQuality.Low,
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = ImageFilter.entries[index].toFormattedString(),
+                                style = MaterialTheme.typography.labelSmall,
+                            )
+                        }
+                    }
+                }else {
+                    Row (
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(28.dp),
+                            strokeWidth = 1.5.dp
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "Applying Filters...",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun ColorAdjustOption(
     modifier: Modifier = Modifier,
     icon: Any,
@@ -561,7 +667,9 @@ fun DocumentEditOptions(
     viewModel: ScannerViewModel,
     currentPage: Int,
     isColorAdjustSelected: Boolean = false,
+    isFilterSelected: Boolean = false,
     showColorAdjustUi: () -> Unit = {},
+    showFilterUi: () -> Unit = {},
 ) {
     val lazyListState = rememberLazyListState()
     LazyRow(
@@ -595,8 +703,10 @@ fun DocumentEditOptions(
             EditOption(
                 icon = Icons.Rounded.PhotoFilter,
                 title = "Filter",
+                isSelected = isFilterSelected,
                 onClick = {
-                    viewModel.trySendAction(ScannerAction.Alert.ShowFilterImageAlert)
+                    showFilterUi()
+                    //viewModel.trySendAction(ScannerAction.Alert.ShowFilterImageAlert)
                 },
             )
             EditOption(

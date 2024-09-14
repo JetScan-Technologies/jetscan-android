@@ -68,9 +68,6 @@ fun ExpandedHomeScreen(
                 state.importDocumentState?.let { importDocumentState ->
                     DocumentImportingState(
                         importDocumentState = importDocumentState,
-                        onCancel = {
-                            viewModel.trySendAction(MainHomeAction.ImportDocumentState.Cancelled)
-                        }
                     )
                 }
             }

@@ -18,7 +18,6 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven { url = uri("https://jitpack.io") }
-        maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
     }
 }
 
@@ -27,3 +26,4 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 rootProject.name = "JetScan"
 include(":app")
 include(":opencv")
+include(":pdf")

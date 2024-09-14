@@ -115,6 +115,7 @@ dependencies {
 
     // ==================== SUB PROJECTS ====================
     implementation(projects.opencv)
+    implementation(projects.pdf)
 
     // ==================== ANDROIDX ====================
     implementation(libs.androidx.core.ktx)
@@ -127,9 +128,9 @@ dependencies {
 
     // ==================== COMPOSE ====================
     implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui)
+    implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.espresso.core)
-    implementation(libs.androidx.adaptive.android)
+    implementation(libs.androidx.compose.adaptive.android)
 
     // ==================== LIFECYCLE ====================
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
@@ -140,10 +141,10 @@ dependencies {
     implementation(libs.android.lifecycle.runtime.ktx)
 
     // ==================== MATERIAL  ====================
-    implementation(libs.androidx.material3)
-    implementation(libs.androidx.ripple)
-    implementation(libs.androidx.icons.core)
-    implementation(libs.androidx.icons.extended)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.ripple)
+    implementation(libs.androidx.compose.icons.core)
+    implementation(libs.androidx.compose.icons.extended)
 
     // ==================== BIOMETRICS ====================
     implementation(libs.androidx.biometrics)
@@ -155,8 +156,7 @@ dependencies {
 
     // ==================== HILT ====================
     implementation(libs.dagger.hilt)
-    implementation(libs.androidx.security.crypto.ktx)
-    implementation(libs.androidx.adaptive.android)
+    implementation(libs.androidx.compose.adaptive.android)
     implementation(libs.material)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.navigation.fragment.ktx)

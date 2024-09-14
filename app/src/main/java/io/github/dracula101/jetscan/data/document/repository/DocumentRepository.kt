@@ -1,9 +1,11 @@
 package io.github.dracula101.jetscan.data.document.repository
 
+import android.graphics.Bitmap
+import android.net.Uri
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.models.doc.DocumentFolder
+import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import kotlinx.coroutines.flow.Flow
-import java.io.File
 
 
 interface DocumentRepository {
@@ -21,9 +23,18 @@ interface DocumentRepository {
 
     // ================= Insert Documents =================
     suspend fun isDocumentExists(name: String): Boolean
-    suspend fun addDocument(document: Document): Boolean
-    suspend fun addDocumentFile(file: File): Document?
-    suspend fun insertDocuments(documents: List<Document>): Boolean
+    suspend fun addImportDocument(
+        uri: Uri,
+        imageQuality: ImageQuality,
+        progressListener: (currentProgress: Float, totalProgress: Int) -> Unit = { _, _ -> }
+    ): Boolean
+
+    suspend fun addDocumentFromScanner(
+        bitmaps: List<Bitmap>,
+        fileName: String,
+        imageQuality: Int,
+        progressListener: (currentProgress: Float, totalProgress: Int) -> Unit = { _, _ -> }
+    ): Boolean
 
     // ================= Insert Folder =================
     suspend fun addFolder(folderName: String, path: String): Boolean

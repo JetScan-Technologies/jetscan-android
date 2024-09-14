@@ -44,10 +44,11 @@ import kotlin.math.absoluteValue
 @Composable
 fun Modifier.debugBorder(
     shape: Shape? = null,
+    color: Color = Color.Red
 ) = this
     .border(
         1.dp,
-        Color.Red,
+        color,
         shape = shape ?: RoundedCornerShape(0.dp)
     )
 

@@ -50,10 +50,10 @@ fun NoDocumentView(
             style = MaterialTheme.typography.bodyLarge,
         )
         Spacer(modifier = Modifier.size(16.dp))
-        GradientButton(
-            text = "Add Document",
-            onClick = onDocumentAdd
-        )
-        Spacer(modifier = Modifier.size(48.dp))
+        // GradientButton(
+        //     text = "Add Document",
+        //     onClick = onDocumentAdd
+        // )
+        // Spacer(modifier = Modifier.size(48.dp))
     }
 }

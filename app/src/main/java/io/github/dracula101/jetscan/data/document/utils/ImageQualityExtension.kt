@@ -14,18 +14,17 @@ fun ImageQuality.getImageHeight(): Int {
 fun Int.fromImageQuality(): ImageQuality {
     return when (this) {
         in 0..30 -> ImageQuality.VERY_LOW
-        65 -> ImageQuality.LOW
-        85 -> ImageQuality.MEDIUM
-        100 -> ImageQuality.HIGH
-        else -> ImageQuality.MEDIUM
+        in 31..50 -> ImageQuality.LOW
+        in 51..80 -> ImageQuality.MEDIUM
+        else -> ImageQuality.HIGH
     }
 }
 
 fun ImageQuality.toBitmapQuality(): Int {
     return when (this) {
         ImageQuality.VERY_LOW -> 30
-        ImageQuality.LOW -> 65
-        ImageQuality.MEDIUM -> 85
-        ImageQuality.HIGH -> 100
+        ImageQuality.LOW -> 50
+        ImageQuality.MEDIUM -> 80
+        ImageQuality.HIGH -> 95
     }
 }

@@ -1,5 +1,8 @@
 package io.github.dracula101.jetscan.data.document.repository
 
+import android.graphics.Bitmap
+import android.net.Uri
+import androidx.core.net.toUri
 import io.github.dracula101.jetscan.data.document.datasource.disk.converters.toDocument
 import io.github.dracula101.jetscan.data.document.datasource.disk.converters.toDocumentEntity
 import io.github.dracula101.jetscan.data.document.datasource.disk.converters.toDocumentFolder
@@ -7,18 +10,23 @@ import io.github.dracula101.jetscan.data.document.datasource.disk.converters.toD
 import io.github.dracula101.jetscan.data.document.datasource.disk.converters.toScannedImageEntity
 import io.github.dracula101.jetscan.data.document.datasource.disk.dao.DocumentDao
 import io.github.dracula101.jetscan.data.document.datasource.disk.dao.DocumentFolderDao
+import io.github.dracula101.jetscan.data.document.manager.DocumentManager
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.models.doc.DocumentFolder
+import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
+import io.github.dracula101.jetscan.data.document.models.image.ScannedImage
+import io.github.dracula101.jetscan.data.document.utils.Task
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
-import java.io.File
 import javax.inject.Inject
 
 class DocumentRepositoryImpl @Inject constructor(
     private val documentDao: DocumentDao,
-    private val folderDocumentDao: DocumentFolderDao
+    private val folderDocumentDao: DocumentFolderDao,
+    private val documentManager: DocumentManager
 ) : DocumentRepository {
     override fun getDocuments(excludeFolders: Boolean): Flow<List<Document>?> {
         return if (excludeFolders) {
@@ -87,19 +95,79 @@ class DocumentRepositoryImpl @Inject constructor(
         return documentDao.isDocumentExists(name)
     }
 
-    override suspend fun addDocument(document: Document): Boolean {
+    override suspend fun addImportDocument(
+        uri: Uri,
+        imageQuality: ImageQuality,
+        progressListener: (currentProgress: Float, totalProgress: Int) -> Unit,
+    ): Boolean {
         return try {
-            val documentId = documentDao.insertDocument(document.toDocumentEntity())
-            documentDao.insertImages(document.scannedImages.map { it.toScannedImageEntity(documentId) })
-            true
+            val fileName = documentManager.getFileName(uri, withoutExtension = true)
+                ?: return false
+            val timeCreated = System.currentTimeMillis()
+            val task = documentManager.addDocument(
+                imageQuality =  imageQuality,
+                uri = uri,
+                fileName = fileName,
+                progressListener = progressListener
+            )
+            delay(500)
+            if (task is Task.Success) {
+                val document = Document(
+                    name = fileName,
+                    dateCreated = timeCreated,
+                    dateModified = System.currentTimeMillis(),
+                    size = documentManager.getFileLength(uri),
+                    uri = task.data.originalFile?.toUri() ?: Uri.EMPTY,
+                    previewImageUri = task.data.previewDirectory?.toUri(),
+                    mimeType = documentManager.getMimeType(uri),
+                    extension = documentManager.getExtension(uri),
+                )
+                val documentId = documentDao.insertDocument(document.toDocumentEntity())
+                val scannedImages = task.data.imageDirectory.listFiles()?.map { ScannedImage.fromFile(it) }
+                    ?: emptyList()
+                documentDao.insertImages(scannedImages.map { it.toScannedImageEntity(documentId) })
+                true
+            } else { false }
         } catch (e: Exception) {
             Timber.e(e)
             false
         }
     }
 
-    override suspend fun addDocumentFile(file: File): Document? {
-        return null
+    override suspend fun addDocumentFromScanner(
+        bitmaps: List<Bitmap>,
+        fileName: String,
+        imageQuality: Int,
+        progressListener: (currentProgress: Float, totalProgress: Int) -> Unit
+    ): Boolean {
+        return try {
+            val task = documentManager.addDocumentFromScanner(
+                bitmaps = bitmaps,
+                imageQuality = imageQuality,
+                fileName = fileName,
+                progressListener = progressListener
+            )
+            delay(500)
+            if (task is Task.Success) {
+                val timeCreated = System.currentTimeMillis()
+                val document = Document(
+                    name = fileName,
+                    dateCreated = timeCreated,
+                    dateModified = System.currentTimeMillis(),
+                    size = task.data.originalFile?.length() ?: 0,
+                    uri = task.data.originalFile?.toUri() ?: Uri.EMPTY,
+                    previewImageUri = task.data.previewDirectory?.toUri()
+                )
+                val documentId = documentDao.insertDocument(document.toDocumentEntity())
+                val scannedImages = task.data.imageDirectory.listFiles()?.map { ScannedImage.fromFile(it) }
+                    ?: emptyList()
+                documentDao.insertImages(scannedImages.map { it.toScannedImageEntity(documentId) })
+                true
+            } else { false }
+        } catch (e: Exception) {
+            Timber.e(e)
+            false
+        }
     }
 
     override suspend fun addFolder(folderName: String, path: String): Boolean {
@@ -129,16 +197,6 @@ class DocumentRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun insertDocuments(documents: List<Document>): Boolean {
-        return try {
-            documentDao.insertDocuments(documents.map { it.toDocumentEntity() })
-            true
-        } catch (e: Exception) {
-            Timber.e(e)
-            false
-        }
-    }
-
     override suspend fun updateDocument(document: Document): Boolean {
         return try {
             documentDao.updateDocument(document.toDocumentEntity().copy(dateModified = System.currentTimeMillis()))
@@ -161,10 +219,13 @@ class DocumentRepositoryImpl @Inject constructor(
 
     override suspend fun deleteDocument(document: Document): Boolean {
         return try {
-            val documentPrimaryId = documentDao.getDocumentByUid(document.id).firstOrNull()?.documentEntity?.id
-                ?: return false
-            documentDao.deleteDocumentById(documentPrimaryId)
-            true
+            val isDeleted = documentManager.deleteDocument(document.name)
+            if (isDeleted) {
+                val documentPrimaryId = documentDao.getDocumentByUid(document.id).firstOrNull()?.documentEntity?.id
+                    ?: return false
+                documentDao.deleteDocumentById(documentPrimaryId)
+                true
+            } else { false }
         } catch (e: Exception) {
             Timber.e(e)
             false

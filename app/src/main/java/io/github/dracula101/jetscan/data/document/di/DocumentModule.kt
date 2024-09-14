@@ -12,20 +12,14 @@ import io.github.dracula101.jetscan.data.document.datasource.disk.dao.DocumentFo
 import io.github.dracula101.jetscan.data.document.datasource.disk.database.DocumentDatabase
 import io.github.dracula101.jetscan.data.document.manager.DocumentManager
 import io.github.dracula101.jetscan.data.document.manager.DocumentManagerImpl
-import io.github.dracula101.jetscan.data.document.manager.apk.ApkManager
-import io.github.dracula101.jetscan.data.document.manager.apk.ApkManagerImpl
 import io.github.dracula101.jetscan.data.document.manager.extension.ExtensionManager
 import io.github.dracula101.jetscan.data.document.manager.extension.ExtensionManagerImpl
-import io.github.dracula101.jetscan.data.document.manager.file.FileManager
-import io.github.dracula101.jetscan.data.document.manager.file.FileManagerImpl
 import io.github.dracula101.jetscan.data.document.manager.image.ImageManager
 import io.github.dracula101.jetscan.data.document.manager.image.ImageManagerImpl
 import io.github.dracula101.jetscan.data.document.manager.mime.MimeTypeManager
 import io.github.dracula101.jetscan.data.document.manager.mime.MimeTypeManagerImpl
 import io.github.dracula101.jetscan.data.document.manager.pdf.PdfManager
 import io.github.dracula101.jetscan.data.document.manager.pdf.PdfManagerImpl
-import io.github.dracula101.jetscan.data.document.manager.video.VideoManager
-import io.github.dracula101.jetscan.data.document.manager.video.VideoManagerImpl
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepositoryImpl
 import io.github.dracula101.jetscan.data.document.utils.DBConstants
@@ -51,13 +45,6 @@ object DocumentModule {
     @Singleton
     fun providePdfManager(): PdfManager = PdfManagerImpl()
 
-    @Provides
-    @Singleton
-    fun provideApkManager(): ApkManager = ApkManagerImpl()
-
-    @Provides
-    @Singleton
-    fun provideVideoManager(): VideoManager = VideoManagerImpl()
 
     @Provides
     @Singleton
@@ -67,17 +54,14 @@ object DocumentModule {
         mimeTypeManager: MimeTypeManager,
         imageManager: ImageManager,
         pdfManager: PdfManager,
-        apkManager: ApkManager,
-        videoManager: VideoManager,
     ): DocumentManager {
         return DocumentManagerImpl(
             context = context,
             extensionManager = extensionManager,
-            mimeTypeManager = mimeTypeManager,
             imageManager = imageManager,
             pdfManager = pdfManager,
-            apkManager = apkManager,
-            videoManager = videoManager,
+            mimeTypeManager = mimeTypeManager,
+            documentDirectory = context.filesDir
         )
     }
 
@@ -86,26 +70,11 @@ object DocumentModule {
     fun provideDocumentRepository(
         documentDao: DocumentDao,
         folderDao: DocumentFolderDao,
+        documentManager: DocumentManager,
     ): DocumentRepository = DocumentRepositoryImpl(
         documentDao = documentDao,
-        folderDocumentDao = folderDao
-    )
-
-    @Provides
-    @Singleton
-    fun provideFileManager(
-        @ApplicationContext context: Context,
-        documentManager: DocumentManager,
-        extensionManager: ExtensionManager,
-        imageManager: ImageManager,
-        pdfManager: PdfManager,
-    ): FileManager = FileManagerImpl(
-        extensionManager = extensionManager,
-        imageManager = imageManager,
-        pdfManager = pdfManager,
+        folderDocumentDao = folderDao,
         documentManager = documentManager,
-        contentResolver = context.contentResolver,
-        fileManagerDirectory = context.filesDir,
     )
 
     // ======================== Document Database ========================

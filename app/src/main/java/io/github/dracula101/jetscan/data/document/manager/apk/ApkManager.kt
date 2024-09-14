@@ -9,4 +9,5 @@ interface ApkManager {
 
     fun saveApkIcon(context: Context, uri: Uri, name: String): File?
     fun getApkIcon(context: Context, apkFile: File): Drawable?
+
 }

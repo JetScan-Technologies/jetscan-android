@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -45,11 +44,10 @@ import io.github.dracula101.jetscan.data.document.models.doc.DocumentFolder
 import io.github.dracula101.jetscan.data.document.models.extensions.formatDateTime
 import io.github.dracula101.jetscan.presentation.features.document.folder.components.*
 import io.github.dracula101.jetscan.presentation.features.home.files_view.AddFolderDialog
-import io.github.dracula101.jetscan.presentation.features.home.files_view.components.FolderItem
+import io.github.dracula101.jetscan.presentation.platform.component.bottomsheet.DocumentFilesBottomSheet
 import io.github.dracula101.jetscan.presentation.platform.component.dropdown.AppDropDown
 import io.github.dracula101.jetscan.presentation.platform.component.dropdown.MenuItem
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.JetScanScaffold
-import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.debugBorder
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,7 +73,7 @@ fun FolderDocumentScreen(
                     viewModel.trySendAction(FolderDocAction.Ui.HideDocuments)
                 },
                 documents = state.value.remDocuments,
-                onDocumentAdd = {
+                documentClick = {
                     viewModel.trySendAction(FolderDocAction.Ui.AddDocument(it))
                 }
             )

@@ -1,14 +1,13 @@
 package io.github.dracula101.jetscan.data.platform.utils.opencv
 
-import android.graphics.Bitmap
 import org.opencv.core.Core
 import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.core.MatOfFloat
-import org.opencv.core.MatOfPoint
 import org.opencv.core.Scalar
 import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
+
 
 fun Mat.grayscale(): Mat {
     val grayImage = Mat()
@@ -23,42 +22,44 @@ fun Mat.autoEnhance(): Mat {
 }
 
 fun Mat.noShadow(): Mat {
-    val gray = this.grayscale()
-    val blurred = gray.toGaussianBlur(15.0f, 0.0)
-    val corrected = Mat()
-    Core.divide(gray, blurred, corrected, 255.0)
-    val thresholded = Mat()
-    Imgproc.adaptiveThreshold(
-        corrected,
-        thresholded,
-        255.0,
-        Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C,
-        Imgproc.THRESH_BINARY,
-        15, // Block size to adjust thresholding
-        10.0 // Constant to fine-tune shadow removal
-    )
-    val bilateralFiltered = Mat()
-    Imgproc.bilateralFilter(thresholded, bilateralFiltered, 9, 75.0, 75.0)
-    val kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(1.0, 1.0))
-    val morphCleaned = Mat()
-    Imgproc.morphologyEx(bilateralFiltered, morphCleaned, Imgproc.MORPH_CLOSE, kernel)
-    val sharpenKernel = MatOfFloat(
-        -1f, -1f, -1f,
-        -1f,  9f, -1f,
-        -1f, -1f, -1f
-    )
-    val sharpened = Mat()
-    Imgproc.filter2D(morphCleaned, sharpened, -1, sharpenKernel)
-    gray.release()
-    blurred.release()
-    corrected.release()
-    thresholded.release()
-    bilateralFiltered.release()
-    morphCleaned.release()
-    return sharpened
+    val srcArray = Mat(this.size(), CvType.CV_8UC1)
+    Imgproc.cvtColor(this, srcArray, Imgproc.COLOR_BGR2HSV)
+    val bgrPlanes: List<Mat> = ArrayList()
+    val list: MutableList<Mat> = ArrayList()
+    val result: MutableList<Mat> = ArrayList()
+
+    Core.split(srcArray, bgrPlanes)
+    list.add(bgrPlanes[2]) // adding the V channel for processing in list
+
+    result.add(0, bgrPlanes[0]) // adding H channel in result
+    result.add(1, bgrPlanes[1]) // adding S channel in result
+
+    // processing the V channel for shadow removal
+    for (mat in list) {
+        val dilatedImg = Mat()
+        val kernel = Mat.ones(7, 7, CvType.CV_32F)
+        Imgproc.dilate(mat, dilatedImg, kernel)
+        Imgproc.medianBlur(dilatedImg, dilatedImg, 21)
+        val diff = Mat()
+        Core.absdiff(mat, dilatedImg, diff)
+        Core.bitwise_not(diff, diff)
+        val norm = diff.clone()
+        Core.normalize(diff, norm, 0.0, 255.0, Core.NORM_MINMAX, CvType.CV_8UC1)
+        result.add(norm) // completely processed --> adding V channel into result
+    }
+
+    val resultNorm = Mat()
+    Core.merge(result, resultNorm)
+    Imgproc.cvtColor(resultNorm, resultNorm, Imgproc.COLOR_HSV2BGR)
+    return resultNorm.also{
+        srcArray.release()
+        bgrPlanes.forEach { it.release() }
+        list.forEach { it.release() }
+        result.forEach { it.release() }
+    }
 }
 
-fun Mat.toVibrant(scaleFactor: Double = 2.0): Mat {
+fun Mat.toVibrant(scaleFactor: Double = 1.8): Mat {
     val hsv = Mat()
     Imgproc.cvtColor(this, hsv, Imgproc.COLOR_BGR2HSV)
     val channels = mutableListOf<Mat>()
@@ -125,10 +126,11 @@ fun Mat.colorBump(alpha: Double = 1.5, beta: Double = 0.0): Mat {
 }
 
 fun Mat.toBlackAndWhite(): Mat {
-    val grayImage = this.grayscale()
-    val blackAndWhiteImage = Mat()
-    Imgproc.threshold(grayImage, blackAndWhiteImage, 128.0, 255.0, Imgproc.THRESH_BINARY)
-    return blackAndWhiteImage
+    val gray = Mat()
+    Imgproc.cvtColor(this, gray, Imgproc.COLOR_BGR2GRAY)
+    Imgproc.medianBlur(gray,gray,5);
+    Imgproc.adaptiveThreshold(gray, gray,255.0,Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C,Imgproc.THRESH_BINARY,11,3.0);
+    return gray
 }
 
 fun Mat.sharpBlack(): Mat {

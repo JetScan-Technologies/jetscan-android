@@ -32,20 +32,8 @@ class ImageManagerImpl : ImageManager {
         }
     }
 
-    override fun saveImageFromFile(file: File, bitmap: Bitmap, quality: ImageQuality): Boolean {
-        return try {
-            val outputStream = FileOutputStream(file)
-            bitmap.compress(Bitmap.CompressFormat.PNG, quality.toBitmapQuality(), outputStream)
-            outputStream.flush()
-            outputStream.close()
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
 
-
-    override fun compress(bitmap: Bitmap, quality: ImageQuality): Bitmap {
+    override fun compressToJpg(bitmap: Bitmap, quality: ImageQuality): Bitmap {
         val originalBitmap = Bitmap.createBitmap(
             bitmap.width,
             bitmap.height,
@@ -75,23 +63,5 @@ class ImageManagerImpl : ImageManager {
         } catch (e: Exception) {
             throw e
         }
-    }
-
-    private fun calculateInSampleSize(
-        options: BitmapFactory.Options,
-        reqWidth: Int,
-        reqHeight: Int
-    ): Int {
-        val height = options.outHeight
-        val width = options.outWidth
-        var inSampleSize = 1
-        if (height > reqHeight || width > reqWidth) {
-            val halfHeight: Int = height / 2
-            val halfWidth: Int = width / 2
-            while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
-                inSampleSize *= 2
-            }
-        }
-        return inSampleSize
     }
 }

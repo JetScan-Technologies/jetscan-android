@@ -9,16 +9,17 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.dracula101.jetscan.data.auth.repository.AuthRepository
 import io.github.dracula101.jetscan.data.document.manager.DocumentManager
-import io.github.dracula101.jetscan.data.document.manager.file.FileManager
-import io.github.dracula101.jetscan.data.document.manager.file.ScannedDocDirectory
+import io.github.dracula101.jetscan.data.document.manager.DocumentDirectory
+import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
+import io.github.dracula101.jetscan.data.document.models.image.ScannedImage
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.data.document.utils.Task
-import io.github.dracula101.jetscan.data.document.models.doc.Document
-import io.github.dracula101.jetscan.data.document.models.image.ScannedImage
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeState.MainHomeDialogState
 import io.github.dracula101.jetscan.presentation.features.home.main.components.MainHomeSubPage
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
+import io.github.dracula101.jetscan.presentation.platform.base.ImportBaseViewModel
+import io.github.dracula101.jetscan.presentation.platform.base.ImportDocumentState
 import io.github.dracula101.jetscan.presentation.platform.feature.app.model.SnackbarState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -41,11 +42,12 @@ class MainHomeViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val documentRepository: DocumentRepository,
     private val documentManager: DocumentManager,
-    private val fileManager: FileManager,
     private val savedStateHandle: SavedStateHandle,
     private val contentResolver: ContentResolver,
-) : BaseViewModel<MainHomeState, Unit, MainHomeAction>(
+) : ImportBaseViewModel<MainHomeState, Unit, MainHomeAction>(
     initialState = savedStateHandle[MAIN_HOME_STATE] ?: MainHomeState(),
+    documentRepository = documentRepository,
+    documentManager = documentManager
 ) {
 
     private val _importJob = MutableStateFlow<Job?>(null)
@@ -63,12 +65,21 @@ class MainHomeViewModel @Inject constructor(
                 replay = 1,
             )
             .launchIn(viewModelScope)
+        importDocumentState
+            .onEach { importState ->
+                when(importState){
+                    is ImportDocumentState.Idle, is ImportDocumentState.Started -> {}
+                    is ImportDocumentState.InProgress -> handleImportDocumentInProgress(importState)
+                    is ImportDocumentState.Error -> handleImportDocumentError(importState.error)
+                    is ImportDocumentState.Success -> handleImportDocumentComplete()
+                }
+            }
+            .launchIn(viewModelScope)
     }
 
 
     override fun handleAction(action: MainHomeAction) {
         when (action) {
-            is MainHomeAction.Alerts.ImportQualityAlert -> handleImportQualityAlert(action.uri)
             is MainHomeAction.Ui.ChangeImportQuality -> handleChangeImportQuality(action.quality)
             is MainHomeAction.Ui.AddDocument -> handleAddDocument(_fileUri.value!!)
             is MainHomeAction.Ui.DeleteDocument -> handleDeleteDocument(action.document)
@@ -78,17 +89,13 @@ class MainHomeViewModel @Inject constructor(
             is MainHomeAction.Ui.Logout -> handleLogout()
             is MainHomeAction.Ui.ChangeTab -> handleTabChange(action.tab)
 
-            is MainHomeAction.ImportDocumentState.InProgress -> handleImportDocumentInProgress(action)
-            is MainHomeAction.ImportDocumentState.Completed -> handleImportDocumentComplete(action.scannedDocument, action.uri)
-            is MainHomeAction.ImportDocumentState.Error -> handleImportDocumentError(action.error)
-            is MainHomeAction.ImportDocumentState.Cancelled -> handleCancelImportDocument()
-
             is MainHomeAction.MainHomeNavigate -> handleNavigateTo(action.navigatePage)
             is MainHomeAction.MainHomeClearNavigate -> handleClearNavigate()
 
 
             is MainHomeAction.Alerts.DeleteDocumentAlert -> handleDeleteDocumentAlert(action.document)
             is MainHomeAction.Alerts.ImportDocumentInProgressAlert -> handleImportDocumentInProgressAlert()
+            is MainHomeAction.Alerts.ImportQualityAlert -> handleImportQualityAlert(action.uri)
             is MainHomeAction.Alerts.FileNotSelectedAlert -> handleFileNotSelectedAlert()
         }
     }
@@ -111,11 +118,9 @@ class MainHomeViewModel @Inject constructor(
     }
 
     private fun handleImportDocumentInProgress(
-        action: MainHomeAction.ImportDocumentState
-    ) = mutableStateFlow.update { state.copy(importDocumentState = action) }.also {
-        if (action is MainHomeAction.ImportDocumentState.InProgress) {
-            Timber.i("Importing Document: ${action.currentProgress} / ${action.totalProgress} ")
-        }
+        importState: ImportDocumentState.InProgress
+    ) = mutableStateFlow.update { state.copy(importDocumentState = importState) }.also{
+        Timber.d("Importing Document: ${importState.fileName} - ${importState.currentProgress} / ${importState.totalProgress}")
     }
 
     private fun handleNavigateTo(subPage: MainHomeSubPage) {
@@ -126,45 +131,7 @@ class MainHomeViewModel @Inject constructor(
         mutableStateFlow.update { state.copy(navigateTo = null) }
     }
 
-    private fun handleImportDocumentComplete(
-        scannedDocument: ScannedDocDirectory,
-        uri: Uri
-    ) {
-        val fileSize = documentManager.getFileLength(contentResolver, uri)
-        val filename = documentManager.getFileName(contentResolver, uri)
-        val scannedImages = scannedDocument.scannedImageDirectory.listFiles()?.map {
-            ScannedImage.fromFile(it)
-        } ?: emptyList()
-        val previewImageUri =
-            scannedDocument.previewImage.toUri()
-        if (scannedImages.isNotEmpty()) {
-            val scannedDoc = Document(
-                size = fileSize,
-                name = filename ?: "New Document",
-                previewImageUri = previewImageUri,
-                scannedImages = scannedImages,
-                dateCreated = System.currentTimeMillis(),
-                uri = uri
-            )
-            Timber.i("Adding Document")
-            viewModelScope.launch {
-                documentRepository.addDocument(scannedDoc)
-            }.runCatching {
-                this
-            }.getOrElse { error ->
-                Timber.e(error)
-                mutableStateFlow.update {
-                    state.copy(
-                        isImportingDocument = false,
-                        importDocumentState = MainHomeAction.ImportDocumentState.Error(
-                            message = "Error adding document",
-                            error = Exception(error.localizedMessage ?: "Unknown error occurred"),
-                        )
-                    )
-                }
-                return@handleImportDocumentComplete
-            }
-        }
+    private fun handleImportDocumentComplete() {
         mutableStateFlow.update {
             state.copy(
                 snackbarState = SnackbarState.ShowSuccess(
@@ -174,7 +141,6 @@ class MainHomeViewModel @Inject constructor(
                 importDocumentState = null,
             )
         }
-        _importJob.value = null
     }
 
     private fun handleImportDocumentError(error: Exception) {
@@ -186,7 +152,7 @@ class MainHomeViewModel @Inject constructor(
                     message = error.message ?: "Unknown error occurred",
                 ),
                 isImportingDocument = false,
-                importDocumentState = MainHomeAction.ImportDocumentState.Error(
+                importDocumentState = ImportDocumentState.Error(
                     message = "Error importing document",
                     error = error,
                 ),
@@ -217,89 +183,9 @@ class MainHomeViewModel @Inject constructor(
     }
 
     private fun handleAddDocument(uri: Uri) {
-        val fileName = documentManager.getFileName(contentResolver, uri) ?: ""
-        val fileLength = documentManager.getFileLength(contentResolver, uri)
         val fileQuality = state.importQuality
         mutableStateFlow.update { state.copy(isImportingDocument = true) }
-        _importJob.value = viewModelScope.launch(Dispatchers.IO) {
-            trySendAction(
-                MainHomeAction.ImportDocumentState.InProgress(
-                    fileName = fileName,
-                    size = fileLength,
-                    currentProgress = 0f,
-                    totalProgress = 100
-                )
-            )
-            fileManager.addScannedDocument(
-                uri,
-                imageQuality = fileQuality,
-            ) { currentProgress: Float, totalProgress: Int ->
-                trySendAction(
-                    MainHomeAction.ImportDocumentState.InProgress(
-                        fileName = fileName,
-                        size = fileLength,
-                        currentProgress = currentProgress,
-                        totalProgress = totalProgress,
-                    )
-                )
-            }.runCatching {
-                this
-            }.getOrElse { error ->
-                Timber.e(error)
-                trySendAction(
-                    MainHomeAction.ImportDocumentState.Error(
-                        message = "Error importing document",
-                        error = Exception(error.message ?: "Unknown error occurred"),
-                    )
-                )
-                return@launch
-            }.also { taskFile ->
-                when (taskFile) {
-                    is Task.Success -> {
-                        mutableStateFlow.update {
-                            state.copy(
-                                importDocumentState = MainHomeAction.ImportDocumentState.InProgress(
-                                    fileName = fileName,
-                                    size = fileLength,
-                                    currentProgress = 100f,
-                                    totalProgress = 100
-                                )
-                            )
-                        }
-                        // Added delay to show progress bar completion
-                        delay(1000)
-                        trySendAction(
-                            MainHomeAction.ImportDocumentState.Completed(
-                                taskFile.data,
-                                uri
-                            )
-                        )
-                    }
-
-                    is Task.Error -> {
-                        trySendAction(
-                            MainHomeAction.ImportDocumentState.Error(
-                                message = "Error importing document",
-                                error = Exception(
-                                    taskFile.error.message ?: "Unknown error occurred"
-                                ),
-                            )
-                        )
-                    }
-
-                    is Task.Cancelled -> {
-                        trySendAction(
-                            MainHomeAction.ImportDocumentState.Error(
-                                message = "Importing document was cancelled",
-                                error = Exception("Importing document was cancelled")
-                            )
-                        )
-                    }
-
-                    is Task.Idle -> {}
-                }
-            }
-        }
+        importDocument(uri, fileQuality)
     }
 
     private fun handleDeleteDocument(document: Document) {
@@ -321,14 +207,14 @@ class MainHomeViewModel @Inject constructor(
                     }
                     return@launch
                 }
-            if (isDeleted) {
-                fileManager.deleteScannedDocument(document.name)
-            }
             mutableStateFlow.update {
                 state.copy(
                     snackbarState =
-                    if(isDeleted) SnackbarState.ShowSuccess( title = "Document Deleted" )
-                    else SnackbarState.ShowError( title = "Error Deleting Document", message = "Unknown error occurred" ),
+                    if (isDeleted) SnackbarState.ShowSuccess(title = "Document Deleted")
+                    else SnackbarState.ShowError(
+                        title = "Error Deleting Document",
+                        message = "Unknown error occurred"
+                    ),
                     documents = if (isDeleted) state.documents.filter { it.id != document.id } else state.documents
                 )
             }
@@ -390,7 +276,8 @@ class MainHomeViewModel @Inject constructor(
 enum class MainHomeTabs {
     HOME,
     FILES,
-//    SUBSCRIPTION,
+
+    //    SUBSCRIPTION,
     SETTINGS;
 
     fun toLabel(): String {
@@ -417,7 +304,7 @@ enum class MainHomeTabs {
 data class MainHomeState(
     val isImportingDocument: Boolean = false,
     val documents: List<Document> = emptyList(),
-    val importDocumentState: MainHomeAction.ImportDocumentState? = null,
+    val importDocumentState: ImportDocumentState? = null,
     val importQuality: ImageQuality = ImageQuality.MEDIUM,
     val dialogState: MainHomeDialogState? = null,
     val snackbarState: SnackbarState? = null,
@@ -425,10 +312,11 @@ data class MainHomeState(
     val currentTab: MainHomeTabs = MainHomeTabs.HOME,
 ) : Parcelable {
 
-    sealed class MainHomeDialogState : Parcelable{
+    sealed class MainHomeDialogState : Parcelable {
 
         @Parcelize
         data class ShowDeleteDocument(val document: Document) : MainHomeDialogState(), Parcelable
+
         @Parcelize
         data object ShowImportQuality : MainHomeDialogState(), Parcelable
     }
@@ -443,7 +331,7 @@ sealed class MainHomeAction {
         data class ChangeImportQuality(val quality: ImageQuality) : Ui()
         data object Logout : Ui()
         data class DeleteDocument(val document: Document) : Ui()
-        data class ShowSnackbar(val snackbarState: SnackbarState): Ui()
+        data class ShowSnackbar(val snackbarState: SnackbarState) : Ui()
         data object DismissSnackbar : Ui()
         data object DismissDialog : Ui()
         data class ChangeTab(val tab: MainHomeTabs) : Ui()
@@ -452,10 +340,10 @@ sealed class MainHomeAction {
     @Parcelize
     data class MainHomeNavigate(
         val navigatePage: MainHomeSubPage
-    ): MainHomeAction(), Parcelable
+    ) : MainHomeAction(), Parcelable
 
     @Parcelize
-    data object MainHomeClearNavigate: MainHomeAction(), Parcelable
+    data object MainHomeClearNavigate : MainHomeAction(), Parcelable
 
     @Parcelize
     sealed class Alerts : MainHomeAction(), Parcelable {
@@ -463,29 +351,8 @@ sealed class MainHomeAction {
         data class DeleteDocumentAlert(
             val document: Document
         ) : Alerts()
+
         data object FileNotSelectedAlert : Alerts()
         data class ImportQualityAlert(val uri: Uri) : Alerts()
-    }
-
-    @Parcelize
-    sealed class ImportDocumentState : MainHomeAction(), Parcelable {
-        data class InProgress(
-            val fileName: String,
-            val size: Long,
-            val currentProgress: Float,
-            val totalProgress: Int,
-        ) : ImportDocumentState()
-
-        data class Completed(
-            val scannedDocument: ScannedDocDirectory,
-            val uri: Uri,
-        ) : ImportDocumentState()
-
-        data class Error(
-            val message: String,
-            val error: Exception
-        ) : ImportDocumentState()
-
-        data object Cancelled : ImportDocumentState()
     }
 }

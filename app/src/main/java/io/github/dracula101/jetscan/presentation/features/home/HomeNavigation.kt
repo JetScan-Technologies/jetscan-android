@@ -11,6 +11,8 @@ import io.github.dracula101.jetscan.presentation.features.document.edit.navigate
 import io.github.dracula101.jetscan.presentation.features.document.folder.createFolderDocumentDestinationRoute
 import io.github.dracula101.jetscan.presentation.features.document.folder.navigateToFolder
 import io.github.dracula101.jetscan.presentation.features.document.folder.navigateToFolderDest
+import io.github.dracula101.jetscan.presentation.features.document.pdfview.createPdfViewDestination
+import io.github.dracula101.jetscan.presentation.features.document.pdfview.navigateToPdfViewScreen
 import io.github.dracula101.jetscan.presentation.features.document.preview.createPreviewDocumentDestination
 import io.github.dracula101.jetscan.presentation.features.document.preview.navigateToPreviewDocument
 import io.github.dracula101.jetscan.presentation.features.document.scanner.createScannerDestination
@@ -22,8 +24,19 @@ import io.github.dracula101.jetscan.presentation.features.settings.about.createA
 import io.github.dracula101.jetscan.presentation.features.settings.about.navigateToAboutPage
 import io.github.dracula101.jetscan.presentation.features.settings.open_source_libs.createOpenSourceLibrariesDestination
 import io.github.dracula101.jetscan.presentation.features.settings.open_source_libs.navigateToOpenSourceLibraryScreen
+import io.github.dracula101.jetscan.presentation.features.tools.compress_pdf.createCompressPdfDestination
+import io.github.dracula101.jetscan.presentation.features.tools.compress_pdf.navigateToCompressPdfScreen
+import io.github.dracula101.jetscan.presentation.features.tools.esign_pdf.createESignPdfDestination
+import io.github.dracula101.jetscan.presentation.features.tools.esign_pdf.navigateToESignPdfScreen
+import io.github.dracula101.jetscan.presentation.features.tools.merge_pdf.createMergePdfDestination
+import io.github.dracula101.jetscan.presentation.features.tools.merge_pdf.navigateToMergePdfScreen
+import io.github.dracula101.jetscan.presentation.features.tools.protect_pdf.createProtectPdfDestination
+import io.github.dracula101.jetscan.presentation.features.tools.protect_pdf.navigateToProtectPdfScreen
+import io.github.dracula101.jetscan.presentation.features.tools.split_pdf.createSplitPdfDestination
+import io.github.dracula101.jetscan.presentation.features.tools.split_pdf.navigateToSplitPdfScreen
+import io.github.dracula101.jetscan.presentation.features.tools.watermark_pdf.createWatermarkPdfDestination
+import io.github.dracula101.jetscan.presentation.features.tools.watermark_pdf.navigateToWatermarkPdfScreen
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.document.DocumentType
-import timber.log.Timber
 
 const val HOME_GRAPH_ROUTE = "home_graph"
 
@@ -43,12 +56,12 @@ fun NavGraphBuilder.homeGraph(navController: NavHostController) {
             navigateToSubPage = { subPage ->
                 when (subPage) {
                     MainHomeSubPage.QR_CODE -> navController.navigateToScannerRoute(documentType = DocumentType.QR_CODE)
-                    MainHomeSubPage.WATERMARK -> TODO()
-                    MainHomeSubPage.ESIGN_PDF -> TODO()
-                    MainHomeSubPage.SPLIT_PDF -> TODO()
-                    MainHomeSubPage.MERGE_PDF -> TODO()
-                    MainHomeSubPage.PROTECT_PDF -> TODO()
-                    MainHomeSubPage.COMPRESS_PDF -> TODO()
+                    MainHomeSubPage.WATERMARK -> navController.navigateToWatermarkPdfScreen()
+                    MainHomeSubPage.ESIGN_PDF -> navController.navigateToESignPdfScreen()
+                    MainHomeSubPage.SPLIT_PDF -> navController.navigateToSplitPdfScreen()
+                    MainHomeSubPage.MERGE_PDF -> navController.navigateToMergePdfScreen()
+                    MainHomeSubPage.PROTECT_PDF -> navController.navigateToProtectPdfScreen()
+                    MainHomeSubPage.COMPRESS_PDF -> navController.navigateToCompressPdfScreen()
                     MainHomeSubPage.ALL_TOOLS -> TODO()
                 }
             },
@@ -70,6 +83,9 @@ fun NavGraphBuilder.homeGraph(navController: NavHostController) {
         createEditDocumentDestination(
             onNavigateBack = {
                 navController.popBackStack()
+            },
+            onNavigateToPdf = { document ->
+                navController.navigateToPdfViewScreen(document)
             }
         )
         createScannerDestination(
@@ -100,6 +116,43 @@ fun NavGraphBuilder.homeGraph(navController: NavHostController) {
             }
         )
         createOpenSourceLibrariesDestination(
+            onNavigateBack = {
+                navController.popBackStack()
+            }
+        )
+        createPdfViewDestination(
+            onNavigateBack = {
+                navController.popBackStack()
+            }
+        )
+
+        // TOOLS SCREENS HERE
+        createCompressPdfDestination(
+            onNavigateBack = {
+                navController.popBackStack()
+            }
+        )
+        createESignPdfDestination(
+            onNavigateBack = {
+                navController.popBackStack()
+            }
+        )
+        createMergePdfDestination(
+            onNavigateBack = {
+                navController.popBackStack()
+            }
+        )
+        createProtectPdfDestination(
+            onNavigateBack = {
+                navController.popBackStack()
+            }
+        )
+        createSplitPdfDestination(
+            onNavigateBack = {
+                navController.popBackStack()
+            }
+        )
+        createWatermarkPdfDestination(
             onNavigateBack = {
                 navController.popBackStack()
             }

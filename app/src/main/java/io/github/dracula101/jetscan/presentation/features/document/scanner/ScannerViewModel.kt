@@ -15,12 +15,12 @@ import androidx.camera.view.CameraController
 import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import app.cash.molecule.launchMolecule
 import com.google.mlkit.vision.barcode.common.Barcode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.github.dracula101.jetscan.data.document.manager.DocumentDirectory
 import io.github.dracula101.jetscan.data.document.manager.DocumentManager
-import io.github.dracula101.jetscan.data.document.manager.file.FileManager
-import io.github.dracula101.jetscan.data.document.manager.file.ScannedDocDirectory
 import io.github.dracula101.jetscan.data.document.manager.pdf.PdfManager
 import io.github.dracula101.jetscan.data.document.models.doc.DocQuality
 import io.github.dracula101.jetscan.data.document.utils.Task
@@ -37,7 +37,6 @@ import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extens
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageCropCoords
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageFilter
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageOrientation
-import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.scale
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.imageproxy.BarcodeAnalyzer
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.camera.CameraAspectRatio
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.camera.CameraFacingMode
@@ -70,7 +69,6 @@ class ScannerViewModel @Inject constructor(
     private val mainExecutor: Executor,
     private val openCvManager: OpenCvManager,
     private val documentManager: DocumentManager,
-    private val fileManager: FileManager,
     private val pdfManager: PdfManager,
     private val documentRepository: DocumentRepository,
     @ApplicationContext private val context: Context
@@ -89,7 +87,7 @@ class ScannerViewModel @Inject constructor(
 
     // ================== Cached Filter Bitmaps ======================
     private val _cachedFilterBitmaps =  MutableStateFlow<Map<Int, List<Bitmap>?>>(emptyMap())
-    fun cachedFilterBitmaps(documentIndex: Int): List<Bitmap>? = _cachedFilterBitmaps.value.get(documentIndex)
+    fun getCacheBitmaps(documentIndex: Int): List<Bitmap>? = _cachedFilterBitmaps.value.get(documentIndex)
 
     private val rotationListener = object : android.hardware.SensorEventListener {
         override fun onSensorChanged(event: android.hardware.SensorEvent) {
@@ -133,23 +131,23 @@ class ScannerViewModel @Inject constructor(
             is ScannerAction.Ui.OnBackPress -> handleBackPress(action.navigateBack)
             is ScannerAction.Ui.OnDismissBarCode -> handleDismissBarcode()
             is ScannerAction.Ui.OnSaveDocument -> handleStartSavingDocument()
+            is ScannerAction.Ui.PreviewCropDocument -> handlePreviewCropDocument(action.cropCoords, action.onCompleteCallback)
+
             is ScannerAction.OnCameraInitialized -> _cameraController.value = action.cameraController
             is ScannerAction.EditAction.DocumentChangeName -> handleDocumentNameChange(action.name)
             is ScannerAction.EditAction.CropDocument -> handleCropDocument(action.index)
             is ScannerAction.EditAction.RetakeDocument -> handleRetakeDocument(action.index)
-            is ScannerAction.EditAction.RotateDocument -> handleRotateDocument(action.index)
-            is ScannerAction.EditAction.ApplyFilter -> handleApplyFilter(state.currentDocumentIndex, action.filter)
+            is ScannerAction.EditAction.RotateDocument -> handleRotateDocument(action.index, action.rotation)
+            is ScannerAction.EditAction.ApplyFilter -> handleApplyFilter(action.index ?: state.currentDocumentIndex, action.filter)
             is ScannerAction.EditAction.ChangeColorAdjustTab -> handleColorAdjustTabChange(action.tab)
             is ScannerAction.EditAction.ChangeColorAdjustment -> handleColorAdjustmentChange(action.brightness, action.contrast, action.saturation)
 
             is ScannerAction.Internal.DeleteDocument -> handleDeleteDocument(action.index)
             is ScannerAction.Internal.UpdateProgress -> handleUpdateProgress(action.progress)
-            is ScannerAction.Internal.SaveDocumentToDB -> handleSaveDocument(action.scannedDocDir)
 
             is ScannerAction.Alert.CameraModeChangedAlert -> handleCameraModeChangedAlert(action)
             is ScannerAction.Alert.RemoveCameraModeAlert -> handleRemoveCameraModeAlert()
             is ScannerAction.Alert.DeleteImageAlert -> handleDeleteImageAlert()
-            is ScannerAction.Alert.ShowFilterImageAlert -> handleShowFilterImageAlert()
             is ScannerAction.Alert.ShowExitCameraAlert -> handleShowCameraExitAlert()
             is ScannerAction.Alert.ShowUnsavedDocumentAlert -> handleShowUnsavedDocumentAlert(action.nextTab)
             is ScannerAction.Alert.ShowSavingDocumentAlert -> handleSavingDocument()
@@ -204,29 +202,6 @@ class ScannerViewModel @Inject constructor(
                 Timber.i("Captured Image: ${bitmap.width}x${bitmap.height} - ${bitmap.readableSize}")
                 trySendAction(ScannerAction.Ui.ChangeScannerView(ScannerView.CROP_DOCUMENT))
                 image.close()
-                // withContext(Dispatchers.IO){
-                //     if (cropCoords != null) return@withContext
-                //     val lastScannedDocument = stateFlow.value.scannedDocuments.last()
-                //     val rescaledWidth = 400
-                //     val rescaledHeight = (lastScannedDocument.originalImage.height * rescaledWidth) / lastScannedDocument.originalImage.width
-                //     val rescaledBitmap = Bitmap.createScaledBitmap(lastScannedDocument.originalImage, rescaledWidth, rescaledHeight, true)
-                //     val autoCropCoords = openCvManager.detectDocument(rescaledBitmap)
-                //     val imageCropCoords = autoCropCoords?.scale(
-                //         scale = (lastScannedDocument.originalImage.width.toFloat() / rescaledWidth) * 0.33f,
-                //     )
-                //     mutableStateFlow.update {
-                //         it.copy(
-                //             scannedDocuments = it.scannedDocuments.mapIndexed { index, scannedDocument ->
-                //                 if (index == it.scannedDocuments.size - 1) {
-                //                     scannedDocument.copy(cropCoords = imageCropCoords ?: scannedDocument.cropCoords)
-                //                 } else {
-                //                     scannedDocument
-                //                 }
-                //             }
-                //         )
-                //     }
-                //     rescaledBitmap.recycle()
-                // }
             }
 
         } catch (e: Exception) {
@@ -245,7 +220,7 @@ class ScannerViewModel @Inject constructor(
 
     private fun handleImportFromGallery(uri: Uri){
         viewModelScope.launch {
-            val bitmap = documentManager.getBitmapFromUri(context, uri)
+            val bitmap = documentManager.getBitmapFromUri(uri)
             if (bitmap == null) {
                 mutableStateFlow.update {
                     it.copy(
@@ -436,14 +411,6 @@ class ScannerViewModel @Inject constructor(
         }
     }
 
-    private fun handleShowFilterImageAlert() {
-        mutableStateFlow.update {
-            it.copy(
-                dialogState = ScannerDialogState.FilterImage
-            )
-        }
-    }
-
     private fun handleShowCameraExitAlert() {
         mutableStateFlow.update {
             it.copy(
@@ -502,57 +469,6 @@ class ScannerViewModel @Inject constructor(
         }
     }
 
-    private fun handleSaveDocument(scannedDocDir: ScannedDocDirectory){
-        viewModelScope.launch(Dispatchers.IO) {
-            var fileLength = 0L
-            for (file in scannedDocDir.scannedImageDirectory.listFiles() ?: emptyArray()) {
-                fileLength += file.length()
-            }
-            val fileName = state.documentName
-            val scannedImages = scannedDocDir.scannedImageDirectory.listFiles()?.map {
-                Timber.i("Scanned Image: ${it.name}, Size: ${it.length().bytesToReadableSize()}")
-                ScannedImage.fromFile(it)
-            } ?: emptyList()
-            val previewImageUri = scannedDocDir.previewImage.listFiles()?.first()?.toUri() ?: scannedImages.first().scannedUri
-            val originalFile = File(scannedDocDir.mainDirectory, "Original.pdf")
-            pdfManager.saveToPdf(scannedImages.map { File(it.scannedUri.path!!) }, originalFile, DocQuality.PPI_72)
-            if (scannedImages.isEmpty()) throw Exception("No images found")
-            val scannedDoc = Document(
-                size = originalFile.length(),
-                uri = originalFile.toUri(),
-                dateCreated = System.currentTimeMillis(),
-                name = fileName,
-                previewImageUri = previewImageUri,
-                scannedImages = scannedImages
-            )
-            val isAdded = documentRepository.addDocument(scannedDoc)
-            Timber.i("Document Added: $isAdded")
-            if (!isAdded) throw Exception("Error saving document")
-            mutableStateFlow.update {
-                it.copy(
-                    snackbarState = SnackbarState.ShowSuccess(
-                        title = "Document Saved",
-                    ),
-                )
-            }
-            trySendAction(ScannerAction.Alert.DismissAlert(dialog = true,snackbar = true))
-            delay(500)
-            mutableStateFlow.update { it.copy(isDocumentSaved = true) }
-        }.runCatching{
-            this
-        }.getOrElse {
-            Timber.e(it)
-            mutableStateFlow.update { state->
-                state.copy(
-                    savingDocState = SavingDocumentState(
-                        hasError = it as Exception
-                    )
-                )
-            }
-            trySendAction(ScannerAction.Alert.DismissAlert(dialog = true,snackbar = true))
-        }
-    }
-
     private fun handleDocumentNameChange(name: String) {
         mutableStateFlow.update {
             it.copy(documentName = name)
@@ -600,12 +516,12 @@ class ScannerViewModel @Inject constructor(
         }
     }
 
-    private fun handleRotateDocument(index: Int) {
+    private fun handleRotateDocument(index: Int, rotation: Int? = null) {
         val updatedDocuments = stateFlow.value.scannedDocuments.toMutableList()
         val scannedDocument = updatedDocuments[index]
         if (scannedDocument.croppedImage == null) return
         viewModelScope.launch(Dispatchers.IO) {
-            val rotatedBitmap = scannedDocument.croppedImage.rotate(-90f)
+            val rotatedBitmap =  scannedDocument.croppedImage.rotate((rotation ?: -90).toFloat())
             val updatedDocument = scannedDocument.copy(
                 croppedImage = rotatedBitmap,
                 imageEffect = scannedDocument.imageEffect.copy(
@@ -627,21 +543,30 @@ class ScannerViewModel @Inject constructor(
     }
 
     private fun handleApplyFilter(index: Int, filter: ImageFilter) {
-        val updatedDocuments = stateFlow.value.scannedDocuments.toMutableList()
-        if (updatedDocuments[index].croppedImage == null) return
-        val filteredImage =
-            openCvManager.applyFilter(updatedDocuments[index].croppedImage!!, filter)
-        val scannedDocument = updatedDocuments[index].copy(
-            imageEffect = updatedDocuments[index].imageEffect.copy(
-                imageFilter = filter
-            ),
-            filteredImage = filteredImage
-        )
-        updatedDocuments[index] = scannedDocument
-        mutableStateFlow.update {
-            it.copy(
-                scannedDocuments = updatedDocuments
+        viewModelScope.launch {
+            val updatedDocuments = stateFlow.value.scannedDocuments.toMutableList()
+            if (updatedDocuments[index].croppedImage == null) return@launch
+            val document = updatedDocuments[index]
+            if (document.imageEffect.imageFilter == filter) return@launch
+            val timesToApply = (document.originalImage.width / PREVIEW_FILTER_WIDTH) + 1
+            var filteredBitmap: Bitmap? = null
+            for (i in 0 until timesToApply) {
+                filteredBitmap = withContext(Dispatchers.IO) {
+                    openCvManager.applyFilter(document.croppedImage!!, filter)
+                }
+            }
+            val scannedDocument = document.copy(
+                imageEffect = document.imageEffect.copy(
+                    imageFilter = filter
+                ),
+                filteredImage = filteredBitmap
             )
+            updatedDocuments[index] = scannedDocument
+            mutableStateFlow.update {
+                it.copy(
+                    scannedDocuments = updatedDocuments
+                )
+            }
         }
     }
 
@@ -703,6 +628,32 @@ class ScannerViewModel @Inject constructor(
         }
     }
 
+    private fun handlePreviewCropDocument(imageCropCoords: ImageCropCoords, onCompleteCallback: () -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val scannedDocument = if (state.retakeDocumentIndex != null) {
+                state.scannedDocuments[state.retakeDocumentIndex!!]
+            } else {
+                state.scannedDocuments.last()
+            }
+            val imageFilter = scannedDocument.imageEffect.imageFilter
+            val rotation = scannedDocument.imageEffect.orientation
+            val croppedBitmap = openCvManager.cropDocument(scannedDocument.originalImage, imageCropCoords).rotate(rotation.toDegrees())
+            val filteredBitmap = if (imageFilter != ImageFilter.ORIGINAL) {
+                openCvManager.applyFilter(croppedBitmap, imageFilter)
+            } else { null }
+            val updatedDocuments = state.scannedDocuments.toMutableList()
+            updatedDocuments[state.retakeDocumentIndex ?: (updatedDocuments.size - 1)] = scannedDocument.copy(
+                croppedImage = croppedBitmap,
+                filteredImage = filteredBitmap,
+                cropCoords = imageCropCoords
+            )
+            mutableStateFlow.update {
+                it.copy(scannedDocuments = updatedDocuments)
+            }
+            onCompleteCallback()
+        }
+    }
+
     private fun handleStartSavingDocument() {
         Timber.i("Started Saving Document")
         viewModelScope.launch(Dispatchers.IO + SupervisorJob()) {
@@ -724,7 +675,7 @@ class ScannerViewModel @Inject constructor(
                 in 21..40 -> 50
                 else -> 40
             }
-            fileManager.addScannedDocumentFromScanner(
+            documentRepository.addDocumentFromScanner(
                 bitmaps = bitmaps,
                 fileName = state.documentName,
                 imageQuality = imageQuality,
@@ -741,43 +692,54 @@ class ScannerViewModel @Inject constructor(
                     )
                 }
                 return@launch
-            }.also { taskFile ->
-                when (taskFile) {
-                    is Task.Success -> {
-                        mutableStateFlow.update {
-                            it.copy(
-                                savingDocState = SavingDocumentState(
-                                    saved = true,
-                                    currentProgress = 1f,
-                                    hasError = null
-                                )
+            }.also { isDocumentAdded ->
+                if (isDocumentAdded) {
+                    mutableStateFlow.update {
+                        it.copy(
+                            savingDocState = SavingDocumentState(
+                                saved = true,
+                                currentProgress = 1f
+                            ),
+                            isDocumentSaved = true,
+                            snackbarState = SnackbarState.ShowSuccess(
+                                title = "Document Saved",
                             )
-                        }
-                        trySendAction(ScannerAction.Internal.SaveDocumentToDB(taskFile.data))
+                        )
                     }
-
-                    is Task.Error -> {
-                        mutableStateFlow.update {
-                            it.copy(
-                                savingDocState = SavingDocumentState(
-                                    hasError = taskFile.error as Exception
-                                )
+                }else {
+                    mutableStateFlow.update {
+                        it.copy(
+                            savingDocState = SavingDocumentState(
+                                hasError = Exception("Error saving document")
                             )
-                        }
+                        )
                     }
-
-                    is Task.Cancelled, is Task.Idle -> {}
                 }
             }
         }
     }
 
-    fun cacheFilterBitmaps(bitmaps: List<Bitmap>) {
-        if (_cachedFilterBitmaps.value.get(state.currentDocumentIndex) == null) {
+    suspend fun applyFilters(index: Int? = null) : List<Bitmap> {
+        val currentDocument = state.scannedDocuments[index ?: state.currentDocumentIndex]
+        val rescaleHeight = PREVIEW_FILTER_WIDTH * currentDocument.originalImage.height / currentDocument.originalImage.width
+        val rescaledBitmap = Bitmap.createScaledBitmap(currentDocument.originalImage, PREVIEW_FILTER_WIDTH, rescaleHeight, false)
+        return withContext(Dispatchers.IO) {
+            val bitmaps = _cachedFilterBitmaps.value[index ?: state.currentDocumentIndex] ?: emptyList()
+            if (bitmaps.isNotEmpty()) {
+                return@withContext bitmaps
+            } else {
+                val filteredBitmaps = openCvManager.applyFilters(rescaledBitmap)
+                cacheFilterBitmaps(filteredBitmaps)
+                filteredBitmaps
+            }
+        }
+    }
+
+    private fun cacheFilterBitmaps(bitmaps: List<Bitmap>) {
+        if (_cachedFilterBitmaps.value[state.currentDocumentIndex] == null) {
             _cachedFilterBitmaps.value = _cachedFilterBitmaps.value.toMutableMap().apply {
                 put(state.currentDocumentIndex, bitmaps)
             }
-
         }
     }
 
@@ -789,6 +751,10 @@ class ScannerViewModel @Inject constructor(
         savedStateHandle[SCANNER_STATE] = stateFlow.value
         sensorManager.unregisterListener(rotationListener)
         super.onCleared()
+    }
+
+    companion object {
+        const val PREVIEW_FILTER_WIDTH = 400
     }
 
 }
@@ -817,7 +783,7 @@ data class ScannerState(
     // Edit Screen values
     val scannerView: ScannerView = ScannerView.CAMERA,
     val currentDocumentIndex: Int = 0,
-    val documentName: String = "Scan - " + SimpleDateFormat(
+    val documentName: String = "JetScan - " + SimpleDateFormat(
         "dd/MM/yy h:mm a",
         Locale.getDefault()
     ).format(System.currentTimeMillis()),
@@ -827,7 +793,6 @@ data class ScannerState(
 @Parcelize
 sealed class ScannerDialogState : Parcelable {
     data object DeleteImage : ScannerDialogState()
-    data object FilterImage : ScannerDialogState()
     data object ExitScanner : ScannerDialogState()
     data class UnsavedDocument(
         val nextTab: DocumentType,
@@ -853,6 +818,10 @@ sealed class ScannerAction {
         data class OnBackPress(val navigateBack: () -> Unit) : Ui()
         data object OnDismissBarCode : Ui()
         data object OnSaveDocument : Ui()
+        data class PreviewCropDocument(
+            val cropCoords: ImageCropCoords,
+            val onCompleteCallback: () -> Unit
+        ) : Ui()
     }
 
     data class OnCameraInitialized(val cameraController: CameraController) : ScannerAction()
@@ -862,8 +831,8 @@ sealed class ScannerAction {
         data class DocumentChangeName(val name: String) : Ui()
         data class CropDocument(val index: Int) : Ui()
         data class RetakeDocument(val index: Int) : Ui()
-        data class RotateDocument(val index: Int) : Ui()
-        data class ApplyFilter(val filter: ImageFilter) : Ui()
+        data class RotateDocument(val index: Int, val rotation: Int? = null) : Ui()
+        data class ApplyFilter(val filter: ImageFilter, val index: Int? = null) : Ui()
         data class ChangeColorAdjustTab(val tab: ColorAdjustTab) : Ui()
         data class ChangeColorAdjustment(val saturation: Float? = null, val brightness: Float? = null, val contrast: Float? = null) : Ui()
     }
@@ -872,7 +841,6 @@ sealed class ScannerAction {
     sealed class Internal : ScannerAction(), Parcelable {
         data class DeleteDocument(val index: Int) : Internal()
         data class UpdateProgress(val progress: Float) : Internal()
-        data class SaveDocumentToDB(val scannedDocDir: ScannedDocDirectory): Internal()
     }
 
     @Parcelize
@@ -885,7 +853,6 @@ sealed class ScannerAction {
 
         data object DeleteImageAlert : Alert()
         data object RemoveCameraModeAlert : Alert()
-        data object ShowFilterImageAlert : Alert()
         data object ShowExitCameraAlert : Alert()
         data class ShowUnsavedDocumentAlert(
             val nextTab: DocumentType,

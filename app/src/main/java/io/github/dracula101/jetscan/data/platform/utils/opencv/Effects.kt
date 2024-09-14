@@ -152,7 +152,7 @@ fun Mat.applyFilter(filter: ImageFilter): Mat {
         ImageFilter.NO_SHADOW -> noShadow()
         ImageFilter.AUTO -> toAutoFilter()
         ImageFilter.COLOR_BUMP -> colorBump()
-        ImageFilter.SHARP_BLACK -> sharpBlack()
+        ImageFilter.GRAYSCALE -> toGrayScale()
         ImageFilter.B_W -> toBlackAndWhite()
     }
 }

@@ -9,6 +9,7 @@ import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.presentation.features.auth.authGraph
 import io.github.dracula101.jetscan.presentation.features.document.preview.PreviewScreen
 import io.github.dracula101.jetscan.presentation.platform.base.util.composableWithPushTransitions
+import io.github.dracula101.jetscan.presentation.platform.base.util.composableWithSlideTransitions
 import io.github.dracula101.jetscan.presentation.platform.composition.LockOrientation
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.document.DocumentType
 
@@ -19,7 +20,7 @@ const val DOCUMENT_TAB_TYPE = "document_tab_type"
 fun NavGraphBuilder.createScannerDestination(
     onNavigateBack: () -> Unit,
 ) {
-    composableWithPushTransitions(
+    composableWithSlideTransitions(
         route = "$SCANNER_ROUTE/{$DOCUMENT_TAB_TYPE}",
         arguments = listOf(
             navArgument(DOCUMENT_TAB_TYPE) {

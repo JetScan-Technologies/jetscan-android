@@ -1,6 +1,7 @@
 package io.github.dracula101.jetscan.data.document.manager.pdf
 
 import android.content.ContentResolver
+import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.ui.unit.Dp
@@ -40,4 +41,12 @@ interface PdfManager {
         file: File,
         pdfQuality: DocQuality
     )
+
+    suspend fun mergePdf(
+        images: List<File>,
+        file: File,
+        pdfQuality: DocQuality
+    )
+
+
 }

@@ -21,14 +21,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeAction
+import io.github.dracula101.jetscan.presentation.platform.base.ImportDocumentState
 import io.github.dracula101.jetscan.presentation.platform.component.button.CircleButton
 import io.github.dracula101.jetscan.presentation.platform.component.loader.AnimatedLoader
 
 @Composable
 fun DocumentImportingState(
     modifier: Modifier = Modifier,
-    importDocumentState: MainHomeAction.ImportDocumentState,
-    onCancel: () -> Unit
+    importDocumentState: ImportDocumentState,
+    // onCancel: () -> Unit
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -39,10 +40,9 @@ fun DocumentImportingState(
     ) {
         Icon(
             when (importDocumentState) {
-                is MainHomeAction.ImportDocumentState.InProgress -> Icons.Rounded.FileDownload
-                is MainHomeAction.ImportDocumentState.Completed -> Icons.Rounded.CheckCircleOutline
-                is MainHomeAction.ImportDocumentState.Error -> Icons.Rounded.Close
-                is MainHomeAction.ImportDocumentState.Cancelled -> Icons.Rounded.Close
+                is ImportDocumentState.InProgress -> Icons.Rounded.FileDownload
+                is ImportDocumentState.Success -> Icons.Rounded.CheckCircleOutline
+                else -> Icons.Rounded.Close
             },
             contentDescription = "Import Icon",
             modifier = Modifier
@@ -57,21 +57,22 @@ fun DocumentImportingState(
             ) {
                 Text(
                     text = when (importDocumentState) {
-                        is MainHomeAction.ImportDocumentState.InProgress -> "Importing Document - ${importDocumentState.fileName}"
-                        is MainHomeAction.ImportDocumentState.Completed -> "Document Imported"
-                        is MainHomeAction.ImportDocumentState.Error -> "Error Importing Document"
-                        is MainHomeAction.ImportDocumentState.Cancelled -> "Import Cancelled"
+                        is ImportDocumentState.InProgress -> "Importing Document - ${importDocumentState.fileName}"
+                        is ImportDocumentState.Success -> "Document Imported"
+                        is ImportDocumentState.Error -> "Error Importing Document"
+                        is ImportDocumentState.Started -> "Importing Document"
+                        else -> "---"
                     },
                     maxLines = 2,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.fillMaxWidth(0.85f)
                 )
-                if (importDocumentState is MainHomeAction.ImportDocumentState.InProgress) {
-                    CircleButton(
-                        imageVector = Icons.Rounded.Close,
-                        onClick = onCancel
-                    )
-                }
+                // if (importDocumentState is MainHomeAction.ImportDocumentState.InProgress) {
+                //     CircleButton(
+                //         imageVector = Icons.Rounded.Close,
+                //         onClick = onCancel
+                //     )
+                // }
             }
             Row(
                 modifier = Modifier
@@ -81,7 +82,7 @@ fun DocumentImportingState(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 when (importDocumentState) {
-                    is MainHomeAction.ImportDocumentState.InProgress -> {
+                    is ImportDocumentState.InProgress -> {
                         AnimatedLoader(
                             value = importDocumentState.currentProgress / importDocumentState.totalProgress,
                             modifier = Modifier
@@ -98,7 +99,7 @@ fun DocumentImportingState(
                         )
                     }
 
-                    is MainHomeAction.ImportDocumentState.Error -> {
+                    is ImportDocumentState.Error -> {
                         Text(
                             text = "Error Importing Document",
                             style = MaterialTheme.typography.labelSmall,

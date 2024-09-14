@@ -136,6 +136,7 @@ import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.document.DocumentType
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.graph.CPoint
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.graph.Line
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -202,21 +203,11 @@ fun ScannerScreenView(
 
     ScannerViewDialog(
         state = state,
-        cachedFilterBitmaps = viewModel.cachedFilterBitmaps(state.value.currentDocumentIndex),
-        onCacheBitmap = { bitmaps ->
-            viewModel.cacheFilterBitmaps(bitmaps)
-        },
         dismissAlert = {
             viewModel.trySendAction(ScannerAction.Alert.DismissAlert(dialog = true))
         },
         deleteDocument = {
             viewModel.trySendAction(ScannerAction.Internal.DeleteDocument(state.value.currentDocumentIndex))
-        },
-        applyFilterProcess = { bitmap ->
-            viewModel.imageProcessingManager.applyFilters(bitmap)
-        },
-        applyFilter = { filter ->
-            viewModel.trySendAction(ScannerAction.EditAction.ApplyFilter(filter))
         },
         onNavigateBack = onNavigateBack
     )
@@ -416,7 +407,7 @@ private fun ScannerView(
                         viewModel.trySendAction(
                             ScannerAction.Ui.OnCapturePhoto(
                                 documentOutline.value?.scale(
-                                    scale = 2.2f
+                                    scale = 2.23f
                                 )
                             )
                         )
@@ -549,14 +540,11 @@ fun ScannerAlertSnackbar(
 @Composable
 private fun ScannerViewDialog(
     state: State<ScannerState>,
-    cachedFilterBitmaps: List<Bitmap>?,
-    onCacheBitmap: (bitmaps: List<Bitmap>) -> Unit,
     dismissAlert: () -> Unit,
     deleteDocument: () -> Unit,
-    applyFilterProcess: suspend (bitmap: Bitmap) -> List<Bitmap>,
-    applyFilter: (filter: ImageFilter) -> Unit,
     onNavigateBack: () -> Unit
 ) {
+    val coroutineScope = rememberCoroutineScope()
     if (state.value.dialogState == null) return
     when (state.value.dialogState!!) {
         is ScannerDialogState.DeleteImage -> {
@@ -577,20 +565,26 @@ private fun ScannerViewDialog(
                 positiveButtonText = "Exit",
                 negativeButtonText = "Cancel",
                 onDismiss = { dismissAlert() },
-                onConfirm = onNavigateBack,
+                onConfirm = {
+                    dismissAlert()
+                    coroutineScope.launch(Dispatchers.Main) {
+                        delay(100)
+                        onNavigateBack()
+                    }
+                },
                 icon = Icons.AutoMirrored.Rounded.ExitToApp
             )
         }
-        is ScannerDialogState.FilterImage -> {
-            ShowFilterDialog(
-                onDismiss = { dismissAlert() },
-                cachedBitmaps = cachedFilterBitmaps,
-                onCacheBitmap = onCacheBitmap,
-                scannedDocument = state.value.scannedDocuments[state.value.currentDocumentIndex],
-                applyFilterFunction = { bitmap -> applyFilterProcess(bitmap) },
-                onFilterSelected = { filter -> applyFilter(filter) },
-            )
-        }
+        // is ScannerDialogState.FilterImage -> {
+        //     ShowFilterDialog(
+        //         onDismiss = { dismissAlert() },
+        //         cachedBitmaps = cachedFilterBitmaps,
+        //         onCacheBitmap = onCacheBitmap,
+        //         scannedDocument = state.value.scannedDocuments[state.value.currentDocumentIndex],
+        //         applyFilterFunction = { bitmap -> applyFilterProcess(bitmap) },
+        //         onFilterSelected = { filter -> applyFilter(filter) },
+        //     )
+        // }
         is ScannerDialogState.UnsavedDocument -> {
             val dialogState = state.value.dialogState as ScannerDialogState.UnsavedDocument
             ScannerDialog(
