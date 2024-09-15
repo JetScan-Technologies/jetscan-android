@@ -22,9 +22,9 @@ fun Int.fromImageQuality(): ImageQuality {
 
 fun ImageQuality.toBitmapQuality(): Int {
     return when (this) {
-        ImageQuality.VERY_LOW -> 30
-        ImageQuality.LOW -> 50
-        ImageQuality.MEDIUM -> 75
+        ImageQuality.VERY_LOW -> 50
+        ImageQuality.LOW -> 60
+        ImageQuality.MEDIUM -> 80
         ImageQuality.HIGH -> 90
     }
 }

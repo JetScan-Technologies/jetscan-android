@@ -1,24 +1,32 @@
-package io.github.dracula101.jetscan.data.document.manager.pdf
+package io.github.dracula101.pdf.manager
 
 import android.content.ContentResolver
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Paint
-import android.graphics.pdf.PdfDocument
+import android.graphics.Canvas
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
+import android.util.Log
+import android.util.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
-import io.github.dracula101.jetscan.data.document.models.Extension
-import io.github.dracula101.jetscan.data.document.models.doc.DocQuality
-import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
-import io.github.dracula101.jetscan.data.document.utils.getImageHeight
-import io.github.dracula101.jetscan.data.document.utils.toBitmapQuality
+import com.itextpdf.io.image.ImageDataFactory
+import com.itextpdf.kernel.geom.PageSize
+import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.kernel.pdf.PdfObject
+import com.itextpdf.kernel.pdf.PdfWriter
+import com.itextpdf.kernel.pdf.colorspace.PdfColorSpace
+import com.itextpdf.layout.Document
+import com.itextpdf.layout.element.Image
+import com.itextpdf.layout.properties.HorizontalAlignment
+import com.itextpdf.layout.properties.ObjectFit
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 
@@ -62,7 +70,7 @@ class PdfManagerImpl : PdfManager {
             val outputStream = FileOutputStream(file)
             bitmap.compress(
                 Bitmap.CompressFormat.PNG,
-                ImageQuality.HIGH.toBitmapQuality(),
+                95,
                 outputStream
             )
             outputStream.flush()
@@ -71,7 +79,7 @@ class PdfManagerImpl : PdfManager {
             parcelFileDescriptor.close()
             return file
         } catch (e: Exception) {
-            Timber.e(e)
+            e.printStackTrace()
         }
         return null
     }
@@ -91,7 +99,7 @@ class PdfManagerImpl : PdfManager {
             pdfRenderer.close()
             parcelFileDescriptor.close()
         } catch (e: Exception) {
-            Timber.e(e)
+            e.printStackTrace()
         }
         return images
     }
@@ -105,7 +113,7 @@ class PdfManagerImpl : PdfManager {
             parcelFileDescriptor.close()
             pageCount
         } catch (e: Exception) {
-            Timber.e(e)
+            e.printStackTrace()
             null
         }
     }
@@ -122,7 +130,7 @@ class PdfManagerImpl : PdfManager {
             parcelFileDescriptor.close()
             bitmap
         } catch (e: Exception) {
-            Timber.e(e)
+            e.printStackTrace()
             null
         }
     }
@@ -132,9 +140,9 @@ class PdfManagerImpl : PdfManager {
         contentResolver: ContentResolver,
         scannedImageDirectory: File,
         fileNamePrefix: String,
-        fileExtension: Extension,
-        imageQuality: ImageQuality,
-        delay: Long,
+        fileExtension: String,
+        imageQuality: Int,
+        resizedHeight: Int,
         onPdfPageAdded: (Int) -> Unit
     ): List<Bitmap> = coroutineScope {
         val images = mutableListOf<Bitmap>()
@@ -142,121 +150,64 @@ class PdfManagerImpl : PdfManager {
         val pdfRenderer = PdfRenderer(parcelFileDescriptor!!)
         for (i in 0 until pdfRenderer.pageCount) {
             val page = pdfRenderer.openPage(i)
-            var bitmap = Bitmap.createBitmap(page.width, page.height, Bitmap.Config.ARGB_8888)
-            if (bitmap.hasAlpha()) {
-                bitmap.eraseColor(-0x1)
-            }
-            val scaledWidth =
-                (bitmap.width.toFloat() / bitmap.height.toFloat()) * imageQuality.getImageHeight()
-            val scaledBitmap = Bitmap.createScaledBitmap(
-                bitmap,
-                scaledWidth.toInt(),
-                imageQuality.getImageHeight(),
-                true
-            )
-            bitmap = Bitmap.createScaledBitmap(
-                scaledBitmap,
-                scaledWidth.toInt(),
-                imageQuality.getImageHeight(),
-                true
-            )
+            val canvas  = Canvas()
+            val scale = resizedHeight.toFloat() / page.height
+            val width = (page.width * scale).toInt()
+            val height = (page.height * scale).toInt()
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            canvas.setBitmap(bitmap)
+            canvas.drawColor(Color.White.toArgb())
             page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-            val scannedImage = File(scannedImageDirectory, "${fileNamePrefix}_$i${fileExtension.value()}")
-            withContext(Dispatchers.IO) {
-                val outputStream = FileOutputStream(scannedImage)
-                bitmap.compress(
-                    Bitmap.CompressFormat.JPEG,
-                    imageQuality.toBitmapQuality(),
-                    outputStream
-                )
-                outputStream.flush()
-                outputStream.close()
+            val file = File(scannedImageDirectory, "${fileNamePrefix}_$i$fileExtension")
+            file.outputStream().use {
+                bitmap.compress(Bitmap.CompressFormat.JPEG, imageQuality, it)
             }
-            page.close()
-            bitmap.recycle()
+            images.add(bitmap)
             onPdfPageAdded(i)
-            delay(delay)
+            page.close()
         }
         pdfRenderer.close()
         parcelFileDescriptor.close()
         images
     }
 
-    override suspend fun saveToPdf(scannedImages: List<File>, file: File, pdfQuality: DocQuality) {
-        val pdfDocument = PdfDocument()
-        val fileOutputStream = withContext(Dispatchers.IO) {
-            FileOutputStream(file)
-        }
-        for (i in scannedImages.indices) {
-            val bitmap = BitmapFactory.decodeFile(scannedImages[i].absolutePath)
-            val pdfSize = pdfQuality.toSizePx()
-            val pdfPage = pdfDocument.startPage(
-                PdfDocument.PageInfo.Builder(
-                    pdfSize.width.toInt(),
-                    pdfSize.height.toInt(),
-                    i
-                ).create()
-            )
-            val canvas = pdfPage.canvas
-            val scale = (pdfSize.width / bitmap.width).coerceAtMost(pdfSize.height / bitmap.height)
-            val scaledBitmap = Bitmap.createScaledBitmap(
-                bitmap,
-                (bitmap.width * scale).toInt(),
-                (bitmap.height * scale).toInt(),
+    override suspend fun savePdf(
+        files: List<File>,
+        file: File,
+        imageQuality: Int,
+        pdfSize: Size,
+        margins: Float
+    ): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val pdfWriter = PdfWriter(file)
+                val pdfDocument = PdfDocument(pdfWriter)
+                val document = Document(pdfDocument, PageSize(pdfSize.width.toFloat(), pdfSize.height.toFloat())).also {
+                    it.setMargins(margins, margins, margins, margins)
+                }
+                files.forEach {
+                    val image = Image(ImageDataFactory.create(it.absolutePath))
+                    val width = if (image.imageWidth > pdfSize.width) pdfSize.width.toFloat() else image.imageWidth
+                    val height = if (image.imageHeight > pdfSize.height) (
+                        image.imageHeight * pdfSize.width / image.imageWidth
+                    ) else image.imageHeight
+                    image.scaleToFit(width, height)
+                    image.setHorizontalAlignment(HorizontalAlignment.CENTER)
+                    val left = if (width < pdfSize.width) (pdfSize.width - width) / 2 else 0f
+                    val bottom = if (height < pdfSize.height) (pdfSize.height - height) / 2 else 0f
+                    image.setFixedPosition(left,bottom)
+                    image.setAutoScale(true)
+                    Log.d("PdfManagerImpl", "Image width: ${image.imageWidth}, Image height: ${image.imageHeight}, Pdf width: ${pdfSize.width}, Pdf height: ${pdfSize.height}, Width: $width, Height: $height")
+                    document.add(image)
+                }
+                document.close()
+                pdfDocument.close()
                 true
-            )
-            val left = (pdfSize.width - scaledBitmap.width) / 2
-            val top = (pdfSize.height - scaledBitmap.height) / 2
-            val paint = Paint()
-            canvas.drawBitmap(scaledBitmap, left, top, paint)
-            pdfDocument.finishPage(pdfPage)
-            bitmap.recycle()
-            delay(25)
-        }
-        withContext(Dispatchers.IO) {
-            pdfDocument.writeTo(fileOutputStream)
-            pdfDocument.close()
-            fileOutputStream.flush()
-            fileOutputStream.close()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
+            }
         }
     }
 
-    override suspend fun mergePdf(images: List<File>, file: File, pdfQuality: DocQuality) {
-        val pdfDocument = PdfDocument()
-        val fileOutputStream = withContext(Dispatchers.IO) {
-            FileOutputStream(file)
-        }
-        for (i in images.indices) {
-            val bitmap = BitmapFactory.decodeFile(images[i].absolutePath)
-            val pdfSize = pdfQuality.toSizePx()
-            val pdfPage = pdfDocument.startPage(
-                PdfDocument.PageInfo.Builder(
-                    pdfSize.width.toInt(),
-                    pdfSize.height.toInt(),
-                    i
-                ).create()
-            )
-            val canvas = pdfPage.canvas
-            val scale = (pdfSize.width / bitmap.width).coerceAtMost(pdfSize.height / bitmap.height)
-            val scaledBitmap = Bitmap.createScaledBitmap(
-                bitmap,
-                (bitmap.width * scale).toInt(),
-                (bitmap.height * scale).toInt(),
-                true
-            )
-            val left = (pdfSize.width - scaledBitmap.width) / 2
-            val top = (pdfSize.height - scaledBitmap.height) / 2
-            val paint = Paint()
-            canvas.drawBitmap(scaledBitmap, left, top, paint)
-            pdfDocument.finishPage(pdfPage)
-            bitmap.recycle()
-            delay(25)
-        }
-        withContext(Dispatchers.IO) {
-            pdfDocument.writeTo(fileOutputStream)
-            pdfDocument.close()
-            fileOutputStream.flush()
-            fileOutputStream.close()
-        }
-    }
 }

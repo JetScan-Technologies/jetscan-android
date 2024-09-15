@@ -36,10 +36,9 @@ fun Mat.area(): Int {
     return this.width() * this.height()
 }
 
-fun Bitmap.saveBitmapToFile(filePath: String, imageType: ImageType = ImageType.JPEG, quality: Int = 100) : Boolean {
+fun Bitmap.saveBitmapToFile(file: File, imageType: ImageType = ImageType.JPEG, quality: Int = 100) : Boolean {
     return try {
         val mat = toMat()
-        val file = File(filePath)
         Imgcodecs.imwrite(
             file.absolutePath,
             mat,

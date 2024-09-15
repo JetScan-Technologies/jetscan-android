@@ -1,13 +1,10 @@
-package io.github.dracula101.jetscan.data.document.manager.pdf
+package io.github.dracula101.pdf.manager
 
 import android.content.ContentResolver
-import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
+import android.util.Size
 import androidx.compose.ui.unit.Dp
-import io.github.dracula101.jetscan.data.document.models.Extension
-import io.github.dracula101.jetscan.data.document.models.doc.DocQuality
-import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import java.io.File
 
 interface PdfManager {
@@ -33,23 +30,17 @@ interface PdfManager {
         contentResolver: ContentResolver,
         scannedImageDirectory: File,
         fileNamePrefix: String,
-        fileExtension: Extension = Extension.JPEG,
-        imageQuality: ImageQuality = ImageQuality.MEDIUM,
-        delay: Long = 16,
+        fileExtension: String,
+        imageQuality: Int,
+        resizedHeight: Int,
         onPdfPageAdded: (Int) -> Unit = {}
     ): List<Bitmap>
 
-    suspend fun saveToPdf(
-        scannedImages: List<File>,
+    suspend fun savePdf(
+        files: List<File>,
         file: File,
-        pdfQuality: DocQuality
-    )
-
-    suspend fun mergePdf(
-        images: List<File>,
-        file: File,
-        pdfQuality: DocQuality
-    )
-
-
+        imageQuality: Int,
+        pdfSize: Size,
+        margins: Float,
+    ): Boolean
 }

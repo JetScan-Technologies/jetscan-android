@@ -18,7 +18,7 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.dracula101.jetscan.data.document.manager.DocumentManager
-import io.github.dracula101.jetscan.data.document.manager.pdf.PdfManager
+import io.github.dracula101.jetscan.data.document.models.IllegalFilenameChar
 import io.github.dracula101.jetscan.data.platform.manager.opencv.OpenCvManager
 import io.github.dracula101.jetscan.data.platform.utils.readableSize
 import io.github.dracula101.jetscan.data.platform.utils.rotate
@@ -60,7 +60,6 @@ class ScannerViewModel @Inject constructor(
     private val mainExecutor: Executor,
     private val openCvManager: OpenCvManager,
     private val documentManager: DocumentManager,
-    private val pdfManager: PdfManager,
     private val documentRepository: DocumentRepository,
     @ApplicationContext private val context: Context
 ) : BaseViewModel<ScannerState, Unit, ScannerAction>(
@@ -462,7 +461,7 @@ class ScannerViewModel @Inject constructor(
 
     private fun handleDocumentNameChange(name: String) {
         mutableStateFlow.update {
-            it.copy(documentName = name)
+            it.copy(documentName = IllegalFilenameChar.removeIllegalChar(name))
         }
     }
 
@@ -647,32 +646,38 @@ class ScannerViewModel @Inject constructor(
 
     private fun handleStartSavingDocument() {
         Timber.i("Started Saving Document")
+        mutableStateFlow.update {
+            it.copy(
+                dialogState = ScannerDialogState.SaveDocument,
+                savingDocState = SavingDocumentState(
+                    currentProgress = 0.0f
+                ),
+            )
+        }
+        val originalBitmaps = state.scannedDocuments.map { it.originalImage }
+        val filteredCroppedBitmaps = state.scannedDocuments.map { (it.filteredImage ?: it.croppedImage!!) }
+        val averageImageKb = originalBitmaps.map { it.byteCount / 1024 }.average().toInt()
+        val imageQuality : Int = when(averageImageKb){
+            in 0..200 -> 95
+            in 200..500 -> 90
+            in 500..1000 -> 80
+            in 1000..2000 -> 70
+            in 2000..5000 -> 60
+            in 5000..10000 -> 50
+            in 10000..20000 -> 45
+            in 20000..50000 -> 35
+            else -> 25
+        }
+        var currentTime = System.currentTimeMillis()
         viewModelScope.launch(Dispatchers.IO + SupervisorJob()) {
-            mutableStateFlow.update {
-                it.copy(
-                    dialogState = ScannerDialogState.SaveDocument,
-                    savingDocState = SavingDocumentState(
-                        currentProgress = 0.0f
-                    ),
-                )
-            }
-            val originalBitmaps = state.scannedDocuments.map { it.originalImage }
-            val filteredCroppedBitmaps = state.scannedDocuments.map { (it.filteredImage ?: it.croppedImage!!) }
-            val imageQuality : Int = when(filteredCroppedBitmaps.size){
-                in 1..3 -> 95
-                in 4..6 -> 90
-                in 7..10 -> 85
-                in 11..15 -> 80
-                in 15..20 -> 75
-                in 21..40 -> 50
-                else -> 40
-            }
             documentRepository.addDocumentFromScanner(
                 originalBitmaps,
                 filteredCroppedBitmaps,
-                fileName = state.documentName,
+                fileName = IllegalFilenameChar.removeIllegalChar(state.documentName),
                 imageQuality = imageQuality,
             ) { currentProgress: Float, totalProgress: Int ->
+                Timber.i("Progress: $currentProgress / $totalProgress - ${System.currentTimeMillis() - currentTime} ms")
+                currentTime = System.currentTimeMillis()
                 //trySendAction(ScannerAction.Internal.UpdateProgress(currentProgress / totalProgress))
             }.runCatching {
                 this
@@ -783,8 +788,9 @@ data class ScannerState(
     // Edit Screen values
     val scannerView: ScannerView = ScannerView.CAMERA,
     val currentDocumentIndex: Int = 0,
+    // JetScan 15 Sep 2024, 12:00:01 PM
     val documentName: String = "JetScan - " + SimpleDateFormat(
-        "dd/MM/yy h:mm:ss a",
+        "dd MMM yyyy, hh-mm-ss a",
         Locale.getDefault()
     ).format(System.currentTimeMillis()),
     val selectedColorAdjustTab: ColorAdjustTab = ColorAdjustTab.SATURATION,

@@ -18,11 +18,11 @@ import io.github.dracula101.jetscan.data.document.manager.image.ImageManager
 import io.github.dracula101.jetscan.data.document.manager.image.ImageManagerImpl
 import io.github.dracula101.jetscan.data.document.manager.mime.MimeTypeManager
 import io.github.dracula101.jetscan.data.document.manager.mime.MimeTypeManagerImpl
-import io.github.dracula101.jetscan.data.document.manager.pdf.PdfManager
-import io.github.dracula101.jetscan.data.document.manager.pdf.PdfManagerImpl
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepositoryImpl
 import io.github.dracula101.jetscan.data.document.utils.DBConstants
+import io.github.dracula101.pdf.manager.PdfManager
+import io.github.dracula101.pdf.manager.PdfManagerImpl
 import javax.inject.Singleton
 
 @Module

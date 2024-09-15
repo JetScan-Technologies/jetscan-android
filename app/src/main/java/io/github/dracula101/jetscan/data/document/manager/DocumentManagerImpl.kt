@@ -11,21 +11,25 @@ import android.os.Build
 import android.provider.OpenableColumns
 import android.util.Base64
 import android.util.Base64.encodeToString
+import android.util.Size
 import io.github.dracula101.jetscan.data.document.manager.extension.ExtensionManager
 import io.github.dracula101.jetscan.data.document.manager.image.ImageManager
 import io.github.dracula101.jetscan.data.document.manager.mime.MimeTypeManager
-import io.github.dracula101.jetscan.data.document.manager.pdf.PdfManager
 import io.github.dracula101.jetscan.data.document.models.Extension
 import io.github.dracula101.jetscan.data.document.models.MimeType
-import io.github.dracula101.jetscan.data.document.models.doc.DocQuality
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
+import io.github.dracula101.jetscan.data.document.models.image.ImageType
 import io.github.dracula101.jetscan.data.document.utils.Task
 import io.github.dracula101.jetscan.data.document.utils.getImageHeight
 import io.github.dracula101.jetscan.data.document.utils.toBitmapQuality
 import io.github.dracula101.jetscan.data.platform.utils.bytesToReadableSize
+import io.github.dracula101.jetscan.data.platform.utils.compress
+import io.github.dracula101.jetscan.data.platform.utils.opencv.saveBitmapToFile
+import io.github.dracula101.pdf.manager.PdfManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,6 +48,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import kotlin.math.pow
+import kotlin.time.measureTime
 
 class DocumentManagerImpl(
     private val context: Context,
@@ -77,7 +82,7 @@ class DocumentManagerImpl(
             val imageDir = File(mainDir, SCANNED_DOCUMENTS_ORIGINAL_FOLDER)
             val scannedImageDir = File(mainDir, SCANNED_DOCUMENTS_SCANNED_IMAGES_FOLDER)
             val originalFile = mainDir.listFiles()?.find { file -> (file.isFile && file.path.contains(".pdf")) }
-            val previewFile = File(mainDir, SCANNED_DOCUMENTS_PREVIEW_IMAGE).listFiles()?.firstOrNull()
+            val previewFile = File(mainDir, SCANNED_DOCUMENTS_SCANNED_IMAGES_FOLDER).listFiles()?.firstOrNull() ?: File(mainDir, SCANNED_DOCUMENTS_ORIGINAL_FOLDER).listFiles()?.firstOrNull()
             if (originalFile == null) { return@map null }
             DocumentDirectory(
                 mainDir = mainDir,
@@ -109,15 +114,18 @@ class DocumentManagerImpl(
             // Create scanned Image Directory, (if the file has been applied some filters)
             val scannedImageDir = File(mainFileDirectory, SCANNED_DOCUMENTS_SCANNED_IMAGES_FOLDER).also { it.mkdirs() }
             if (isPdf) {
+                progressListener.invoke(0f, numOfPdfPages + 1)
                 // Saving files into the original image directory
                 pdfManager.loadPdfAsyncPages(
                     uri,
                     contentResolver,
                     originalImageDirectory,
                     SCANNED_DOCUMENT_IMAGE_PREFIX,
-                    imageQuality = imageQuality,
+                    imageQuality = imageQuality.toBitmapQuality(),
+                    resizedHeight = imageQuality.getImageHeight(),
+                    fileExtension = SCANNED_DOCUMENT_IMAGE_EXTENSION
                 ) { progressListener.invoke(it + 1f, numOfPdfPages + 1) }
-                val reformedFileName = base64Encoder(fileName.replace(".pdf", ""))
+                val reformedFileName = fileName.replace(".pdf", "")
                 // Saving the original pdf file
                 val originalFile = File(mainFileDirectory, "$reformedFileName.pdf")
                 withContext(Dispatchers.IO) {
@@ -131,11 +139,7 @@ class DocumentManagerImpl(
                     return@coroutineScope Task.Error(Exception("Error creating file"))
                 }
                 // Saving the preview image
-                val previewFileDirectory = savePreviewImageUri(uri, mainFileDirectory, isPdf = true)
                 progressListener.invoke(numOfPdfPages + 1f, numOfPdfPages + 1)
-                if (previewFileDirectory !is Task.Success) {
-                    return@coroutineScope Task.Error(Exception("Error creating preview image"))
-                }
                 updateFlow()
                 return@coroutineScope Task.Success(
                     DocumentDirectory(
@@ -143,26 +147,28 @@ class DocumentManagerImpl(
                         imageDir = originalImageDirectory,
                         scannedImageDir = scannedImageDir,
                         originalFile = originalFile,
-                        previewFile = previewFileDirectory.data,
+                        previewFile = originalImageDirectory.listFiles()?.firstOrNull()
                     )
                 )
             } else {
+                progressListener.invoke(0f, 1)
                 val bitmap = imageManager.getBitmapFromUri(contentResolver, uri)
                 val outputStream = ByteArrayOutputStream()
                 bitmap.compress(CompressFormat.JPEG, imageQuality.toBitmapQuality(), outputStream)
-                progressListener.invoke(0.5f, 1)
+                progressListener.invoke(0.2f, 1)
                 val byteArray = outputStream.toByteArray()
                 val scannedImage = File(
                     originalImageDirectory,
                     "${SCANNED_DOCUMENT_IMAGE_PREFIX}_1.$SCANNED_DOCUMENT_IMAGE_EXTENSION"
                 )
                 scannedImage.writeBytes(byteArray)
+                progressListener.invoke(0.5f, 1)
                 if (originalImageDirectory.parentFile == null) {
                     return@coroutineScope Task.Error(Exception("Error creating file"))
                 }
                 // saving the original file
                 val originalFile = withContext(Dispatchers.IO) {
-                    val reformedFileName = base64Encoder(fileName.replace(".jpeg", ""))
+                    val reformedFileName = fileName.replace(".jpeg", "")
                     val originalFile = File(mainFileDirectory, "$reformedFileName.$extension")
                     val inputStream = contentResolver.openInputStream(uri)
                     inputStream?.use { input ->
@@ -171,16 +177,7 @@ class DocumentManagerImpl(
                     inputStream?.close()
                     originalFile
                 }
-                // saving the preview image
-                val previewImageDirectory = savePreviewImageUri(
-                    uri,
-                    mainFileDirectory,
-                    false
-                )
                 progressListener.invoke(1f, 1)
-                if (previewImageDirectory !is Task.Success) {
-                    return@coroutineScope Task.Error(Exception("Error creating preview image"))
-                }
                 updateFlow()
                 return@coroutineScope Task.Success(
                     DocumentDirectory(
@@ -188,7 +185,7 @@ class DocumentManagerImpl(
                         imageDir = originalImageDirectory,
                         scannedImageDir = scannedImageDir,
                         originalFile = originalFile,
-                        previewFile = previewImageDirectory.data
+                        previewFile = originalImageDirectory.listFiles()?.firstOrNull()
                     )
                 )
             }
@@ -217,64 +214,44 @@ class DocumentManagerImpl(
             // Create scanned Image Directory, (if the file has been applied cropping and filters)
             val scannedImageDirectory =
                 File(mainFileDirectory, SCANNED_DOCUMENTS_SCANNED_IMAGES_FOLDER).also { it.mkdirs() }
-            // Create preview image directory
-            val previewImageDirectory = File(mainFileDirectory, SCANNED_DOCUMENTS_PREVIEW_IMAGE).also { it.mkdirs() }
             // Saving the original images
-            val reformedFileName = base64Encoder(fileName.replace(".pdf", ""))
+            val reformedFileName = fileName.replace(".pdf", "")
             val originalFile = File(mainFileDirectory, "$reformedFileName.pdf")
-            val previewImageFile: File? = withContext(Dispatchers.IO){
-                val previewImageFile = File(previewImageDirectory, "$PREVIEW_FILE_NAME.$PREVIEW_FILE_EXTENSION")
-                originalBitmaps.forEachIndexed { index, bitmap ->
-                    val outputStream = ByteArrayOutputStream()
-                    bitmap.compress(CompressFormat.JPEG, imageQuality, outputStream)
-                    val byteArray = outputStream.toByteArray()
-                    val file = File(
+            progressListener.invoke(1f, originalBitmaps.size * 2)
+            var currentProgress = 1f
+            List(originalBitmaps.size) { index ->
+                async(Dispatchers.IO) {
+                    val originalImage = File(
                         originalImageDirectory,
                         "${SCANNED_DOCUMENT_IMAGE_PREFIX}_${index + 1}.$SCANNED_DOCUMENT_IMAGE_EXTENSION"
                     )
-                    file.writeBytes(byteArray)
-                    progressListener.invoke(index + 1f, originalBitmaps.size * 2)
-                    outputStream.close()
-                    delay(delayDuration)
-                }
-                scannedBitmaps.forEachIndexed { index, bitmap ->
-                    val outputStream = ByteArrayOutputStream()
-                    bitmap.compress(CompressFormat.JPEG, imageQuality, outputStream)
-                    val byteArray = outputStream.toByteArray()
-                    val file = File(
+                    originalImage.outputStream().use {
+                        originalBitmaps[index].compress(CompressFormat.JPEG,imageQuality,it)
+                    }
+                    progressListener.invoke(currentProgress++, originalBitmaps.size * 2)
+                    val scannedImage = File(
                         scannedImageDirectory,
                         "${SCANNED_DOCUMENT_SCANNED_IMAGE_PREFIX}_${index + 1}.$SCANNED_DOCUMENT_IMAGE_EXTENSION"
                     )
-                    file.writeBytes(byteArray)
-                    progressListener.invoke(originalBitmaps.size + index + 1f , scannedBitmaps.size * 2)
-                    if (index == 0) {
-                        val previewByteArray = ByteArrayOutputStream()
-                        bitmap.compress(CompressFormat.PNG, imageQuality, previewByteArray)
-                        previewImageFile.writeBytes(previewByteArray.toByteArray())
-                        previewByteArray.close()
+                    scannedImage.outputStream().use {
+                        scannedBitmaps[index].compress(CompressFormat.JPEG,imageQuality,it)
                     }
-                    outputStream.close()
-                    delay(delayDuration)
+                    progressListener.invoke(currentProgress++, originalBitmaps.size * 2)
                 }
-                previewImageFile
-            }.runCatching { this }.getOrNull()
+            }.awaitAll()
             val files = scannedImageDirectory.listFiles()
             if (files != null) {
-                pdfManager.saveToPdf(files.toList(), originalFile, DocQuality.PPI_72)
+                pdfManager.savePdf(files.toList(), originalFile, imageQuality, Size(595,842), 0f)
             }
             if (originalFile.length() == 0L) {
                 return@coroutineScope Task.Error(Exception("Error creating file"))
             }
-            if (previewImageFile == null) {
-                return@coroutineScope Task.Error(Exception("Error creating preview image"))
-            }
-            progressListener.invoke(1f, 1)
             val scannedDocument = DocumentDirectory(
                 mainDir = mainFileDirectory,
                 imageDir = originalImageDirectory,
                 scannedImageDir = scannedImageDirectory,
                 originalFile = originalFile,
-                previewFile = previewImageFile
+                previewFile = File(scannedImageDirectory, files?.first()?.name ?: "")
             )
             updateFlow()
             Task.Success(scannedDocument)
@@ -305,43 +282,6 @@ class DocumentManagerImpl(
         Timber.i("${bitmaps.size} Bitmaps")
         bitmaps.forEachIndexed { index, bitmap ->
             Timber.i("Bitmap ${index + 1}: ${bitmap.byteCount.bytesToReadableSize()}, ${bitmap.width}x${bitmap.height}")
-        }
-    }
-
-    override fun savePreviewImageUri(uri: Uri, mainDirectory: File, isPdf: Boolean): Task<File> {
-        val imageQuality = ImageQuality.LOW
-        var image = if (isPdf) {
-            pdfManager.getPdfPage(contentResolver, uri, 0)
-        } else {
-            imageManager.getBitmapFromUri(contentResolver, uri)
-        }
-        if (image == null) {
-            return Task.Error(Exception("Error creating preview image"))
-        }
-        val outputStream = ByteArrayOutputStream()
-        val scaledWidth =
-            (image.width.toFloat() / image.height.toFloat()) * imageQuality.getImageHeight()
-                .toFloat()
-        Timber.i("Scaled Width: $scaledWidth, Image: ${image.width}x${image.height}")
-        image = Bitmap.createScaledBitmap(
-            image,
-            scaledWidth.toInt(),
-            imageQuality.getImageHeight(),
-            true
-        )
-        image.compress(CompressFormat.PNG, imageQuality.toBitmapQuality(), outputStream)
-        val byteArray = outputStream.toByteArray()
-        return if (mainDirectory.isDirectory) {
-            val previewDirectory =
-                File(mainDirectory, SCANNED_DOCUMENTS_PREVIEW_IMAGE)
-            if (!previewDirectory.exists()) {
-                previewDirectory.mkdirs()
-            }
-            val previewFile = File(previewDirectory, "$PREVIEW_FILE_NAME.$PREVIEW_FILE_EXTENSION")
-            previewFile.writeBytes(byteArray)
-            Task.Success(previewFile)
-        } else {
-            Task.Error(Exception("Directory not found"))
         }
     }
 
@@ -480,11 +420,8 @@ class DocumentManagerImpl(
 
         private const val SCANNED_DOCUMENT_IMAGE_PREFIX = "Image"
         private const val SCANNED_DOCUMENT_SCANNED_IMAGE_PREFIX = "Scanned Image"
-        private const val SCANNED_DOCUMENT_IMAGE_EXTENSION = "jpeg"
+        private const val SCANNED_DOCUMENT_IMAGE_EXTENSION = "jpg"
 
-        private const val SCANNED_DOCUMENTS_PREVIEW_IMAGE = "Preview"
-        private const val PREVIEW_FILE_NAME = "Preview"
-        private const val PREVIEW_FILE_EXTENSION = "png"
     }
 
 }

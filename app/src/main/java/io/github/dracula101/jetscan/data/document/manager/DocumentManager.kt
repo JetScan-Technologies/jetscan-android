@@ -31,8 +31,6 @@ interface DocumentManager {
         progressListener: (currentProgress: Float, totalProgress: Int) -> Unit,
     ): Task<DocumentDirectory>
 
-    fun savePreviewImageUri(uri: Uri, mainDirectory: File, isPdf: Boolean): Task<File>
-
     fun deleteDocument(fileName: String): Boolean
 
     fun getBitmapFromUri(uri: Uri): Bitmap?

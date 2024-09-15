@@ -28,12 +28,6 @@ abstract class ImportBaseViewModel<S, E, A>(
         viewModelScope.launch(Dispatchers.IO) {
             val fileName = documentManager.getFileName(uri) ?: ""
             val fileLength = documentManager.getFileLength(uri)
-            importDocumentStateFlow.value = ImportDocumentState.InProgress(
-                fileName = fileName,
-                fileLength = fileLength,
-                currentProgress = 0f,
-                totalProgress = 100f
-            )
             documentRepository
                 .addImportDocument(
                     uri = uri,
