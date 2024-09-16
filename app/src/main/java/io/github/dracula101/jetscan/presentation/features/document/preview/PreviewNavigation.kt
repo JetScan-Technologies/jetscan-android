@@ -16,7 +16,8 @@ const val PREVIEW_DOCUMENT_NAME_ARGUMENT = "document_name"
 
 fun NavGraphBuilder.createPreviewDocumentDestination(
     onNavigateBack: () -> Unit,
-    onNavigateToEdit: (Document, Int) -> Unit
+    onNavigateToPdf: (Document) -> Unit,
+    onNavigateToEdit: (Document, Int) -> Unit,
 ) {
     composableWithPushTransitions(
         route = "$PREVIEW_DOCUMENT_ROUTE/{$PREVIEW_DOCUMENT_NAME_ARGUMENT}",
@@ -31,7 +32,8 @@ fun NavGraphBuilder.createPreviewDocumentDestination(
             PreviewScreen(
                 documentId = documentName,
                 onBack = onNavigateBack,
-                onEdit = onNavigateToEdit
+                onNavigateToPdf = onNavigateToPdf,
+                onEdit = onNavigateToEdit,
             )
         }
     }

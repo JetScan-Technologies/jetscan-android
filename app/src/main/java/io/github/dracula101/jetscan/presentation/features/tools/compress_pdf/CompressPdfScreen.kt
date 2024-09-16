@@ -30,6 +30,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,12 +52,21 @@ import kotlinx.coroutines.launch
 @Composable
 fun CompressPdfScreen(
     onNavigateBack: () -> Unit,
+    documentId: String?,
     viewModel: CompressPdfViewModel = hiltViewModel()
 ){
     val state = viewModel.stateFlow.collectAsStateWithLifecycle()
     val bottomSheetState = rememberModalBottomSheetState()
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+
+    LaunchedEffect(Unit) {
+        if(documentId != null){
+            viewModel.trySendAction(
+                CompressPdfAction.Internal.LoadDocument(documentId)
+            )
+        }
+    }
 
     if(bottomSheetState.isVisible){
         DocumentFilesBottomSheet(

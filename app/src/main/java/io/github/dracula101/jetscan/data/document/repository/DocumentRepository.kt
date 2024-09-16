@@ -13,6 +13,7 @@ interface DocumentRepository {
     // ================= Get Documents =================
     fun getDocuments(excludeFolders: Boolean = true): Flow<List<Document>?>
     fun getDocument(id: Long): Flow<Document?>
+    fun getDocumentByUid(uid: String): Flow<Document?>
     fun getDocument(name: String): Flow<Document?>
 
     // ================= Get Folder =================
@@ -35,7 +36,7 @@ interface DocumentRepository {
         fileName: String,
         imageQuality: Int,
         progressListener: (currentProgress: Float, totalProgress: Int) -> Unit = { _, _ -> }
-    ): Boolean
+    ): String?
 
     // ================= Insert Folder =================
     suspend fun addFolder(folderName: String, path: String): Boolean

@@ -50,6 +50,12 @@ class DocumentRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getDocumentByUid(uid: String): Flow<Document?> {
+        return documentDao.getDocumentByUid(uid).map {
+            it?.toDocument()
+        }
+    }
+
     override fun getDocument(name: String): Flow<Document?> {
         return documentDao.getDocumentByName(name).map {
             it?.toDocument()
@@ -140,7 +146,7 @@ class DocumentRepositoryImpl @Inject constructor(
         fileName: String,
         imageQuality: Int,
         progressListener: (currentProgress: Float, totalProgress: Int) -> Unit
-    ): Boolean {
+    ): String? {
         return try {
             val task = documentManager.addDocumentFromScanner(
                 originalBitmaps = originalBitmaps,
@@ -164,11 +170,11 @@ class DocumentRepositoryImpl @Inject constructor(
                 val scannedImages = task.data.scannedImageDir?.listFiles()?.map { ScannedImage.fromFile(it) }
                     ?: emptyList()
                 documentDao.insertImages(scannedImages.map { it.toScannedImageEntity(documentId) })
-                true
-            } else { false }
+                document.id
+            } else { null }
         } catch (e: Exception) {
             Timber.e(e)
-            false
+            null
         }
     }
 

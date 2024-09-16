@@ -7,6 +7,7 @@ import android.util.Base64
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import io.github.dracula101.jetscan.data.document.utils.toBitmapQuality
 import java.io.ByteArrayOutputStream
+import java.text.DecimalFormat
 
 fun Bitmap.aspectRatio() : Float {
     return this.width.toFloat() / this.height.toFloat()
@@ -95,3 +96,17 @@ fun Int.bytesToReadableSize(): String {
 }
 
 fun Long.bytesToReadableSize(): String = this.toInt().bytesToReadableSize()
+
+fun Long.bytesToSizeAndUnit(): Pair<Float, String> {
+    val size = this.toFloat()
+    val decimalFormat = "%.2f"
+    val kb = decimalFormat.format(size / 1024).toFloat()
+    val mb = decimalFormat.format(kb / 1024).toFloat()
+    val gb = decimalFormat.format(mb / 1024).toFloat()
+    return when {
+        gb >= 1 -> Pair(gb, "GB")
+        mb >= 1 -> Pair(mb, "MB")
+        kb >= 1 -> Pair(kb, "KB")
+        else -> Pair(size, "B")
+    }
+}

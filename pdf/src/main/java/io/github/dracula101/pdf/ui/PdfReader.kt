@@ -53,6 +53,7 @@ fun PdfReader(
     lazyListState: LazyListState = rememberLazyListState(),
     pdfTransformState: PdfTransformState = rememberPdfTransformState(file, lazyListState),
     initContent: @Composable () -> Unit = {},
+    showMarker: Boolean = true,
     loadingContent: @Composable () -> Unit = {
         CircularProgressIndicator()
     },
@@ -129,13 +130,15 @@ fun PdfReader(
                             .pdfTransformable(pdfTransformState, constraints)
                             .fillMaxSize()
                     )
-                    VerticalScrollBar(
-                        lazyListState = lazyListState,
-                        constraints = constraints,
-                        scrollMarker = { currentIndex ->
-                            MarkerComposable(currentPage = currentIndex, totalPages = loader.pdfPages.size)
-                        }
-                    )
+                    if(showMarker){
+                        VerticalScrollBar(
+                            lazyListState = lazyListState,
+                            constraints = constraints,
+                            scrollMarker = { currentIndex ->
+                                MarkerComposable(currentPage = currentIndex, totalPages = loader.pdfPages.size)
+                            }
+                        )
+                    }
                 }
             }
         }

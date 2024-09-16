@@ -9,9 +9,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import javax.inject.Inject
 
@@ -39,9 +41,24 @@ class ProtectPdfViewModel @Inject constructor(
 
     override fun handleAction(action: ProtectPdfAction) {
         when (action) {
+            is ProtectPdfAction.Internal.LoadDocument -> handleLoadDocument(action.documentId)
+
             is ProtectPdfAction.Ui.SelectDocument -> handleSelectDocument(action)
             is ProtectPdfAction.Ui.RemoveDocument -> handleRemoveDocument()
             is ProtectPdfAction.Ui.SetPassword -> handleSetPassword(action)
+        }
+    }
+
+    private fun handleLoadDocument(documentId: String){
+        viewModelScope.launch {
+            documentRepository
+                .getDocumentByUid(documentId)
+                .firstOrNull()
+                ?.let { document ->
+                    mutableStateFlow.update { state ->
+                        state.copy(selectedDocument = document)
+                    }
+                }
         }
     }
 
@@ -87,6 +104,11 @@ sealed class ProtectPdfAction {
         data class SetPassword(
             val password: String? = null,
         ) : Ui()
+    }
+
+    @Parcelize
+    sealed class Internal : ProtectPdfAction(), Parcelable {
+        data class LoadDocument(val documentId: String) : Internal()
     }
 
     @Parcelize

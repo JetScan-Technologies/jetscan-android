@@ -16,6 +16,10 @@ const val PDF_VIEW_DOCUMENT_NAME = "document_name"
  */
 fun NavGraphBuilder.createPdfViewDestination(
     onNavigateBack: () -> Unit,
+    onNavigateToCompression: (Document) -> Unit,
+    onNavigateToMerge: (Document) -> Unit,
+    onNavigateToProtect: (Document) -> Unit,
+    onNavigateToSplit: (Document) -> Unit,
 ) {
     composableWithPushTransitions("$PDF_VIEW_ROUTE/{$PDF_VIEW_DOCUMENT_ID}?${PDF_VIEW_DOCUMENT_NAME}={$PDF_VIEW_DOCUMENT_NAME}") {
         LockOrientation(
@@ -30,7 +34,11 @@ fun NavGraphBuilder.createPdfViewDestination(
                 PdfViewScreen(
                     documentId = documentId,
                     documentName = documentName,
-                    onNavigateBack = onNavigateBack
+                    onNavigateBack = onNavigateBack,
+                    compressDocument = onNavigateToCompression,
+                    mergeDocument = onNavigateToMerge,
+                    protectDocument = onNavigateToProtect,
+                    splitDocument = onNavigateToSplit,
                 )
             }
         }
@@ -41,11 +49,14 @@ fun NavGraphBuilder.createPdfViewDestination(
  * Navigate to the merge pdf screen.
  */
 fun NavController.navigateToPdfViewScreen(
-    document: Document?,
+    // Supply either document or documentId and documentName
+    document:Document? = null,
+    documentId: String? = null,
+    documentName: String? = null,
     navOptions: NavOptions? = null,
 ) {
     navigate(
-        "$PDF_VIEW_ROUTE/${document?.id}?${PDF_VIEW_DOCUMENT_NAME}=${document?.name}",
+        "$PDF_VIEW_ROUTE/${document?.id ?: documentId}?${PDF_VIEW_DOCUMENT_NAME}=${document?.name ?: documentName}",
         navOptions
     )
 }

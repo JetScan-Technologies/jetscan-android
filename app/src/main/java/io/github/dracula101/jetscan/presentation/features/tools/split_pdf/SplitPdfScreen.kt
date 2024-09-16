@@ -12,6 +12,7 @@ import io.github.dracula101.jetscan.presentation.platform.component.scaffold.Jet
 @Composable
 fun SplitPdfScreen(
     onNavigateBack: () -> Unit,
+    documentId: String?,
     viewModel: SplitPdfViewModel = hiltViewModel()
 ){
     JetScanScaffoldWithFlexAppBar(

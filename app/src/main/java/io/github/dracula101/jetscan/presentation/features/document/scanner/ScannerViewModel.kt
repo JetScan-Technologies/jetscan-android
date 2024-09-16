@@ -668,7 +668,6 @@ class ScannerViewModel @Inject constructor(
             in 20000..50000 -> 35
             else -> 25
         }
-        var currentTime = System.currentTimeMillis()
         viewModelScope.launch(Dispatchers.IO + SupervisorJob()) {
             documentRepository.addDocumentFromScanner(
                 originalBitmaps,
@@ -676,9 +675,6 @@ class ScannerViewModel @Inject constructor(
                 fileName = IllegalFilenameChar.removeIllegalChar(state.documentName),
                 imageQuality = imageQuality,
             ) { currentProgress: Float, totalProgress: Int ->
-                Timber.i("Progress: $currentProgress / $totalProgress - ${System.currentTimeMillis() - currentTime} ms")
-                currentTime = System.currentTimeMillis()
-                //trySendAction(ScannerAction.Internal.UpdateProgress(currentProgress / totalProgress))
             }.runCatching {
                 this
             }.getOrElse {
@@ -691,20 +687,20 @@ class ScannerViewModel @Inject constructor(
                             title = "Error Saving Document",
                             message = "An unexpected error occurred"
                         ),
-                        isDocumentSaved = false,
+                        documentUid = null,
                         dialogState = null
                     )
                 }
                 return@launch
-            }.also { isDocumentAdded ->
-                if (isDocumentAdded) {
+            }.also { documentUid ->
+                if (documentUid != null) {
                     mutableStateFlow.update {
                         it.copy(
                             savingDocState = SavingDocumentState(
                                 saved = true,
                                 currentProgress = 1f
                             ),
-                            isDocumentSaved = true,
+                            documentUid = documentUid,
                             snackbarState = SnackbarState.ShowSuccess(
                                 title = "Document Saved",
                             )
@@ -780,7 +776,7 @@ data class ScannerState(
     val retakeDocumentIndex: Int? = null,
     @IgnoredOnParcel val barCode: Barcode? = null,
     val savingDocState: SavingDocumentState? = null,
-    val isDocumentSaved: Boolean = false,
+    val documentUid: String? = null,
     val cameraRotationValue: Float = 0f,
     // Crop Screen values
     val cropDocumentIndex: Int = 0,

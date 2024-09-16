@@ -3,11 +3,13 @@ package io.github.dracula101.jetscan.presentation.features.tools.merge_pdf
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
+import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.presentation.platform.base.util.composableWithPushTransitions
 import io.github.dracula101.jetscan.presentation.platform.composition.LockOrientation
 
 
 const val MERGE_PDF_ROUTE = "merge_pdf_route"
+const val MERGE_PDF_ROUTE_DOCUMENT_ID_ARGS = "document_id"
 
 /**
  * Add merge pdf destinations to the nav graph.
@@ -15,11 +17,15 @@ const val MERGE_PDF_ROUTE = "merge_pdf_route"
 fun NavGraphBuilder.createMergePdfDestination(
     onNavigateBack: () -> Unit,
 ) {
-    composableWithPushTransitions(MERGE_PDF_ROUTE) {
+    composableWithPushTransitions("${MERGE_PDF_ROUTE}/{$MERGE_PDF_ROUTE_DOCUMENT_ID_ARGS}") {
+        val documentId = it.arguments?.getString(MERGE_PDF_ROUTE_DOCUMENT_ID_ARGS)
         LockOrientation(
             isBoth = true
         ) {
-            MergePdfScreen(onNavigateBack = onNavigateBack)
+            MergePdfScreen(
+                onNavigateBack = onNavigateBack,
+                documentId = documentId,
+            )
         }
     }
 }
@@ -28,7 +34,8 @@ fun NavGraphBuilder.createMergePdfDestination(
  * Navigate to the merge pdf screen.
  */
 fun NavController.navigateToMergePdfScreen(
+    document: Document? = null,
     navOptions: NavOptions? = null,
 ) {
-    navigate(MERGE_PDF_ROUTE, navOptions)
+    navigate("${MERGE_PDF_ROUTE}/${document?.id}", navOptions)
 }

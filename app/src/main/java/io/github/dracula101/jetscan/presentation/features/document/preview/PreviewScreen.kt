@@ -14,8 +14,12 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.PictureAsPdf
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -51,6 +55,7 @@ import org.burnoutcrew.reorderable.reorderable
 fun PreviewScreen(
     documentId: String?,
     onBack: () -> Unit,
+    onNavigateToPdf: (Document) -> Unit,
     onEdit: (Document, Int) -> Unit,
     viewModel: PreviewViewModel = hiltViewModel()
 ){
@@ -74,6 +79,22 @@ fun PreviewScreen(
                 onNavigationIconClick = onBack
             )
         },
+        floatingActionButton = {
+            if(state.value.scannedDocument != null){
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        onNavigateToPdf(state.value.scannedDocument!!)
+                    },
+                    text = { Text("PDF") },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Rounded.PictureAsPdf,
+                            contentDescription = "Open PDF"
+                        )
+                    },
+                )
+            }
+        }
     ) {padding, windowSize ->
         when(windowSize) {
             ScaffoldSize.COMPACT -> CompactUiScreen(

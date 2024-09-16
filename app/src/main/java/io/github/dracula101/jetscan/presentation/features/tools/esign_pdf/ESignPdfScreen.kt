@@ -12,6 +12,7 @@ import io.github.dracula101.jetscan.presentation.platform.component.scaffold.Jet
 @Composable
 fun ESignPdfScreen(
     onNavigateBack: () -> Unit,
+    documentId : String?,
     viewModel: ESignPdfViewModel = hiltViewModel()
 ){
     JetScanScaffoldWithFlexAppBar(

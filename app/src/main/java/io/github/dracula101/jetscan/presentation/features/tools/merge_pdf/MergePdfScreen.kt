@@ -34,6 +34,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -61,16 +62,23 @@ import kotlinx.coroutines.launch
 @Composable
 fun MergePdfScreen(
     viewModel: MergePdfViewModel = hiltViewModel(),
+    documentId: String?,
     onNavigateBack: () -> Unit,
 ) {
     val state = viewModel.stateFlow.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
-
     val bottomSheetState = rememberModalBottomSheetState()
     val coroutineScope = rememberCoroutineScope()
-
     val scrollState = rememberScrollState()
+
+    LaunchedEffect(Unit) {
+        if (documentId != null) {
+            viewModel.trySendAction(
+                MergePdfAction.Internal.LoadDocument(documentId)
+            )
+        }
+    }
 
     if(bottomSheetState.isVisible){
         DocumentFilesBottomSheet(

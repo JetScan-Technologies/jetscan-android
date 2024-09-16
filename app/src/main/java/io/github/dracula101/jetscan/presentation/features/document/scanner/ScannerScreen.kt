@@ -6,10 +6,7 @@ import android.content.Intent.CATEGORY_DEFAULT
 import android.content.Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.Intent.FLAG_ACTIVITY_NO_HISTORY
-import android.graphics.Bitmap
-import android.graphics.Point
 import android.net.Uri
-import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
@@ -21,7 +18,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -56,18 +52,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -75,13 +66,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -96,7 +85,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -113,39 +101,31 @@ import io.github.dracula101.jetscan.presentation.features.document.scanner.compo
 import io.github.dracula101.jetscan.presentation.features.document.scanner.components.NoPermissionView
 import io.github.dracula101.jetscan.presentation.features.document.scanner.components.QrCodeOverlay
 import io.github.dracula101.jetscan.presentation.features.document.scanner.components.ScannerTopAppBar
-import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeAction
-import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeAlertSnackbar
-import io.github.dracula101.jetscan.presentation.platform.component.dialog.AppBasicDialog
 import io.github.dracula101.jetscan.presentation.platform.component.dialog.IconAlertDialog
 import io.github.dracula101.jetscan.presentation.platform.component.extensions.gradientContainer
-import io.github.dracula101.jetscan.presentation.platform.component.loader.AnimatedLoader
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.JetScanScaffold
 import io.github.dracula101.jetscan.presentation.platform.component.snackbar.util.showErrorSnackBar
 import io.github.dracula101.jetscan.presentation.platform.component.snackbar.util.showSuccessSnackbar
 import io.github.dracula101.jetscan.presentation.platform.component.snackbar.util.showWarningSnackbar
 import io.github.dracula101.jetscan.presentation.platform.feature.app.model.SnackbarState
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageCropCoords
-import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageFilter
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.scale
-import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.toCropOverlay
-import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.toDocumentOutline
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.imageproxy.DocumentAnalyzer
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.camera.CameraAspectRatio
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.camera.CameraFacingMode
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.camera.GridMode
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.document.DocumentType
-import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.graph.CPoint
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.graph.Line
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun ScannerScreen(
     modifier: Modifier = Modifier,
     onNavigateBack: () -> Unit,
+    navigateToPdf: (id: String, name: String) -> Unit,
     startingTab: DocumentType,
 ) {
     val isPermissionGranted = remember { mutableStateOf<Boolean?>(null) }
@@ -164,7 +144,8 @@ fun ScannerScreen(
         )
 
         is PermissionStatus.Granted -> ScannerScreenView(
-            onNavigateBack = onNavigateBack,
+            navigateBack = onNavigateBack,
+            navigateToPdf = navigateToPdf,
             startingTab = startingTab
         )
     }
@@ -172,15 +153,16 @@ fun ScannerScreen(
 
 @Composable
 fun ScannerScreenView(
-    onNavigateBack: () -> Unit,
+    navigateBack: () -> Unit,
+    navigateToPdf: (id: String, name: String) -> Unit,
     startingTab: DocumentType,
     viewModel: ScannerViewModel = hiltViewModel()
 ) {
     val state = viewModel.stateFlow.collectAsStateWithLifecycle()
-    val documentCropCoords = remember { mutableStateOf<ImageCropCoords?>(null) }
-    when (state.value.isDocumentSaved) {
-        true -> { onNavigateBack() }
-        else -> {}
+    LaunchedEffect(state.value.documentUid){
+        if(state.value.documentUid != null){
+            navigateToPdf(state.value.documentUid!!, state.value.documentName)
+        }
     }
     LaunchedEffect(Unit) {
         viewModel.trySendAction(ScannerAction.Ui.ChangeDocumentType(startingTab))
@@ -189,7 +171,7 @@ fun ScannerScreenView(
     BackHandler {
         when (state.value.scannerView) {
             ScannerView.CAMERA -> {
-                viewModel.trySendAction(ScannerAction.Ui.OnBackPress(onNavigateBack))
+                viewModel.trySendAction(ScannerAction.Ui.OnBackPress(navigateBack))
             }
             ScannerView.EDIT_DOCUMENT, ScannerView.CROP_DOCUMENT -> {
                 viewModel.trySendAction(
@@ -209,7 +191,7 @@ fun ScannerScreenView(
         deleteDocument = {
             viewModel.trySendAction(ScannerAction.Internal.DeleteDocument(state.value.currentDocumentIndex))
         },
-        onNavigateBack = onNavigateBack
+        onNavigateBack = navigateBack
     )
     ShowBarCodeBottomSheet(
         barCode = state.value.barCode,
@@ -220,8 +202,8 @@ fun ScannerScreenView(
 
     when (state.value.scannerView) {
         ScannerView.CAMERA -> {
-            ScannerView(
-                onNavigateBack = onNavigateBack,
+            CameraScannerView(
+                onNavigateBack = navigateBack,
                 state = state,
                 viewModel = viewModel,
                 previewAspectRatio = state.value.cameraAspectRatio,
@@ -256,7 +238,7 @@ fun ScannerScreenView(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ScannerView(
+private fun CameraScannerView(
     onNavigateBack: () -> Unit,
     state: State<ScannerState>,
     viewModel: ScannerViewModel,

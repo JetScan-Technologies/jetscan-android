@@ -187,6 +187,50 @@ class PdfManagerImpl : PdfManager {
                 }
                 files.forEach {
                     val image = Image(ImageDataFactory.create(it.absolutePath))
+                    if (image.imageWidth > pdfSize.width) {
+                        val width = pdfSize.width.toFloat()
+                        val height = image.imageHeight * pdfSize.width / image.imageWidth
+                        image.scaleToFit(width, height)
+                        val left = 0f
+                        val bottom = (pdfSize.height - height) / 2
+                        image.setFixedPosition(left, bottom)
+                    } else {
+                        val width = image.imageWidth
+                        val height = image.imageHeight
+                        image.scaleToFit(width, height)
+                        val left = (pdfSize.width - width) / 2
+                        val bottom = (pdfSize.height - height) / 2
+                        image.setFixedPosition(left, bottom)
+                    }
+                    image.setAutoScale(true)
+                    document.add(image)
+                }
+                document.close()
+                pdfDocument.close()
+                true
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
+            }
+        }
+    }
+
+    override suspend fun mergePdf(
+        files: List<File>,
+        file: File,
+        imageQuality: Int,
+        pdfSize: Size,
+        margins: Float
+    ): Boolean {
+        return withContext(Dispatchers.IO){
+            try {
+                val pdfWriter = PdfWriter(file)
+                val pdfDocument = PdfDocument(pdfWriter)
+                val document = Document(pdfDocument, PageSize(pdfSize.width.toFloat(), pdfSize.height.toFloat())).also {
+                    it.setMargins(margins, margins, margins, margins)
+                }
+                files.forEach {
+                    val image = Image(ImageDataFactory.create(it.absolutePath))
                     val width = if (image.imageWidth > pdfSize.width) pdfSize.width.toFloat() else image.imageWidth
                     val height = if (image.imageHeight > pdfSize.height) (
                         image.imageHeight * pdfSize.width / image.imageWidth
@@ -197,7 +241,6 @@ class PdfManagerImpl : PdfManager {
                     val bottom = if (height < pdfSize.height) (pdfSize.height - height) / 2 else 0f
                     image.setFixedPosition(left,bottom)
                     image.setAutoScale(true)
-                    Log.d("PdfManagerImpl", "Image width: ${image.imageWidth}, Image height: ${image.imageHeight}, Pdf width: ${pdfSize.width}, Pdf height: ${pdfSize.height}, Width: $width, Height: $height")
                     document.add(image)
                 }
                 document.close()

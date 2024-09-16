@@ -12,9 +12,11 @@ import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
 import io.github.dracula101.jetscan.presentation.platform.base.ImportBaseViewModel
 import io.github.dracula101.jetscan.presentation.platform.base.ImportDocumentState
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import javax.inject.Inject
 
@@ -24,8 +26,8 @@ const val COMPRESS_PDF_STATE = ""
 class CompressPdfViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val contentResolver: ContentResolver,
-    documentManager: DocumentManager,
-    documentRepository: DocumentRepository
+    private val documentManager: DocumentManager,
+    private val documentRepository: DocumentRepository
 ) : ImportBaseViewModel<CompressPdfState, Unit, CompressPdfAction>(
     initialState = savedStateHandle[COMPRESS_PDF_STATE] ?: CompressPdfState(),
     documentRepository = documentRepository,
@@ -53,8 +55,22 @@ class CompressPdfViewModel @Inject constructor(
     override fun handleAction(action: CompressPdfAction) {
         when (action) {
             is CompressPdfAction.Ui.SelectDocument -> handleSelectDocument(action)
+            is CompressPdfAction.Internal.LoadDocument -> handleLoadDocument(action)
             is CompressPdfAction.Ui.RemoveDocument -> handleRemoveDocument()
             is CompressPdfAction.Ui.SelectCompressionLevel -> handleSelectCompressionLevel(action)
+        }
+    }
+
+    private fun handleLoadDocument(action: CompressPdfAction.Internal.LoadDocument) {
+        viewModelScope.launch {
+            val document = documentRepository.getDocumentByUid(action.documentId).firstOrNull()
+            document?.let {
+                mutableStateFlow.update { state ->
+                    state.copy(
+                        selectedDocument = document
+                    )
+                }
+            }
         }
     }
 
@@ -105,6 +121,11 @@ sealed class CompressPdfAction {
         data class SelectDocument(val document: Document) : Ui()
         data object RemoveDocument : Ui()
         data class SelectCompressionLevel(val compressionLevel: CompressionLevel) : Ui()
+    }
+
+    @Parcelize
+    sealed class Internal : CompressPdfAction(), Parcelable {
+        data class LoadDocument(val documentId: String) : Internal()
     }
 
     @Parcelize

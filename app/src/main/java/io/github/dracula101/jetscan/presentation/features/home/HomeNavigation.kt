@@ -76,6 +76,9 @@ fun NavGraphBuilder.homeGraph(navController: NavHostController) {
             onNavigateBack = {
                 navController.popBackStack()
             },
+            onNavigateToPdf = { document ->
+                navController.navigateToPdfViewScreen(document = document)
+            },
             onNavigateToEdit = { scannedDocument, index ->
                 navController.navigateToEditDocument(scannedDocument, pageIndex = index)
             }
@@ -85,12 +88,24 @@ fun NavGraphBuilder.homeGraph(navController: NavHostController) {
                 navController.popBackStack()
             },
             onNavigateToPdf = { document ->
-                navController.navigateToPdfViewScreen(document)
+                navController.navigateToPdfViewScreen(
+                    documentId = document.id,
+                    documentName = document.name
+                )
             }
         )
         createScannerDestination(
             onNavigateBack = {
                 navController.popBackStack()
+            },
+            onNavigateToPdf = { id, name ->
+                navController.run {
+                    popBackStack()
+                    navigateToPdfViewScreen(
+                        documentId = id,
+                        documentName = name,
+                    )
+                }
             }
         )
         createFolderDocumentDestinationRoute(
@@ -123,6 +138,18 @@ fun NavGraphBuilder.homeGraph(navController: NavHostController) {
         createPdfViewDestination(
             onNavigateBack = {
                 navController.popBackStack()
+            },
+            onNavigateToCompression = { document ->
+                navController.navigateToCompressPdfScreen(document = document)
+            },
+            onNavigateToMerge = { document ->
+                navController.navigateToMergePdfScreen(document = document)
+            },
+            onNavigateToProtect = { document ->
+                navController.navigateToProtectPdfScreen(document = document)
+            },
+            onNavigateToSplit = { document ->
+                navController.navigateToSplitPdfScreen(document = document)
             }
         )
 

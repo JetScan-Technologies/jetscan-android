@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -51,6 +52,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ProtectPdfScreen(
     onNavigateBack: () -> Unit,
+    documentId: String?,
     viewModel: ProtectPdfViewModel = hiltViewModel()
 ){
 
@@ -59,6 +61,12 @@ fun ProtectPdfScreen(
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
     val isPasswordVisible = remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        if (documentId != null){
+            viewModel.trySendAction(ProtectPdfAction.Internal.LoadDocument(documentId))
+        }
+    }
 
     if (bottomSheetState.isVisible){
         DocumentFilesBottomSheet(
@@ -88,7 +96,9 @@ fun ProtectPdfScreen(
             FilledTonalButton(
                 onClick = {
                 },
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
                 enabled = state.value.selectedDocument != null
             ){
                 Text("Protect PDF")

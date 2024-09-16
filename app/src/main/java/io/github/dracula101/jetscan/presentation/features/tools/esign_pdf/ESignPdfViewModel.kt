@@ -9,7 +9,7 @@ import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
 import kotlinx.parcelize.Parcelize
 import javax.inject.Inject
 
-const val ESIGN_PDF_STATE = ""
+const val ESIGN_PDF_STATE = "esign_pdf"
 
 @HiltViewModel
 class ESignPdfViewModel @Inject constructor(

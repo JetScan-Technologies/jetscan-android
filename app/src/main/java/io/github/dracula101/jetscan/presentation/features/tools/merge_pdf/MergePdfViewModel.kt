@@ -10,9 +10,11 @@ import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
 import io.github.dracula101.jetscan.presentation.platform.feature.app.model.SnackbarState
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -46,9 +48,27 @@ class MergePdfViewModel @Inject constructor(
 
     override fun handleAction(action: MergePdfAction) {
         when(action){
+            is MergePdfAction.Internal.LoadDocument -> handleLoadDocument(action.documentId)
+
             is MergePdfAction.Ui.OnFileNameChanged -> handleFileNameChange(action.fileName)
             is MergePdfAction.Ui.OnDocumentSelected -> handleDocumentSelected(action.document)
             is MergePdfAction.Ui.OnDocumentDeleted -> handleDocumentDeleted(action.document)
+        }
+    }
+
+    private fun handleLoadDocument(documentId: String){
+        viewModelScope.launch {
+            documentRepository
+                .getDocumentByUid(documentId)
+                .firstOrNull()
+                ?.let { document ->
+                    mutableStateFlow.update {
+                        it.copy(
+                            selectedDocuments = it.selectedDocuments + document,
+                            documents = it.documents.filter { doc -> doc != document }
+                        )
+                    }
+                }
         }
     }
 
@@ -98,6 +118,11 @@ sealed class MergePdfAction {
         data class OnFileNameChanged(val fileName: String) : Ui()
         data class OnDocumentSelected(val document: Document) : Ui()
         data class OnDocumentDeleted(val document: Document) : Ui()
+    }
+
+    @Parcelize
+    sealed class Internal : MergePdfAction(), Parcelable {
+        data class LoadDocument(val documentId: String) : Internal()
     }
 
     @Parcelize

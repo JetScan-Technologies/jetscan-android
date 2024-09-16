@@ -43,4 +43,12 @@ interface PdfManager {
         pdfSize: Size,
         margins: Float,
     ): Boolean
+
+    suspend fun mergePdf(
+        files: List<File>,
+        file: File,
+        imageQuality: Int,
+        pdfSize: Size,
+        margins: Float,
+    ): Boolean
 }
