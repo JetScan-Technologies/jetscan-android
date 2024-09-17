@@ -24,7 +24,7 @@ fun EditPdfActionTile(
     Column(
         modifier = Modifier
             .clickable { onClick() }
-            .padding(vertical = 12.dp)
+            .padding(vertical = 8.dp, horizontal = 8.dp)
             .then(modifier),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)

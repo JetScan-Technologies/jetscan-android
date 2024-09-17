@@ -1,3 +1,5 @@
+import com.android.build.api.dsl.Packaging
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -52,7 +54,8 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)
 
-
-    implementation(libs.itext.core)
-
+    // implementation(libs.itext.kernel)
+    // implementation(libs.itext.layout)
+    // implementation(libs.itext.io)
+    implementation(libs.itextg)
 }
