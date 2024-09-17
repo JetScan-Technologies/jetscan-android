@@ -26,7 +26,7 @@ fun PdfActionTitle(
     Column(
         modifier = Modifier
             .clickable { onClick() }
-            .padding(vertical = 4.dp)
+            .padding(vertical = 8.dp)
             .then(modifier),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)

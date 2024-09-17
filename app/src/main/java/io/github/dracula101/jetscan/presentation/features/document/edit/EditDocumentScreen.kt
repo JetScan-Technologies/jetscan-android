@@ -218,7 +218,6 @@ fun EditDocumentScreen(
                                 title = "Crop",
                                 icon = Icons.Rounded.CropOriginal,
                                 onClick = { },
-                                modifier = Modifier.fillMaxWidth()
                             )
                             HorizontalDivider(
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
@@ -227,7 +226,6 @@ fun EditDocumentScreen(
                                 title = "Rotate",
                                 icon = Icons.Rounded.Rotate90DegreesCw,
                                 onClick = { },
-                                modifier = Modifier.fillMaxWidth()
                             )
                             HorizontalDivider(
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
@@ -236,7 +234,6 @@ fun EditDocumentScreen(
                                 title = "Filter",
                                 icon = Icons.Rounded.Filter,
                                 onClick = { },
-                                modifier = Modifier.fillMaxWidth()
                             )
                             HorizontalDivider(
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
@@ -249,7 +246,6 @@ fun EditDocumentScreen(
                                         onNavigateToPdf(state.value.scannedDocument!!)
                                     }
                                 },
-                                modifier = Modifier.fillMaxWidth()
                             )
                             HorizontalDivider(
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
@@ -258,7 +254,6 @@ fun EditDocumentScreen(
                                 title = "Rename",
                                 icon = Icons.Rounded.Edit,
                                 onClick = { },
-                                modifier = Modifier.fillMaxWidth()
                             )
                             // VerticalDivider(
                             //     modifier = Modifier
@@ -278,7 +273,6 @@ fun EditDocumentScreen(
                                 title = "Share",
                                 icon = Icons.Rounded.IosShare,
                                 onClick = { },
-                                modifier = Modifier.fillMaxWidth()
                             )
                             Box(
                                 modifier = Modifier
