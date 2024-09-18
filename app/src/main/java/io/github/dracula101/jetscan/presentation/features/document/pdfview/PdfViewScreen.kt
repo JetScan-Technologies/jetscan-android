@@ -257,7 +257,7 @@ fun PdfViewScreen(
                                     val activity = (context as ComponentActivity)
                                     activity.startActivity(Intent.createChooser(intent, "Share"))
                                 },
-                                modifier = Modifier.padding(vertical = 8.dp ,horizontal = 4.dp)
+                                modifier = Modifier.fillMaxWidth()
                             )
                             HorizontalDivider()
                             PdfActionTitle(
@@ -268,7 +268,6 @@ fun PdfViewScreen(
                                         showSaveBottomSheet.expand()
                                     }
                                 },
-                                modifier = Modifier.padding(vertical = 8.dp ,horizontal = 4.dp)
                             )
                             HorizontalDivider()
                             PdfActionTitle(
@@ -277,7 +276,7 @@ fun PdfViewScreen(
                                 onClick = {
 
                                 },
-                                modifier = Modifier.padding(vertical = 8.dp ,horizontal = 4.dp)
+                                modifier = Modifier.fillMaxWidth()
                             )
                             HorizontalDivider()
                             PdfActionTitle(
@@ -285,7 +284,7 @@ fun PdfViewScreen(
                                 icon = Icons.AutoMirrored.Rounded.OpenInNew,
                                 onClick = {
                                 },
-                                modifier = Modifier.padding(vertical = 8.dp ,horizontal = 4.dp)
+                                modifier = Modifier.fillMaxWidth()
                             )
                             HorizontalDivider()
                             PdfActionTitle(
@@ -296,7 +295,7 @@ fun PdfViewScreen(
                                         compressDocument(state.value.document!!)
                                     }
                                 },
-                                modifier = Modifier.padding(vertical = 8.dp ,horizontal = 4.dp)
+                                modifier = Modifier.fillMaxWidth()
                             )
                             HorizontalDivider()
                             PdfActionTitle(
@@ -307,7 +306,7 @@ fun PdfViewScreen(
                                         mergeDocument(state.value.document!!)
                                     }
                                 },
-                                modifier = Modifier.padding(vertical = 8.dp ,horizontal = 4.dp)
+                                modifier = Modifier.fillMaxWidth()
                             )
                             Box(
                                 modifier = Modifier

@@ -73,6 +73,9 @@ android {
             signingConfig = signingConfigs.getByName("release")
         }
         debug {
+            isShrinkResources = false
+            isMinifyEnabled = false
+            isDebuggable = false
             manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_debug"
             manifestPlaceholders["appRoundIcon"] = "@mipmap/ic_launcher_debug_round"
             manifestPlaceholders["crashlyticsCollectionEnabled"] = false
@@ -106,7 +109,7 @@ android {
     }
     packaging {
         resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes.add("/META-INF/{AL2.0,LGPL2.1}")
         }
     }
 }
