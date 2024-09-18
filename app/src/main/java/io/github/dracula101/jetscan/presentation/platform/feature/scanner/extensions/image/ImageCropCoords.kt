@@ -3,7 +3,6 @@ package io.github.dracula101.jetscan.presentation.platform.feature.scanner.exten
 
 import android.graphics.Bitmap
 import android.os.Parcelable
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.graph.CPoint
 import kotlinx.parcelize.Parcelize

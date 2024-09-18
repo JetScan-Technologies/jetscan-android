@@ -19,10 +19,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.dracula101.jetscan.data.document.manager.DocumentManager
 import io.github.dracula101.jetscan.data.document.models.IllegalFilenameChar
+import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.data.platform.manager.opencv.OpenCvManager
 import io.github.dracula101.jetscan.data.platform.utils.readableSize
 import io.github.dracula101.jetscan.data.platform.utils.rotate
-import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
 import io.github.dracula101.jetscan.presentation.platform.feature.app.model.SnackbarState
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageColorAdjustment

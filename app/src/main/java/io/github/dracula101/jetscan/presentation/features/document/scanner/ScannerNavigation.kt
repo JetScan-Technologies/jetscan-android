@@ -5,7 +5,6 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
-import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.presentation.features.auth.authGraph
 import io.github.dracula101.jetscan.presentation.platform.base.util.composableWithSlideTransitions
 import io.github.dracula101.jetscan.presentation.platform.composition.LockOrientation

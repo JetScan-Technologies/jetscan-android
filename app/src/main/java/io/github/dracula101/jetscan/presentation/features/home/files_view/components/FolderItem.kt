@@ -27,7 +27,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import io.github.dracula101.jetscan.data.document.models.doc.DocumentFolder
-import io.github.dracula101.jetscan.data.document.models.extensions.formatDate
 import io.github.dracula101.jetscan.data.document.models.extensions.formatDateTime
 import io.github.dracula101.jetscan.presentation.platform.component.dropdown.AppDropDown
 import io.github.dracula101.jetscan.presentation.platform.component.dropdown.MenuItem

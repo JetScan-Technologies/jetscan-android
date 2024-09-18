@@ -13,8 +13,8 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
-import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.graph.CPoint
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageCropCoords
+import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.graph.CPoint
 
 fun ImageCropCoords.scale(scale: Float): ImageCropCoords {
     return ImageCropCoords(

@@ -7,7 +7,6 @@ import android.util.Base64
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import io.github.dracula101.jetscan.data.document.utils.toBitmapQuality
 import java.io.ByteArrayOutputStream
-import java.text.DecimalFormat
 
 fun Bitmap.aspectRatio() : Float {
     return this.width.toFloat() / this.height.toFloat()

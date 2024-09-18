@@ -8,7 +8,6 @@ import io.github.dracula101.jetscan.data.document.models.Extension
 import io.github.dracula101.jetscan.data.document.models.MimeType
 import io.github.dracula101.jetscan.data.document.models.image.ScannedImage
 import kotlinx.parcelize.Parcelize
-import java.io.File
 import java.util.UUID
 import javax.annotation.concurrent.Immutable
 

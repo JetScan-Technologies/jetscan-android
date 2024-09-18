@@ -2,7 +2,6 @@ package io.github.dracula101.jetscan.presentation.platform.base
 
 import android.net.Uri
 import android.os.Parcelable
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.dracula101.jetscan.data.document.manager.DocumentManager
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality

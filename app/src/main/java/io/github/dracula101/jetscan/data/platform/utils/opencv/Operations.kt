@@ -1,6 +1,5 @@
 package io.github.dracula101.jetscan.data.platform.utils.opencv
 
-import androidx.annotation.FloatRange
 import org.opencv.core.Core
 import org.opencv.core.Mat
 import org.opencv.core.MatOfInt

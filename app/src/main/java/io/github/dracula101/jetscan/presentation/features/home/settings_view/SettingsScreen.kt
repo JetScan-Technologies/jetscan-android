@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
-import androidx.compose.material.icons.outlined.ArrowCircleRight
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.PictureAsPdf
@@ -25,7 +24,6 @@ import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.ImportExport
 import androidx.compose.material.icons.rounded.Language
-import androidx.compose.material.icons.rounded.Logout
 import androidx.compose.material.icons.rounded.NoAccounts
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -51,7 +49,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.SubcomposeAsyncImage
 import io.github.dracula101.jetscan.data.auth.model.UserState
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeState
-import io.github.dracula101.jetscan.presentation.features.settings.about.components.JetScanFooter
 import io.github.dracula101.jetscan.presentation.features.home.settings_view.components.SettingsItem
 import io.github.dracula101.jetscan.presentation.features.home.settings_view.components.SettingsSection
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.ScaffoldSize

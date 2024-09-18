@@ -1,12 +1,10 @@
 package io.github.dracula101.jetscan.presentation.features.app
 
-import android.app.Application
 import android.content.Context
 import android.os.Parcelable
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
-import dagger.hilt.android.internal.Contexts.getApplication
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.dracula101.jetscan.data.auth.model.UserState

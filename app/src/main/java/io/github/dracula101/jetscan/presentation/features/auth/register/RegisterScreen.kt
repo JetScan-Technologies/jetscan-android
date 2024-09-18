@@ -43,11 +43,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dracula101.jetscan.R
-import io.github.dracula101.jetscan.presentation.platform.component.button.FlatButton
 import io.github.dracula101.jetscan.presentation.platform.component.button.GradientButton
 import io.github.dracula101.jetscan.presentation.platform.component.button.NoRippleButton
 import io.github.dracula101.jetscan.presentation.platform.component.checkbox.CircleCheckbox
-import io.github.dracula101.jetscan.presentation.platform.component.extensions.gradientContainer
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.JetScanScaffold
 import io.github.dracula101.jetscan.presentation.platform.component.snackbar.util.showErrorSnackBar
 import io.github.dracula101.jetscan.presentation.platform.component.snackbar.util.showSuccessSnackbar

@@ -3,17 +3,14 @@ package io.github.dracula101.jetscan.presentation.platform.feature.scanner.image
 import android.graphics.Bitmap
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
-import androidx.compose.ui.geometry.Size
 import io.github.dracula101.jetscan.data.platform.manager.opencv.OpenCvManager
 import io.github.dracula101.jetscan.data.platform.utils.rotate
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageCropCoords
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.scale
-import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.graph.Line
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 
 class DocumentAnalyzer(

@@ -4,7 +4,6 @@ import android.net.Uri
 import io.github.dracula101.jetscan.data.document.datasource.disk.entity.DocumentEntity
 import io.github.dracula101.jetscan.data.document.datasource.disk.entity.DocumentWithImages
 import io.github.dracula101.jetscan.data.document.models.doc.Document
-import java.io.File
 
 fun DocumentEntity.toDocument() = Document(
     id = uid,

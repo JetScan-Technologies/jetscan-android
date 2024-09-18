@@ -2,8 +2,6 @@ package io.github.dracula101.jetscan.presentation.features.settings.open_source_
 
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.composable
-import io.github.dracula101.jetscan.presentation.features.settings.about.AboutScreen
 import io.github.dracula101.jetscan.presentation.platform.base.util.composableWithPushTransitions
 
 

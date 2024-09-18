@@ -1,24 +1,11 @@
 package io.github.dracula101.jetscan.data.platform.utils.opencv
 
 import android.graphics.Bitmap
-import android.util.SparseArray
 import io.github.dracula101.jetscan.data.document.models.image.ImageType
-import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.graph.CLine
-import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.graph.CPoint
-import org.opencv.core.Core
-import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.core.MatOfInt
-import org.opencv.core.MatOfPoint
-import org.opencv.core.MatOfPoint2f
-import org.opencv.core.Point
-import org.opencv.core.Size
 import org.opencv.imgcodecs.Imgcodecs
-import org.opencv.imgproc.Imgproc
 import java.io.File
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.sqrt
 
 fun Bitmap.toMat(): Mat {
     val mat = Mat()

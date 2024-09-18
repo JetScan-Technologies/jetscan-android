@@ -20,9 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeAction
 import io.github.dracula101.jetscan.presentation.platform.base.ImportDocumentState
-import io.github.dracula101.jetscan.presentation.platform.component.button.CircleButton
 import io.github.dracula101.jetscan.presentation.platform.component.loader.AnimatedLoader
 
 @Composable

@@ -7,11 +7,9 @@ import io.github.dracula101.jetscan.data.platform.utils.opencv.bitwiseNot
 import io.github.dracula101.jetscan.data.platform.utils.opencv.cannyEdge
 import io.github.dracula101.jetscan.data.platform.utils.opencv.closing
 import io.github.dracula101.jetscan.data.platform.utils.opencv.colorAdjustment
-import io.github.dracula101.jetscan.data.platform.utils.opencv.contourDetection
 import io.github.dracula101.jetscan.data.platform.utils.opencv.crop
 import io.github.dracula101.jetscan.data.platform.utils.opencv.detectCorners
 import io.github.dracula101.jetscan.data.platform.utils.opencv.detectDocument
-import io.github.dracula101.jetscan.data.platform.utils.opencv.dilation
 import io.github.dracula101.jetscan.data.platform.utils.opencv.erosion
 import io.github.dracula101.jetscan.data.platform.utils.opencv.gradient
 import io.github.dracula101.jetscan.data.platform.utils.opencv.merge
@@ -21,7 +19,6 @@ import io.github.dracula101.jetscan.data.platform.utils.opencv.saturationChannel
 import io.github.dracula101.jetscan.data.platform.utils.opencv.split
 import io.github.dracula101.jetscan.data.platform.utils.opencv.toBitmap
 import io.github.dracula101.jetscan.data.platform.utils.opencv.toGaussianBlur
-import io.github.dracula101.jetscan.data.platform.utils.opencv.toGrayScale
 import io.github.dracula101.jetscan.data.platform.utils.opencv.toLabColorSpace
 import io.github.dracula101.jetscan.data.platform.utils.opencv.toMat
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageCropCoords
@@ -42,7 +39,6 @@ import org.opencv.imgproc.Imgproc
 import timber.log.Timber
 import kotlin.math.abs
 import kotlin.math.cos
-import kotlin.math.hypot
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt

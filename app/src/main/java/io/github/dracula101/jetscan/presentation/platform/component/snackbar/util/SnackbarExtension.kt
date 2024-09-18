@@ -6,7 +6,6 @@ import androidx.compose.material3.SnackbarResult
 import io.github.dracula101.jetscan.presentation.platform.component.snackbar.ErrorSnackbar
 import io.github.dracula101.jetscan.presentation.platform.component.snackbar.SuccessSnackbar
 import io.github.dracula101.jetscan.presentation.platform.component.snackbar.WarningSnackbar
-import timber.log.Timber
 
 suspend fun SnackbarHostState.showWarningSnackbar(
     message: String,

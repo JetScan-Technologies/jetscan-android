@@ -1,14 +1,12 @@
 package io.github.dracula101.jetscan.presentation.features.settings.about
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -25,11 +23,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.dracula101.jetscan.BuildConfig
-import io.github.dracula101.jetscan.R
-import io.github.dracula101.jetscan.presentation.features.settings.about.components.JetScanFooter
 import io.github.dracula101.jetscan.presentation.features.settings.about.components.AboutScreenItem
 import io.github.dracula101.jetscan.presentation.features.settings.about.components.AboutTopAppBar
 import io.github.dracula101.jetscan.presentation.features.settings.about.components.DeveloperInfoBottomSheet
+import io.github.dracula101.jetscan.presentation.features.settings.about.components.JetScanFooter
 import io.github.dracula101.jetscan.presentation.features.settings.about.components.JetScanLogo
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.JetScanScaffold
 import kotlinx.coroutines.launch

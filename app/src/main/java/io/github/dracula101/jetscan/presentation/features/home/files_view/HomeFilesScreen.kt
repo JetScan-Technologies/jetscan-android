@@ -2,13 +2,10 @@ package io.github.dracula101.jetscan.presentation.features.home.files_view
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,45 +16,27 @@ import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Sort
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material.icons.rounded.Cancel
-import androidx.compose.material.icons.rounded.CreateNewFolder
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.FolderDelete
-import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.LinearGradient
-import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dracula101.jetscan.R
@@ -68,13 +47,8 @@ import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeStat
 import io.github.dracula101.jetscan.presentation.features.home.main.components.DocumentItem
 import io.github.dracula101.jetscan.presentation.platform.component.dialog.AppBasicDialog
 import io.github.dracula101.jetscan.presentation.platform.component.dialog.IconAlertDialog
-import io.github.dracula101.jetscan.presentation.platform.component.dropdown.AppDropDown
-import io.github.dracula101.jetscan.presentation.platform.component.dropdown.MenuItem
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.ScaffoldSize
 import io.github.dracula101.jetscan.presentation.platform.feature.app.model.SnackbarState
-import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.customContainer
-import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.fadingEdge
-import timber.log.Timber
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

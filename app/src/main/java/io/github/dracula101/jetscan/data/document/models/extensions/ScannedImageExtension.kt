@@ -3,7 +3,6 @@ package io.github.dracula101.jetscan.data.document.models.extensions
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.core.net.toUri
-import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import io.github.dracula101.jetscan.data.document.models.image.ScannedImage
 import java.io.File

@@ -3,7 +3,6 @@ package io.github.dracula101.jetscan.data.platform.manager.opencv
 import android.graphics.Bitmap
 import androidx.annotation.FloatRange
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.geometry.Size
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageCropCoords
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageFilter
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.graph.Line

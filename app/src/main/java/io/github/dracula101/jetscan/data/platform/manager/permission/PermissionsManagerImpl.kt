@@ -3,11 +3,9 @@ package io.github.dracula101.jetscan.data.platform.manager.permission
 
 import android.app.Activity
 import android.content.pm.PackageManager
-import android.os.Build
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.core.content.ContextCompat
 

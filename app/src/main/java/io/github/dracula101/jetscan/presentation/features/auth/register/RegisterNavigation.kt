@@ -2,9 +2,7 @@ package io.github.dracula101.jetscan.presentation.features.auth.register
 
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
-import io.github.dracula101.jetscan.presentation.platform.base.util.composableWithPushTransitions
 import io.github.dracula101.jetscan.presentation.platform.base.util.composableWithSlideTransitions
-import io.github.dracula101.jetscan.presentation.platform.base.util.composableWithStayTransitions
 import io.github.dracula101.jetscan.presentation.platform.composition.LockOrientation
 
 const val REGISTER_ROUTE = "register"

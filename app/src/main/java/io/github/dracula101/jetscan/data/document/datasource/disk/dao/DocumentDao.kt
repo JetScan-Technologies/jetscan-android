@@ -7,8 +7,8 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
-import io.github.dracula101.jetscan.data.document.datasource.disk.entity.DocumentWithImages
 import io.github.dracula101.jetscan.data.document.datasource.disk.entity.DocumentEntity
+import io.github.dracula101.jetscan.data.document.datasource.disk.entity.DocumentWithImages
 import io.github.dracula101.jetscan.data.document.datasource.disk.entity.ScannedImageEntity
 import kotlinx.coroutines.flow.Flow
 

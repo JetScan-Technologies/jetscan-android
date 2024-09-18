@@ -40,7 +40,6 @@ import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.models.image.ScannedImage
 import io.github.dracula101.jetscan.presentation.features.document.preview.components.PreviewImageGridListItem
 import io.github.dracula101.jetscan.presentation.features.document.preview.components.PreviewImageListItem
-import io.github.dracula101.jetscan.presentation.platform.component.appbar.BackButtonIcon
 import io.github.dracula101.jetscan.presentation.platform.component.appbar.JetScanTopAppbar
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.JetScanScaffold
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.ScaffoldSize

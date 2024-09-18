@@ -2,7 +2,6 @@ package io.github.dracula101.jetscan.data.platform.datasource.disk
 
 import io.github.dracula101.jetscan.presentation.platform.feature.setting.model.AppTheme
 import kotlinx.coroutines.flow.Flow
-import java.time.Instant
 
 /**
  * Primary access point for general settings-related disk information.

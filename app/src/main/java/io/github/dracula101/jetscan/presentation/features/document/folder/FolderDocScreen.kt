@@ -42,7 +42,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.models.doc.DocumentFolder
 import io.github.dracula101.jetscan.data.document.models.extensions.formatDateTime
-import io.github.dracula101.jetscan.presentation.features.document.folder.components.*
+import io.github.dracula101.jetscan.presentation.features.document.folder.components.FolderDocItem
+import io.github.dracula101.jetscan.presentation.features.document.folder.components.FolderDocTopbar
+import io.github.dracula101.jetscan.presentation.features.document.folder.components.FolderLocation
+import io.github.dracula101.jetscan.presentation.features.document.folder.components.MenuOption
+import io.github.dracula101.jetscan.presentation.features.document.folder.components.NoDocumentView
 import io.github.dracula101.jetscan.presentation.features.home.files_view.AddFolderDialog
 import io.github.dracula101.jetscan.presentation.platform.component.bottomsheet.DocumentFilesBottomSheet
 import io.github.dracula101.jetscan.presentation.platform.component.dropdown.AppDropDown

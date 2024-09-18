@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -39,10 +38,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.MultiChoiceSegmentedButtonRow
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -57,7 +54,6 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
@@ -70,18 +66,16 @@ import coil.compose.AsyncImage
 import io.github.dracula101.jetscan.data.platform.utils.aspectRatio
 import io.github.dracula101.jetscan.presentation.platform.component.button.SegmentedButton
 import io.github.dracula101.jetscan.presentation.platform.component.button.SegmentedItem
-import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.debugBorder
 import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.detectTransformGestures
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.CornerPointVisibility
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.HolderVisibility
-import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.scale
-import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.camera.CameraScannedImage
-import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.graph.CPoint
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageCropCoords
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageFilter
+import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.scale
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.toCropOverlay
+import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.camera.CameraScannedImage
+import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.graph.CPoint
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 @OptIn(
     ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,

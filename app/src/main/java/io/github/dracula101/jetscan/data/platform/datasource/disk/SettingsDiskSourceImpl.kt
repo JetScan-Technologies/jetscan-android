@@ -1,16 +1,13 @@
 package io.github.dracula101.jetscan.data.platform.datasource.disk
 
 
+//import kotlinx.serialization.json.Json
+//import kotlinx.serialization.encodeToString
 import android.content.SharedPreferences
-import com.squareup.moshi.Json
 import io.github.dracula101.jetscan.data.platform.repository.util.bufferedMutableSharedFlow
 import io.github.dracula101.jetscan.presentation.platform.feature.setting.model.AppTheme
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.onSubscription
-//import kotlinx.serialization.json.Json
-//import kotlinx.serialization.encodeToString
-import java.time.Instant
 
 private const val APP_THEME_KEY = "theme"
 private const val SYSTEM_BIOMETRIC_INTEGRITY_SOURCE_KEY = "biometricIntegritySource"

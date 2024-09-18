@@ -1,13 +1,8 @@
 package io.github.dracula101.jetscan.data.document.models
 
 
-import android.content.ContentResolver
-import android.content.Context
-import android.net.Uri
 import android.os.Parcelable
-import android.webkit.MimeTypeMap
 import kotlinx.parcelize.Parcelize
-import java.io.File
 import java.util.Locale
 
 @Parcelize

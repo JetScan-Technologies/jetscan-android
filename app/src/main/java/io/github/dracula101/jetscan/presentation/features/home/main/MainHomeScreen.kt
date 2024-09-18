@@ -14,13 +14,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -46,9 +44,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.models.doc.DocumentFolder
+import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import io.github.dracula101.jetscan.presentation.features.home.files_view.HomeFilesScreen
 import io.github.dracula101.jetscan.presentation.features.home.files_view.HomeFilesViewModel
 import io.github.dracula101.jetscan.presentation.features.home.home_view.HomeScreen
@@ -56,7 +54,6 @@ import io.github.dracula101.jetscan.presentation.features.home.main.components.M
 import io.github.dracula101.jetscan.presentation.features.home.main.components.MainHomeTopAppbar
 import io.github.dracula101.jetscan.presentation.features.home.settings_view.SettingsScreen
 import io.github.dracula101.jetscan.presentation.features.home.settings_view.SettingsViewModel
-import io.github.dracula101.jetscan.presentation.features.home.subscription_view.SubscriptionScreen
 import io.github.dracula101.jetscan.presentation.features.home.subscription_view.SubscriptionViewModel
 import io.github.dracula101.jetscan.presentation.platform.component.dialog.ConfirmAlertDialog
 import io.github.dracula101.jetscan.presentation.platform.component.dialog.IconAlertDialog

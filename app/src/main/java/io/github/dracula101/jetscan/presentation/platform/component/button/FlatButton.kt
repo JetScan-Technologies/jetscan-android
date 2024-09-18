@@ -16,7 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import io.github.dracula101.jetscan.presentation.platform.composition.ThemePreviews
 
 @Composable
 fun FlatButton(

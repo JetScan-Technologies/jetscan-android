@@ -33,8 +33,8 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import io.github.dracula101.jetscan.R
 import io.github.dracula101.jetscan.data.document.models.extensions.getReadableFileSize
-import io.github.dracula101.jetscan.data.platform.utils.DateFormatter
 import io.github.dracula101.jetscan.data.document.models.image.ScannedImage
+import io.github.dracula101.jetscan.data.platform.utils.DateFormatter
 import io.github.dracula101.jetscan.presentation.platform.component.button.CircleButton
 
 

@@ -7,7 +7,6 @@ import androidx.navigation.NavOptions
 import androidx.navigation.navigation
 import io.github.dracula101.jetscan.presentation.features.auth.login.LOGIN_ROUTE
 import io.github.dracula101.jetscan.presentation.features.auth.login.createLoginDestination
-import io.github.dracula101.jetscan.presentation.features.auth.login.navigateToLoginRoute
 import io.github.dracula101.jetscan.presentation.features.auth.register.createRegisterDestination
 import io.github.dracula101.jetscan.presentation.features.auth.register.navigateToRegisterRoute
 

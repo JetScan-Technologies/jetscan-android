@@ -1,7 +1,6 @@
 package io.github.dracula101.jetscan.data.document.datasource.disk.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query

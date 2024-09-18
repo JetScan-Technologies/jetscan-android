@@ -2,7 +2,6 @@ package io.github.dracula101.jetscan.data.auth.di
 
 import android.content.Context
 import com.google.android.gms.auth.api.identity.SignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.firebase.auth.FirebaseAuth
 import dagger.Module
 import dagger.Provides

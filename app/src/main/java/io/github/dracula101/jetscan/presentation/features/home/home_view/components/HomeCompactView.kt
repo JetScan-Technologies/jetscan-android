@@ -16,9 +16,9 @@ import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeAction
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeState
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeViewModel
-import io.github.dracula101.jetscan.presentation.features.home.main.components.MainHomePageComponent
 import io.github.dracula101.jetscan.presentation.features.home.main.components.DocumentItem
 import io.github.dracula101.jetscan.presentation.features.home.main.components.EmptyDocumentView
+import io.github.dracula101.jetscan.presentation.features.home.main.components.MainHomePageComponent
 
 
 @OptIn(ExperimentalFoundationApi::class)

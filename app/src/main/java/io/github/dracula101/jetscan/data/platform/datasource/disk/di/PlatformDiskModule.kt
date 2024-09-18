@@ -2,7 +2,6 @@ package io.github.dracula101.jetscan.data.platform.datasource.disk.di
 
 
 import android.content.SharedPreferences
-import com.squareup.moshi.Json
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

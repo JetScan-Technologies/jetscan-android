@@ -11,7 +11,6 @@ import io.github.dracula101.jetscan.data.document.models.doc.DocumentFolder
 import io.github.dracula101.jetscan.presentation.features.auth.authGraph
 import io.github.dracula101.jetscan.presentation.platform.base.util.composableWithPushTransitions
 import io.github.dracula101.jetscan.presentation.platform.composition.LockOrientation
-import timber.log.Timber
 
 
 const val FOLDER_DOCUMENT_ROUTE = "folder_document"

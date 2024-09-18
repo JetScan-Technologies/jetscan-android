@@ -18,13 +18,10 @@ import io.github.dracula101.jetscan.data.document.manager.mime.MimeTypeManager
 import io.github.dracula101.jetscan.data.document.models.Extension
 import io.github.dracula101.jetscan.data.document.models.MimeType
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
-import io.github.dracula101.jetscan.data.document.models.image.ImageType
 import io.github.dracula101.jetscan.data.document.utils.Task
 import io.github.dracula101.jetscan.data.document.utils.getImageHeight
 import io.github.dracula101.jetscan.data.document.utils.toBitmapQuality
 import io.github.dracula101.jetscan.data.platform.utils.bytesToReadableSize
-import io.github.dracula101.jetscan.data.platform.utils.compress
-import io.github.dracula101.jetscan.data.platform.utils.opencv.saveBitmapToFile
 import io.github.dracula101.pdf.manager.PdfManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -48,7 +45,6 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import kotlin.math.pow
-import kotlin.time.measureTime
 
 class DocumentManagerImpl(
     private val context: Context,

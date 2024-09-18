@@ -1,6 +1,5 @@
 package io.github.dracula101.jetscan.data.platform.di
 
-import android.app.Application
 import android.content.ContentResolver
 import android.content.Context
 import android.content.pm.PackageManager

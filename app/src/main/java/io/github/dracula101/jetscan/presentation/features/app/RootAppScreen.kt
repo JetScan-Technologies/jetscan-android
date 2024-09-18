@@ -17,8 +17,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navOptions
 import io.github.dracula101.jetscan.presentation.features.auth.AUTH_GRAPH_ROUTE
 import io.github.dracula101.jetscan.presentation.features.auth.authGraph
-import io.github.dracula101.jetscan.presentation.features.auth.login.LOGIN_ROUTE
-import io.github.dracula101.jetscan.presentation.features.auth.login.navigateToLoginRoute
 import io.github.dracula101.jetscan.presentation.features.auth.navigateToAuthGraph
 import io.github.dracula101.jetscan.presentation.features.auth.register.REGISTER_ROUTE
 import io.github.dracula101.jetscan.presentation.features.home.HOME_GRAPH_ROUTE
@@ -27,14 +25,12 @@ import io.github.dracula101.jetscan.presentation.features.home.navigateToHomeGra
 import io.github.dracula101.jetscan.presentation.features.splash.SPLASH_ROUTE
 import io.github.dracula101.jetscan.presentation.features.splash.navigateToSplashRoute
 import io.github.dracula101.jetscan.presentation.features.splash.splashDestination
-import io.github.dracula101.jetscan.presentation.platform.base.util.EventsEffect
 import io.github.dracula101.jetscan.presentation.theme.NonNullEnterTransitionProvider
 import io.github.dracula101.jetscan.presentation.theme.NonNullExitTransitionProvider
 import io.github.dracula101.jetscan.presentation.theme.RootTransitionProviders
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import timber.log.Timber
 import java.util.concurrent.atomic.AtomicReference
 
 @Composable
