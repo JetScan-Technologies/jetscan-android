@@ -31,6 +31,15 @@ interface DocumentManager {
         progressListener: (currentProgress: Float, totalProgress: Int) -> Unit,
     ): Task<DocumentDirectory>
 
+    suspend fun addExtraDocument(
+        file: File,
+        fileName: String,
+    ) : File?
+
+    suspend fun deleteExtraDocument(
+        uri: Uri,
+    ) : Boolean
+
     fun deleteDocument(fileName: String): Boolean
 
     fun getBitmapFromUri(uri: Uri): Bitmap?

@@ -1,13 +1,17 @@
 package io.github.dracula101.jetscan.presentation.features.document.pdfview
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.print.PrintAttributes
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -42,8 +47,10 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -59,13 +66,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.platform.utils.bytesToSizeAndUnit
 import io.github.dracula101.jetscan.presentation.features.document.pdfview.components.PdfActionTitle
+import io.github.dracula101.jetscan.presentation.features.document.pdfview.components.PdfDocumentAdapter
 import io.github.dracula101.jetscan.presentation.features.document.pdfview.components.SaveDocumentBottomSheet
 import io.github.dracula101.jetscan.presentation.features.document.pdfview.components.SaveOption
 import io.github.dracula101.jetscan.presentation.platform.component.appbar.JetScanTopAppbar
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.JetScanScaffold
 import io.github.dracula101.jetscan.presentation.platform.component.text.FittedText
 import io.github.dracula101.pdf.ui.PdfReader
+import io.github.dracula101.pdf.ui.rememberPdfTransformState
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.time.debounce
+import org.burnoutcrew.reorderable.rememberReorderableLazyListState
+import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,6 +98,7 @@ fun PdfViewScreen(
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val showSaveBottomSheet = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+    val pdfLazyListState = rememberLazyListState()
     val saveInternalStorageActivityLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -182,18 +195,21 @@ fun PdfViewScreen(
     }
     JetScanScaffold(
         topBar = {
-            JetScanTopAppbar(
-                title = {
-                    Text(
-                        text = documentName ?: "JetScan Document",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                },
-                scrollBehavior = scrollBehavior,
-                onNavigationIconClick = onNavigateBack
-            )
+            if(widthAnimation.value != 0f){
+                JetScanTopAppbar(
+                    title = {
+                        Text(
+                            text = documentName ?: "JetScan Document",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    },
+                    scrollBehavior = scrollBehavior,
+                    onNavigationIconClick = onNavigateBack,
+                    modifier = Modifier
+                        .offset(y = -(150 * (1 - widthAnimation.value)).dp)
+                )
+            }
         },
         floatingActionButton = {
             if(widthAnimation.value == 0f){
@@ -214,19 +230,42 @@ fun PdfViewScreen(
         }
     ) { padding,_->
         if(state.value.document != null){
+            val pdfTransformState = rememberPdfTransformState(file = state.value.document!!.uri.toFile(), lazyListState = pdfLazyListState)
+            val isZoomed = remember { mutableStateOf(false) }
+            LaunchedEffect(Unit){
+                snapshotFlow { pdfTransformState.scale }
+                    .collect {
+                        if(it > 1.0f && !isZoomed.value){
+                            isZoomed.value = true
+                        } else if(it == 1.0f && isZoomed.value){
+                            isZoomed.value = false
+                        }
+                    }
+            }
+            LaunchedEffect(isZoomed.value){
+                coroutineScope.launch {
+                    widthAnimation.animateTo(
+                        if(isZoomed.value) 0f else 1f,
+                        animationSpec = tween(300)
+                    )
+                }
+            }
+
             Row {
                 PdfReader(
                     file = state.value.document!!.uri.toFile(),
                     modifier = Modifier
                         .weight(1f)
                         .padding(padding),
+                    lazyListState = pdfLazyListState,
+                    pdfTransformState = pdfTransformState,
                     showMarker = false
                 )
                 if(widthAnimation.value != 0f){
                     Box(
                         modifier = Modifier
                             .offset(x = (100 * (1 - widthAnimation.value)).dp)
-                            .width(IntrinsicSize.Min)
+                            .width(58.dp)
                             .fillMaxHeight()
                             .padding(padding)
                             .background(MaterialTheme.colorScheme.surfaceContainer)
@@ -274,6 +313,10 @@ fun PdfViewScreen(
                                 title = "Print",
                                 icon = Icons.Rounded.Print,
                                 onClick = {
+                                    val printIntent = context.getSystemService(Context.PRINT_SERVICE) as android.print.PrintManager
+                                    val jobName = "${state.value.document?.name ?: ""} Document"
+                                    val printAdapter = PdfDocumentAdapter(state.value.document!!.uri.toFile())
+                                    printIntent.print(jobName, printAdapter, PrintAttributes.Builder().build())
 
                                 },
                                 modifier = Modifier.fillMaxWidth()
@@ -283,6 +326,16 @@ fun PdfViewScreen(
                                 title = "Open in",
                                 icon = Icons.AutoMirrored.Rounded.OpenInNew,
                                 onClick = {
+                                    val uri = FileProvider.getUriForFile(
+                                        context,
+                                        context.packageName + ".provider",
+                                        state.value.document!!.uri.toFile()
+                                    )
+                                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                                        setDataAndType(uri, "application/pdf")
+                                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    }
+                                    context.startActivity(intent)
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             )

@@ -57,6 +57,7 @@ class DocumentManagerImpl(
 
     private val contentResolver: ContentResolver = context.contentResolver
     private val scannedDirectory = File(documentDirectory, SCANNED_DOCUMENTS_FOLDER)
+    private val extraDocumentDirectory = File(documentDirectory, EXTRA_DOCUMENTS_FOLDER)
 
     private val documentFlow = MutableStateFlow(emptyList<DocumentDirectory>())
     override val localDocumentFlow: Flow<List<DocumentDirectory>> = documentFlow.asStateFlow()
@@ -66,6 +67,9 @@ class DocumentManagerImpl(
     private fun preCheck() {
         if (!documentDirectory.exists()) {
             documentDirectory.mkdirs()
+        }
+        if (!extraDocumentDirectory.exists()) {
+            extraDocumentDirectory.mkdirs()
         }
         if (!scannedDirectory.exists()) {
             scannedDirectory.mkdirs()
@@ -267,6 +271,37 @@ class DocumentManagerImpl(
         }
     }
 
+    override suspend fun addExtraDocument(file: File, fileName: String): File? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val extraDocumentFile = File(extraDocumentDirectory, fileName)
+                file.copyTo(extraDocumentFile, overwrite = true)
+                updateFlow()
+                extraDocumentFile
+            } catch (e: Exception) {
+                Timber.e(e)
+                null
+            }
+        }
+    }
+
+    override suspend fun deleteExtraDocument(uri: Uri): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val file = File(uri.path ?: throw IllegalArgumentException("Invalid file path"))
+                if (file.exists()) {
+                    file.deleteRecursively()
+                    updateFlow()
+                    true
+                } else {
+                    false
+                }
+            } catch (e: Exception) {
+                Timber.e(e)
+                false
+            }
+        }
+    }
 
     override fun getBitmapFromUri(uri: Uri): Bitmap? {
         return context.contentResolver.openInputStream(uri)?.use { inputStream ->
@@ -417,6 +452,8 @@ class DocumentManagerImpl(
         private const val SCANNED_DOCUMENT_IMAGE_PREFIX = "Image"
         private const val SCANNED_DOCUMENT_SCANNED_IMAGE_PREFIX = "Scanned Image"
         private const val SCANNED_DOCUMENT_IMAGE_EXTENSION = "jpg"
+
+        private const val EXTRA_DOCUMENTS_FOLDER = "Extra Documents"
 
     }
 

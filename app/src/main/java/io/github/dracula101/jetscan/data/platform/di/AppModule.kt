@@ -16,6 +16,7 @@ import io.github.dracula101.jetscan.data.platform.manager.opencv.OpenCvManagerIm
 import java.io.File
 import java.nio.file.spi.FileSystemProvider
 import java.util.concurrent.Executor
+import javax.inject.Named
 import javax.inject.Singleton
 
 @InstallIn(SingletonComponent::class)
@@ -61,6 +62,7 @@ object AppModule {
     // ======================== Local Files Directory ========================
     @Provides
     @Singleton
+    @Named("files")
     fun provideLocalFiles(@ApplicationContext context: Context): File {
         return context.filesDir
     }
@@ -68,6 +70,7 @@ object AppModule {
     // ======================== Local Cache Directory ========================
     @Provides
     @Singleton
+    @Named("cache")
     fun provideLocalCache(@ApplicationContext context: Context): File {
         return context.cacheDir
     }

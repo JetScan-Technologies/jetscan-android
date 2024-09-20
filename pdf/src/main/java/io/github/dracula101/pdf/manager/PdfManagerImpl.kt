@@ -15,6 +15,8 @@ import com.itextpdf.text.Document
 import com.itextpdf.text.Image
 import com.itextpdf.text.PageSize
 import com.itextpdf.text.pdf.PdfDocument
+import com.itextpdf.text.pdf.PdfReader
+import com.itextpdf.text.pdf.PdfStamper
 import com.itextpdf.text.pdf.PdfWriter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -244,6 +246,32 @@ class PdfManagerImpl : PdfManager {
                 false
             } finally {
                 pdfDocument.close()
+            }
+        }
+    }
+
+    override suspend fun protectPdf(
+        file: File,
+        password: String,
+        masterPassword: String,
+        permissions: Int
+    ): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val pdfReader = PdfReader(file.absolutePath)
+                val pdfStamper = PdfStamper(pdfReader, FileOutputStream(file))
+                pdfStamper.setEncryption(
+                    password.toByteArray(),
+                    masterPassword.toByteArray(),
+                    permissions,
+                    PdfWriter.ENCRYPTION_AES_128
+                )
+                pdfStamper.close()
+                pdfReader.close()
+                true
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
             }
         }
     }

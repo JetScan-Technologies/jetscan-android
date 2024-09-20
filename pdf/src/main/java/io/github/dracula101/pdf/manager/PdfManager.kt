@@ -51,4 +51,11 @@ interface PdfManager {
         pdfSize: Size,
         margins: Float,
     ): Boolean
+
+    suspend fun protectPdf(
+        file: File,
+        password: String,
+        masterPassword: String,
+        permissions: Int,
+    ): Boolean
 }

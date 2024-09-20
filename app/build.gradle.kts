@@ -75,7 +75,6 @@ android {
         debug {
             isShrinkResources = false
             isMinifyEnabled = false
-            isDebuggable = false
             manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_debug"
             manifestPlaceholders["appRoundIcon"] = "@mipmap/ic_launcher_debug_round"
             manifestPlaceholders["crashlyticsCollectionEnabled"] = false
