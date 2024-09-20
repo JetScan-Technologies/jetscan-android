@@ -198,6 +198,7 @@ class PdfManagerImpl : PdfManager {
                         image.setAbsolutePosition(left, bottom)
                     }
                     pdfDocument.add(image)
+                    pdfDocument.newPage()
                 }
                 true
             } catch (e: Exception) {
