@@ -59,9 +59,12 @@ constraintlayout = "2.1.4"
 navigationFragmentKtx = "2.7.7"
 navigationUiKtx = "2.7.7"
 compressor = "3.0.1"
-itextVersion = "8.0.2"
-itext7Version = "8.0.0"
-itextgVersion = "5.5.10"
+itextVersion = "8.0.4"
+itext7Version = "7.1.13"
+itextgVersion = "5.5.13.4"
+itextPdfVersion = "5.5.13"
+spongyCastle = "1.58.0.0"
+bouncyCastle = "1.78.1"
 aboutLibrariesVersion = "11.2.3"
 
 [libraries]
@@ -189,8 +192,18 @@ itext-layout = { group = "com.itextpdf.android", name = "layout-android", versio
 itext-io = { group = "com.itextpdf.android", name = "io-android", version.ref = "itextVersion" }
 itext-bouncycastle-adpaters = { group = "com.itextpdf", name = "bouncy-castle-adapter", version.ref = "itextVersion" }
 itext-bouncycastle-figsadpater = { group = "com.itextpdf", name = "bouncy-castle-fips-adapter", version.ref = "itextVersion" }
+
 itext7-core = { group = "com.itextpdf", name = "itext7-core", version.ref = "itext7Version" }
+itext7-kernel = { group = "com.itextpdf", name = "itext7-kernel", version.ref = "itext7Version" }
+itext7-layout = { group = "com.itextpdf", name = "itext7-layout", version.ref = "itext7Version" }
+itext7-io = { group = "com.itextpdf", name = "itext7-io", version.ref = "itext7Version" }
+
 itextg = { group = "com.itextpdf", name = "itextg", version.ref = "itextgVersion" }
+itextpdf = { group = "com.itextpdf", name = "itextpdf", version.ref = "itextPdfVersion" }
+spongycastle = { group = "com.madgag.spongycastle", name = "core", version.ref = "spongyCastle" }
+spongycastle-prov = { group = "com.madgag.spongycastle", name = "prov", version.ref = "spongyCastle" }
+spongycastle-pkix = { group = "com.madgag.spongycastle", name = "bcpkix-jdk15on", version.ref = "spongyCastle" }
+bouncycastle-prov = { group = "org.bouncycastle", name = "bcprov-jdk18on", version.ref = "bouncyCastle" }
 
 # ======================= ABOUT LIBRARIES =======================
 about-libraries-core = { group = "com.mikepenz", name = "aboutlibraries-core", version.ref = "aboutLibrariesVersion" }

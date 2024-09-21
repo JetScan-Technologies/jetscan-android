@@ -56,6 +56,5 @@ interface PdfManager {
         file: File,
         password: String,
         masterPassword: String,
-        permissions: Int,
     ): Boolean
 }

@@ -11,18 +11,17 @@ import android.util.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
-import com.itextpdf.text.Document
-import com.itextpdf.text.Image
-import com.itextpdf.text.PageSize
-import com.itextpdf.text.pdf.PdfDocument
-import com.itextpdf.text.pdf.PdfReader
-import com.itextpdf.text.pdf.PdfStamper
-import com.itextpdf.text.pdf.PdfWriter
+
+import com.itextpdf.io.image.ImageDataFactory
+import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.kernel.pdf.PdfWriter
+import com.itextpdf.layout.Document
+import com.itextpdf.layout.element.Image
+import com.itextpdf.layout.properties.HorizontalAlignment
+import com.itextpdf.layout.properties.ObjectFit
+
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
@@ -147,7 +146,7 @@ class PdfManagerImpl : PdfManager {
         val pdfRenderer = PdfRenderer(parcelFileDescriptor!!)
         for (i in 0 until pdfRenderer.pageCount) {
             val page = pdfRenderer.openPage(i)
-            val canvas  = Canvas()
+            val canvas = Canvas()
             val scale = resizedHeight.toFloat() / page.height
             val width = (page.width * scale).toInt()
             val height = (page.height * scale).toInt()
@@ -176,35 +175,40 @@ class PdfManagerImpl : PdfManager {
         margins: Float
     ): Boolean {
         return withContext(Dispatchers.IO) {
-            val pdfDocument = Document()
+            val pdfWriter = PdfWriter(file)
+            val pdfDocument = PdfDocument(pdfWriter)
+            val document = Document(pdfDocument)
+            document.setMargins(margins, margins, margins, margins)
             try {
-                val pdfWriter = PdfWriter.getInstance(pdfDocument, file.outputStream())
-                pdfDocument.open()
-                files.forEach {
-                    val image = Image.getInstance(it.absolutePath)
-                    if (image.width > pdfSize.width) {
-                        val width = pdfSize.width.toFloat()
-                        val height = image.height * pdfSize.width / image.width
-                        image.scaleToFit(width, height)
-                        val left = 0f
-                        val bottom = (pdfSize.height - height) / 2
-                        image.setAbsolutePosition(left, bottom)
+                files.forEachIndexed { index, it ->
+                    val imageFactory = ImageDataFactory.create(it.absolutePath)
+                    val image = Image(imageFactory)
+                    val imageWidth = image.imageWidth
+                    val imageHeight = image.imageHeight
+                    image.setMargins(margins, margins, margins, margins)
+                    image.setPadding(0f)
+                    if(imageWidth > imageHeight) {
+                        image.setMaxWidth(pdfSize.width - margins * 2)
+                        image.setAutoScaleHeight(true)
+                        val top = (pdfSize.height - imageHeight * pdfSize.width / imageWidth) / 2
+                        image.setRelativePosition(margins, top, 0f, 0f)
                     } else {
-                        val width = image.width
-                        val height = image.height
-                        image.scaleToFit(width, height)
-                        val left = (pdfSize.width - width) / 2
-                        val bottom = (pdfSize.height - height) / 2
-                        image.setAbsolutePosition(left, bottom)
+                        Log.d("PdfManagerImpl", "imageWidth: $imageWidth, imageHeight: $imageHeight")
+                        image.setMaxHeight(pdfSize.height - margins * 2)
                     }
-                    pdfDocument.add(image)
-                    pdfDocument.newPage()
+                    image.setHorizontalAlignment(HorizontalAlignment.CENTER)
+                    image.objectFit = ObjectFit.CONTAIN
+                    document.add(image)
+                    if (index < files.size - 1) {
+                        pdfDocument.addNewPage()
+                    }
                 }
                 true
             } catch (e: Exception) {
                 e.printStackTrace()
                 false
             } finally {
+                document.close()
                 pdfDocument.close()
             }
         }
@@ -217,35 +221,36 @@ class PdfManagerImpl : PdfManager {
         pdfSize: Size,
         margins: Float
     ): Boolean {
-        return withContext(Dispatchers.IO){
-            val pdfDocument = Document(PageSize.A4)
+        return withContext(Dispatchers.IO) {
+            val pdfWriter = PdfWriter(file)
+            val pdfDocument = PdfDocument(pdfWriter)
+            val document = Document(pdfDocument)
             try {
-                val pdfWriter = PdfWriter.getInstance(pdfDocument, file.outputStream())
-                pdfDocument.open()
                 files.forEach {
-                    val image = Image.getInstance(it.absolutePath)
-                    if (image.width > pdfSize.width) {
+                    val imageFactory = ImageDataFactory.create(it.absolutePath)
+                    val image = Image(imageFactory)
+                    if (image.width.value > pdfSize.width) {
                         val width = pdfSize.width.toFloat()
-                        val height = image.height * pdfSize.width / image.width
+                        val height = image.imageHeight * pdfSize.width / image.width.value
                         image.scaleToFit(width, height)
                         val left = 0f
                         val bottom = (pdfSize.height - height) / 2
-                        image.setAbsolutePosition(left, bottom)
+                        image.setRelativePosition(left, bottom, 0f, 0f)
                     } else {
-                        val width = image.width
-                        val height = image.height
+                        val width = image.width.value
+                        val height = image.imageHeight
                         image.scaleToFit(width, height)
                         val left = (pdfSize.width - width) / 2
                         val bottom = (pdfSize.height - height) / 2
-                        image.setAbsolutePosition(left, bottom)
+                        image.setRelativePosition(left, bottom, 0f, 0f)
                     }
-                    pdfDocument.add(image)
                 }
                 true
             } catch (e: Exception) {
                 e.printStackTrace()
                 false
             } finally {
+                document.close()
                 pdfDocument.close()
             }
         }
@@ -255,25 +260,9 @@ class PdfManagerImpl : PdfManager {
         file: File,
         password: String,
         masterPassword: String,
-        permissions: Int
     ): Boolean {
         return withContext(Dispatchers.IO) {
-            try {
-                val pdfReader = PdfReader(file.absolutePath)
-                val pdfStamper = PdfStamper(pdfReader, FileOutputStream(file))
-                pdfStamper.setEncryption(
-                    password.toByteArray(),
-                    masterPassword.toByteArray(),
-                    permissions,
-                    PdfWriter.ENCRYPTION_AES_128
-                )
-                pdfStamper.close()
-                pdfReader.close()
-                true
-            } catch (e: Exception) {
-                e.printStackTrace()
-                false
-            }
+            true
         }
     }
 

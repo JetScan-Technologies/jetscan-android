@@ -241,7 +241,10 @@ class DocumentManagerImpl(
             }.awaitAll()
             val files = scannedImageDirectory.listFiles()
             if (files != null) {
-                pdfManager.savePdf(files.toList(), originalFile, imageQuality, Size(595,842), 0f)
+                val isSaved = pdfManager.savePdf(files.toList(), originalFile, imageQuality, Size(595,842), 0f)
+                if (!isSaved) {
+                    return@coroutineScope Task.Error(Exception("Error saving pdf file"))
+                }
             }
             if (originalFile.length() == 0L) {
                 return@coroutineScope Task.Error(Exception("Error creating file"))

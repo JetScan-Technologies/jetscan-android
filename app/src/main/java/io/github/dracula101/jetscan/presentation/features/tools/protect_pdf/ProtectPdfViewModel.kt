@@ -111,7 +111,6 @@ class ProtectPdfViewModel @Inject constructor(
                 file = cachedFile,
                 password = password,
                 masterPassword = password, // master password is same as password (change if needed)
-                permissions = 0,
             )
             val savedProtectedFile = documentManager.addExtraDocument(
                 file = cachedFile,
