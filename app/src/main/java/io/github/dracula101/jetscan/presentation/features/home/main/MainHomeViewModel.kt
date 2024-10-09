@@ -6,6 +6,7 @@ import android.os.Parcelable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.dracula101.jetscan.data.auth.repository.AuthRepository
 import io.github.dracula101.jetscan.data.document.manager.DocumentManager
 import io.github.dracula101.jetscan.data.document.models.doc.Document
@@ -16,8 +17,10 @@ import io.github.dracula101.jetscan.presentation.features.home.main.components.M
 import io.github.dracula101.jetscan.presentation.platform.base.ImportBaseViewModel
 import io.github.dracula101.jetscan.presentation.platform.base.ImportDocumentState
 import io.github.dracula101.jetscan.presentation.platform.feature.app.model.SnackbarState
+import io.github.dracula101.pdf.manager.PdfManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.launchIn
@@ -36,12 +39,15 @@ class MainHomeViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val documentRepository: DocumentRepository,
     private val documentManager: DocumentManager,
+    private val pdfManager: PdfManager,
     private val savedStateHandle: SavedStateHandle,
     private val contentResolver: ContentResolver,
 ) : ImportBaseViewModel<MainHomeState, Unit, MainHomeAction>(
     initialState = savedStateHandle[MAIN_HOME_STATE] ?: MainHomeState(),
     documentRepository = documentRepository,
-    documentManager = documentManager
+    documentManager = documentManager,
+    pdfManager = pdfManager,
+    contentResolver = contentResolver,
 ) {
 
     private val _importJob = MutableStateFlow<Job?>(null)
@@ -64,7 +70,7 @@ class MainHomeViewModel @Inject constructor(
                 when(importState){
                     is ImportDocumentState.Idle, is ImportDocumentState.Started -> {}
                     is ImportDocumentState.InProgress -> handleImportDocumentInProgress(importState)
-                    is ImportDocumentState.Error -> handleImportDocumentError(importState.error)
+                    is ImportDocumentState.Error -> handleImportDocumentError(importState.message,importState.error)
                     is ImportDocumentState.Success -> handleImportDocumentComplete()
                 }
             }
@@ -137,20 +143,31 @@ class MainHomeViewModel @Inject constructor(
         }
     }
 
-    private fun handleImportDocumentError(error: Exception) {
+    private fun handleImportDocumentError(
+        message: String?,
+        error: Exception
+    ) {
         _importJob.value = null
         mutableStateFlow.update {
             state.copy(
                 snackbarState = SnackbarState.ShowError(
-                    title = "Import Document Error",
+                    title = message ?: "Error Importing Document",
                     message = error.message ?: "Unknown error occurred",
                 ),
                 isImportingDocument = false,
                 importDocumentState = ImportDocumentState.Error(
-                    message = "Error importing document",
+                    message = message,
                     error = error,
                 ),
             )
+        }
+        viewModelScope.launch {
+            delay(2000)
+            mutableStateFlow.update {
+                state.copy(
+                    importDocumentState = null
+                )
+            }
         }
     }
 
@@ -179,7 +196,25 @@ class MainHomeViewModel @Inject constructor(
     private fun handleAddDocument(uri: Uri) {
         val fileQuality = state.importQuality
         mutableStateFlow.update { state.copy(isImportingDocument = true) }
-        importDocument(uri, fileQuality)
+        importDocument(
+            uri,
+            fileQuality,
+            passwordRequest = {
+                mutableStateFlow.update {
+                    state.copy(
+                        dialogState = MainHomeDialogState.ShowPasswordDialog(
+                            onPasswordEntered = { pass ->
+                                importDocument(
+                                    uri,
+                                    fileQuality,
+                                    password = pass,
+                                )
+                            }
+                        )
+                    )
+                }
+            }
+        )
     }
 
     private fun handleDeleteDocument(document: Document) {
@@ -313,6 +348,11 @@ data class MainHomeState(
 
         @Parcelize
         data object ShowImportQuality : MainHomeDialogState(), Parcelable
+
+        @Parcelize
+        data class ShowPasswordDialog(
+            val onPasswordEntered: (String) -> Unit
+        ) : MainHomeDialogState(), Parcelable
     }
 
 }

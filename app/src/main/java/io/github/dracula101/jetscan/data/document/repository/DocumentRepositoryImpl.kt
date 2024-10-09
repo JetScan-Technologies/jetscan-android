@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
+import java.io.File
 import javax.inject.Inject
 
 class DocumentRepositoryImpl @Inject constructor(
@@ -103,12 +104,11 @@ class DocumentRepositoryImpl @Inject constructor(
 
     override suspend fun addImportDocument(
         uri: Uri,
+        fileName: String,
         imageQuality: ImageQuality,
         progressListener: (currentProgress: Float, totalProgress: Int) -> Unit,
     ): Boolean {
         return try {
-            val fileName = documentManager.getFileName(uri, withoutExtension = true)
-                ?: return false
             val timeCreated = System.currentTimeMillis()
             val task = documentManager.addDocument(
                 imageQuality =  imageQuality,
@@ -123,7 +123,7 @@ class DocumentRepositoryImpl @Inject constructor(
                     dateCreated = timeCreated,
                     dateModified = System.currentTimeMillis(),
                     size = documentManager.getFileLength(uri),
-                    uri = task.data.originalFile?.toUri() ?: Uri.EMPTY,
+                    uri = task.data.originalFile.toUri(),
                     previewImageUri = task.data.previewFile?.toUri(),
                     mimeType = documentManager.getMimeType(uri),
                     extension = documentManager.getExtension(uri),

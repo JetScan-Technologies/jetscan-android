@@ -37,13 +37,6 @@ fun ExpandedHomeScreen(
         modifier = Modifier
             .padding(padding)
     ) {
-        MainHomeBottomBar(
-            state = state,
-            onTabSelected = { tab ->
-                viewModel.trySendAction(MainHomeAction.Ui.ChangeTab(tab))
-            },
-            isVertical = true
-        )
         MainHomePageComponent(
             modifier = Modifier
                 .fillMaxWidth(0.8f)

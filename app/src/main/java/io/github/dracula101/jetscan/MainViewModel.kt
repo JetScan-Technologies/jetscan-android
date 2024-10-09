@@ -6,7 +6,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.dracula101.jetscan.data.platform.manager.opencv.OpenCvManager
-import io.github.dracula101.jetscan.data.platform.repository.SettingsRepository
+import io.github.dracula101.jetscan.data.platform.repository.settings.SettingsRepository
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
 import io.github.dracula101.jetscan.presentation.platform.feature.setting.model.AppTheme
 import kotlinx.coroutines.flow.launchIn

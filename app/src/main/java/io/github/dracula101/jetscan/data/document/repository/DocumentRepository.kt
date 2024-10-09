@@ -6,6 +6,7 @@ import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.models.doc.DocumentFolder
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import kotlinx.coroutines.flow.Flow
+import java.io.File
 
 
 interface DocumentRepository {
@@ -26,6 +27,7 @@ interface DocumentRepository {
     suspend fun isDocumentExists(name: String): Boolean
     suspend fun addImportDocument(
         uri: Uri,
+        fileName: String,
         imageQuality: ImageQuality,
         progressListener: (currentProgress: Float, totalProgress: Int) -> Unit = { _, _ -> }
     ): Boolean

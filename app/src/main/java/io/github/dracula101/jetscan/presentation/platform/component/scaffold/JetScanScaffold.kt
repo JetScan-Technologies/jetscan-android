@@ -6,8 +6,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
@@ -32,10 +35,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowWidthSizeClass
 import io.github.dracula101.jetscan.presentation.platform.component.snackbar.AppSnackBar
+import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.debugBorder
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JetScanScaffold(
     modifier: Modifier = Modifier,
@@ -51,10 +57,12 @@ fun JetScanScaffold(
         .contentWindowInsets
         .exclude(WindowInsets.statusBars)
         .exclude(WindowInsets.navigationBars),
+    alwaysShowBottomBar: Boolean = false,
     content: @Composable (PaddingValues, ScaffoldSize) -> Unit,
 ) {
     val windowWidthSize : WindowWidthSizeClass = currentWindowAdaptiveInfo().windowSizeClass.windowWidthSizeClass
     val snackbarHostStateDelegate = remember { snackbarHostState }
+    val layoutDirection = LocalLayoutDirection.current
     val dismissSnackbarState = rememberSwipeToDismissBoxState(
         confirmValueChange = {
             when(it) {
@@ -76,8 +84,13 @@ fun JetScanScaffold(
             topBar?.invoke()
         },
         bottomBar = {
-            if (windowWidthSize == WindowWidthSizeClass.COMPACT) {
-                bottomBar()
+            if (windowWidthSize == WindowWidthSizeClass.COMPACT || alwaysShowBottomBar) {
+                Box(
+                    modifier = Modifier
+                        .imePadding()
+                ){
+                    bottomBar()
+                }
             }
         },
         snackbarHost = {
@@ -106,13 +119,16 @@ fun JetScanScaffold(
                             .statusBarsPadding()
                         else
                             Modifier
-
                     )
                     .padding(WindowInsets.ime.asPaddingValues())
-
             ){
                 content(
-                    paddingValues,
+                    PaddingValues(
+                        top = paddingValues.calculateTopPadding() - WindowInsets.ime.asPaddingValues().calculateTopPadding(),
+                        bottom = paddingValues.calculateBottomPadding() - WindowInsets.ime.asPaddingValues().calculateBottomPadding(),
+                        start = paddingValues.calculateStartPadding(layoutDirection) - WindowInsets.ime.asPaddingValues().calculateStartPadding(layoutDirection),
+                        end = paddingValues.calculateEndPadding(layoutDirection) - WindowInsets.ime.asPaddingValues().calculateEndPadding(layoutDirection),
+                    ),
                     when(windowWidthSize) {
                         WindowWidthSizeClass.COMPACT -> ScaffoldSize.COMPACT
                         WindowWidthSizeClass.MEDIUM -> ScaffoldSize.MEDIUM

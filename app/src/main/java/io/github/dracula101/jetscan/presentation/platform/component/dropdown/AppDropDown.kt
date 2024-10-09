@@ -13,9 +13,12 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DividerDefaults
@@ -48,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
+import io.github.dracula101.jetscan.presentation.platform.component.extensions.verticalScrollbar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -168,10 +172,11 @@ fun DropdownMenuContent(
             scaleY = scale
             this.alpha = alpha
             transformOrigin = transformOriginState.value
-        },
+        }.heightIn(max = 240.dp),
         shape = MaterialTheme.shapes.large,
         elevation = CardDefaults.elevatedCardElevation(),
     ) {
+        val scrollState = rememberScrollState()
         Column(
             modifier = modifier
                 .clip(MaterialTheme.shapes.large)
@@ -181,7 +186,10 @@ fun DropdownMenuContent(
                     shape = MaterialTheme.shapes.large
                 )
                 .background(MaterialTheme.colorScheme.surfaceContainer)
-                .width(IntrinsicSize.Max),
+                .width(IntrinsicSize.Max)
+                .heightIn(max = 240.dp)
+                .verticalScrollbar(scrollState)
+                .verticalScroll(scrollState),
         ) {
             items.forEachIndexed { index, item ->
                 Row(
@@ -206,6 +214,7 @@ fun DropdownMenuContent(
                             .padding(vertical = 12.dp)
                             .padding(start = if (item.icon != null) 8.dp else 16.dp, end = 16.dp),
                         fontWeight = FontWeight.Normal,
+                        style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }

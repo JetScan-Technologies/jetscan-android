@@ -22,6 +22,8 @@ import io.github.dracula101.jetscan.presentation.features.home.main.components.M
 import io.github.dracula101.jetscan.presentation.features.home.main.createMainHomeDestination
 import io.github.dracula101.jetscan.presentation.features.settings.about.createAboutScreenDestination
 import io.github.dracula101.jetscan.presentation.features.settings.about.navigateToAboutPage
+import io.github.dracula101.jetscan.presentation.features.settings.document.createDocumentSettingsDestination
+import io.github.dracula101.jetscan.presentation.features.settings.document.navigateToDocumentSettings
 import io.github.dracula101.jetscan.presentation.features.settings.open_source_libs.createOpenSourceLibrariesDestination
 import io.github.dracula101.jetscan.presentation.features.settings.open_source_libs.navigateToOpenSourceLibraryScreen
 import io.github.dracula101.jetscan.presentation.features.tools.compress_pdf.createCompressPdfDestination
@@ -70,11 +72,19 @@ fun NavGraphBuilder.homeGraph(navController: NavHostController) {
             },
             navigateToAboutPage = {
                 navController.navigateToAboutPage()
+            },
+            navigateToDocumentSettings = { screen ->
+                navController.navigateToDocumentSettings(screen)
+            }
+        )
+        createDocumentSettingsDestination(
+            onNavigateBack = {
+                navController.navigateUp()
             }
         )
         createPreviewDocumentDestination(
             onNavigateBack = {
-                navController.popBackStack()
+                navController.navigateUp()
             },
             onNavigateToPdf = { document ->
                 navController.navigateToPdfViewScreen(document = document)
@@ -85,7 +95,7 @@ fun NavGraphBuilder.homeGraph(navController: NavHostController) {
         )
         createEditDocumentDestination(
             onNavigateBack = {
-                navController.popBackStack()
+                navController.navigateUp()
             },
             onNavigateToPdf = { document ->
                 navController.navigateToPdfViewScreen(
@@ -96,11 +106,11 @@ fun NavGraphBuilder.homeGraph(navController: NavHostController) {
         )
         createScannerDestination(
             onNavigateBack = {
-                navController.popBackStack()
+                navController.navigateUp()
             },
             onNavigateToPdf = { id, name ->
                 navController.run {
-                    popBackStack()
+                    navigateUp()
                     navigateToPdfViewScreen(
                         documentId = id,
                         documentName = name,
@@ -110,7 +120,7 @@ fun NavGraphBuilder.homeGraph(navController: NavHostController) {
         )
         createFolderDocumentDestinationRoute(
             onNavigateBack = {
-                navController.popBackStack()
+                navController.navigateUp()
             },
             navigateToDoc = { document ->
                 navController.navigateToEditDocument(document, pageIndex = 0)
@@ -124,7 +134,7 @@ fun NavGraphBuilder.homeGraph(navController: NavHostController) {
         )
         createAboutScreenDestination(
             onNavigateBack = {
-                navController.popBackStack()
+                navController.navigateUp()
             },
             onNavigateToOpenSourceLibraries = {
                 navController.navigateToOpenSourceLibraryScreen()
@@ -132,12 +142,12 @@ fun NavGraphBuilder.homeGraph(navController: NavHostController) {
         )
         createOpenSourceLibrariesDestination(
             onNavigateBack = {
-                navController.popBackStack()
+                navController.navigateUp()
             }
         )
         createPdfViewDestination(
             onNavigateBack = {
-                navController.popBackStack()
+                navController.navigateUp()
             },
             onNavigateToCompression = { document ->
                 navController.navigateToCompressPdfScreen(document = document)
@@ -156,32 +166,32 @@ fun NavGraphBuilder.homeGraph(navController: NavHostController) {
         // TOOLS SCREENS HERE
         createCompressPdfDestination(
             onNavigateBack = {
-                navController.popBackStack()
+                navController.navigateUp()
             }
         )
         createESignPdfDestination(
             onNavigateBack = {
-                navController.popBackStack()
+                navController.navigateUp()
             }
         )
         createMergePdfDestination(
             onNavigateBack = {
-                navController.popBackStack()
+                navController.navigateUp()
             }
         )
         createProtectPdfDestination(
             onNavigateBack = {
-                navController.popBackStack()
+                navController.navigateUp()
             }
         )
         createSplitPdfDestination(
             onNavigateBack = {
-                navController.popBackStack()
+                navController.navigateUp()
             }
         )
         createWatermarkPdfDestination(
             onNavigateBack = {
-                navController.popBackStack()
+                navController.navigateUp()
             }
         )
     }

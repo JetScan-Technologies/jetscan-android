@@ -52,9 +52,22 @@ interface PdfManager {
         margins: Float,
     ): Boolean
 
-    suspend fun protectPdf(
-        file: File,
+    suspend fun encryptPdf(
+        inputFile: File,
+        outputFile: File,
         password: String,
         masterPassword: String,
+    ): Boolean
+
+    suspend fun decryptPdf(
+        uri: Uri,
+        outputFile: File,
+        contentResolver: ContentResolver,
+        password: String
+    ): Boolean
+
+    suspend fun pdfHasPassword(
+        uri: Uri,
+        contentResolver: ContentResolver,
     ): Boolean
 }

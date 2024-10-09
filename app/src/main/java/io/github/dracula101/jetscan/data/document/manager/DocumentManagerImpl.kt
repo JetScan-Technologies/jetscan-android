@@ -103,7 +103,7 @@ class DocumentManagerImpl(
     ): Task<DocumentDirectory> = coroutineScope {
         try {
             val extension = extensionManager.getExtensionType(contentResolver, uri)
-            if (extension?.isDocument() == false) throw IllegalArgumentException("Only Pdf/Image files are supported.")
+            if (extension?.isDocument() == false || extension == null) throw IllegalArgumentException("Only Pdf/Image files are supported.")
             val isPdf = extension == Extension.PDF
             val numOfPdfPages = pdfManager.getPdfPages(contentResolver, uri) ?: 0
             val directoryName = hashEncoder(fileName)
@@ -278,7 +278,10 @@ class DocumentManagerImpl(
         return withContext(Dispatchers.IO) {
             try {
                 val extraDocumentFile = File(extraDocumentDirectory, fileName)
-                file.copyTo(extraDocumentFile, overwrite = true)
+                if (extraDocumentFile.exists()) {
+                    extraDocumentFile.delete()
+                }
+                file.copyTo(extraDocumentFile)
                 updateFlow()
                 extraDocumentFile
             } catch (e: Exception) {

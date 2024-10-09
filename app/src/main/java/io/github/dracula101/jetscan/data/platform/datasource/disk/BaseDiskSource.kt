@@ -1,7 +1,9 @@
 package io.github.dracula101.jetscan.data.platform.datasource.disk
 
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.core.content.edit
+import timber.log.Timber
 
 /**
  * Base class for simplifying interactions with [SharedPreferences].
@@ -14,12 +16,15 @@ abstract class BaseDiskSource(
      * Gets the [Boolean] for the given [key] from [SharedPreferences], or returns `null` if that
      * key is not present.
      */
-    protected fun getBoolean(key: String): Boolean? =
+    protected fun getBoolean(
+        key: String,
+        defaultValue: Boolean? = null,
+    ): Boolean? =
         if (sharedPreferences.contains(key.withBase())) {
             sharedPreferences.getBoolean(key.withBase(), false)
         } else {
             // Make sure we can return a null value as a default if necessary
-            null
+            defaultValue
         }
 
     /**
@@ -42,12 +47,15 @@ abstract class BaseDiskSource(
      * Gets the [Int] for the given [key] from [SharedPreferences], or returns `null` if that key
      * is not present.
      */
-    protected fun getInt(key: String): Int? =
+    protected fun getInt(
+        key: String,
+        defaultValue: Int? = null,
+    ): Int? =
         if (sharedPreferences.contains(key.withBase())) {
             sharedPreferences.getInt(key.withBase(), 0)
         } else {
             // Make sure we can return a null value as a default if necessary
-            null
+            defaultValue
         }
 
     /**
@@ -70,12 +78,15 @@ abstract class BaseDiskSource(
      * Gets the [Long] for the given [key] from [SharedPreferences], or returns `null` if that key
      * is not present.
      */
-    protected fun getLong(key: String): Long? =
+    protected fun getLong(
+        key: String,
+        defaultValue: Long? = null,
+    ): Long? =
         if (sharedPreferences.contains(key.withBase())) {
             sharedPreferences.getLong(key.withBase(), 0)
         } else {
             // Make sure we can return a null value as a default if necessary
-            null
+            defaultValue
         }
 
     /**
@@ -96,12 +107,15 @@ abstract class BaseDiskSource(
 
     protected fun getString(
         key: String,
-    ): String? = sharedPreferences.getString(key.withBase(), null)
+        defaultValue: String? = null,
+    ): String? = sharedPreferences.getString(key.withBase(), null) ?: defaultValue
 
     protected fun putString(
         key: String,
         value: String?,
-    ): Unit = sharedPreferences.edit { putString(key.withBase(), value) }
+    ): Unit = sharedPreferences.edit(commit = true) {
+        putString(key.withBase(), value)
+    }
 
     protected fun removeWithPrefix(prefix: String) {
         sharedPreferences

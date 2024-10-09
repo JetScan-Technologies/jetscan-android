@@ -25,6 +25,7 @@ fun PreviewIcon(modifier: Modifier = Modifier, uri: Uri) {
             .memoryCachePolicy(CachePolicy.ENABLED)
             .diskCachePolicy(CachePolicy.ENABLED)
             .error(R.drawable.image_error)
+            .size(150, 150 * 4/3)
             .crossfade(true)
             .data(uri)
             .build(),

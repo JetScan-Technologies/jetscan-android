@@ -4,9 +4,12 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import io.github.dracula101.jetscan.data.platform.datasource.disk.SettingsDiskSource
-import io.github.dracula101.jetscan.data.platform.repository.SettingsRepository
-import io.github.dracula101.jetscan.data.platform.repository.SettingsRepositoryImpl
+import io.github.dracula101.jetscan.data.platform.datasource.disk.config.ConfigDiskSource
+import io.github.dracula101.jetscan.data.platform.datasource.disk.settings.SettingsDiskSource
+import io.github.dracula101.jetscan.data.platform.repository.config.ConfigRepository
+import io.github.dracula101.jetscan.data.platform.repository.config.ConfigRepositoryImpl
+import io.github.dracula101.jetscan.data.platform.repository.settings.SettingsRepository
+import io.github.dracula101.jetscan.data.platform.repository.settings.SettingsRepositoryImpl
 import javax.inject.Singleton
 
 /**
@@ -23,5 +26,14 @@ object PlatformRepositoryModule {
     ): SettingsRepository =
         SettingsRepositoryImpl(
             settingsDiskSource = settingsDiskSource,
+        )
+
+    @Provides
+    @Singleton
+    fun provideConfigRepository(
+        configDiskSource: ConfigDiskSource,
+    ): ConfigRepository =
+        ConfigRepositoryImpl(
+            configDiskSource = configDiskSource,
         )
 }

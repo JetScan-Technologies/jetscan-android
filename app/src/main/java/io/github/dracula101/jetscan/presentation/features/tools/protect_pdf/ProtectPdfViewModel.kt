@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
+import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Named
@@ -100,15 +101,10 @@ class ProtectPdfViewModel @Inject constructor(
 
         viewModelScope.launch(Dispatchers.IO) {
             val fileName = "${selectedDocument.name}_locked.pdf"
-            val cachedFile = File(cacheDirectory, fileName)
-            if (!cachedFile.exists()) { cachedFile.createNewFile() }
-            cachedFile.outputStream().use { output ->
-                contentResolver.openInputStream(selectedDocument.uri)?.use { input ->
-                    input.copyTo(output)
-                }
-            }
-            val protected = pdfManager.protectPdf(
-                file = cachedFile,
+            val cachedFile = File(cacheDirectory, fileName).apply { createNewFile() }
+            val protected = pdfManager.encryptPdf(
+                inputFile = selectedDocument.uri.toFile(),
+                outputFile = cachedFile,
                 password = password,
                 masterPassword = password, // master password is same as password (change if needed)
             )
@@ -116,6 +112,7 @@ class ProtectPdfViewModel @Inject constructor(
                 file = cachedFile,
                 fileName = fileName,
             )
+            Timber.i("Protected: $savedProtectedFile")
             cachedFile.delete()
             mutableStateFlow.update { state ->
                 if (savedProtectedFile!=null && protected) {

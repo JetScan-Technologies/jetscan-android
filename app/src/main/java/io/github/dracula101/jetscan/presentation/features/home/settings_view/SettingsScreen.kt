@@ -51,7 +51,9 @@ import io.github.dracula101.jetscan.data.auth.model.UserState
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeState
 import io.github.dracula101.jetscan.presentation.features.home.settings_view.components.SettingsItem
 import io.github.dracula101.jetscan.presentation.features.home.settings_view.components.SettingsSection
+import io.github.dracula101.jetscan.presentation.features.settings.document.DocumentSettingScreen
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.ScaffoldSize
+import io.github.dracula101.jetscan.presentation.platform.component.switch.AppSwitch
 import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.customContainer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -63,7 +65,8 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     padding: PaddingValues,
     mainHomeState: MainHomeState,
-    onNavigateToAboutPage: () -> Unit
+    onNavigateToAboutPage: () -> Unit,
+    onNavigateToDocumentSettings: (DocumentSettingScreen) -> Unit,
 ) {
     val context = LocalContext.current
     val state = viewModel.stateFlow.collectAsStateWithLifecycle()
@@ -129,15 +132,11 @@ fun SettingsScreen(
                     title = "Dark Mode",
                     icon = Icons.Rounded.DarkMode,
                     trailing = {
-                        Switch(
+                        AppSwitch(
                             checked = state.value.isDarkTheme,
                             onCheckedChange = {
                                 viewModel.trySendAction(SettingsAction.Ui.ChangeTheme)
-                            },
-                            modifier = Modifier
-                                .padding(end = 8.dp)
-                                .size(24.dp)
-                                .scale(0.8f)
+                            }
                         )
                     },
                     showDivider = false
@@ -148,27 +147,16 @@ fun SettingsScreen(
             SettingsSection(
                 title = "Document"
             ) {
-                SettingsItem(
-                    title = "Import & Export",
-                    icon = Icons.Rounded.ImportExport,
-                    onClick = {}
-                )
-                SettingsItem(
-                    title = "Pdf Settings",
-                    icon = Icons.Outlined.PictureAsPdf,
-                    onClick = {}
-                )
-                SettingsItem(
-                    title = "Document Configuration",
-                    icon = Icons.Outlined.Description,
-                    onClick = {}
-                )
-                SettingsItem(
-                    title = "Camera Settings",
-                    icon = Icons.Rounded.CameraAlt,
-                    onClick = {},
-                    showDivider = false
-                )
+                DocumentSettingScreen.entries.forEach { screen ->
+                    SettingsItem(
+                        title = screen.toString(),
+                        icon = screen.toIcon(),
+                        onClick = {
+                            onNavigateToDocumentSettings(screen)
+                        },
+                        showDivider = screen != DocumentSettingScreen.entries.last()
+                    )
+                }
             }
         }
         item{

@@ -1,4 +1,4 @@
-package io.github.dracula101.jetscan.data.platform.datasource.disk
+package io.github.dracula101.jetscan.data.platform.datasource.disk.settings
 
 import io.github.dracula101.jetscan.presentation.platform.feature.setting.model.AppTheme
 import kotlinx.coroutines.flow.Flow

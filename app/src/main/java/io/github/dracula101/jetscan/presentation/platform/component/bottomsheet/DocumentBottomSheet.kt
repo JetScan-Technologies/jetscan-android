@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -36,21 +39,24 @@ fun DocumentFilesBottomSheet(
     documents: List<Document> = emptyList(),
     documentClick: (Document) -> Unit
 ){
+    val lazyListState = rememberLazyListState()
     ModalBottomSheet(
         onDismissRequest = onDismiss,
     ) {
-        Column(
+        LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .fillMaxSize(),
+            state = lazyListState,
         ) {
-            Text(
-                text = "Documents",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-            Spacer(modifier = Modifier.size(8.dp))
-            documents.forEach { document->
+            item {
+                Text(
+                    text = "Documents",
+                    style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                Spacer(modifier = Modifier.size(8.dp))
+            }
+            items(documents) { document ->
                 Column(
                     modifier = Modifier
                         .clickable {

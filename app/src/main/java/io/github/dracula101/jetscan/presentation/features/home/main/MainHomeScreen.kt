@@ -5,19 +5,24 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,12 +60,15 @@ import io.github.dracula101.jetscan.presentation.features.home.main.components.M
 import io.github.dracula101.jetscan.presentation.features.home.settings_view.SettingsScreen
 import io.github.dracula101.jetscan.presentation.features.home.settings_view.SettingsViewModel
 import io.github.dracula101.jetscan.presentation.features.home.subscription_view.SubscriptionViewModel
+import io.github.dracula101.jetscan.presentation.features.settings.document.DocumentSettingScreen
 import io.github.dracula101.jetscan.presentation.platform.component.dialog.ConfirmAlertDialog
 import io.github.dracula101.jetscan.presentation.platform.component.dialog.IconAlertDialog
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.JetScanScaffold
+import io.github.dracula101.jetscan.presentation.platform.component.scaffold.ScaffoldSize
 import io.github.dracula101.jetscan.presentation.platform.component.snackbar.util.showErrorSnackBar
 import io.github.dracula101.jetscan.presentation.platform.component.snackbar.util.showSuccessSnackbar
 import io.github.dracula101.jetscan.presentation.platform.component.snackbar.util.showWarningSnackbar
+import io.github.dracula101.jetscan.presentation.platform.component.textfield.AppTextField
 import io.github.dracula101.jetscan.presentation.platform.feature.app.model.SnackbarState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,6 +83,7 @@ fun MainHomeScreen(
     navigateTo: (MainHomeSubPage) -> Unit,
     onNavigateToFolder: (DocumentFolder) -> Unit = {},
     onNavigateToAboutPage: () -> Unit = {},
+    onNavigateToDocumentSettings: (DocumentSettingScreen) -> Unit = {},
 ) {
     val state = mainViewModel.stateFlow.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -146,29 +155,40 @@ fun MainHomeScreen(
             )
         }
     ) { padding, windowSize ->
-        when(state.value.currentTab) {
-            MainHomeTabs.HOME -> {
-                HomeScreen(
-                    viewModel = mainViewModel,
-                    windowSize = windowSize,
-                    padding = padding,
-                    onDocumentClick = onNavigateDocument,
-                )
-            }
-            MainHomeTabs.FILES -> {
-                HomeFilesScreen(
-                    windowSize = windowSize,
-                    padding = padding,
-                    viewModel = filesViewModel,
-                    mainHomeState = state.value,
-                    onShowSnackbar = { snackbarState ->
-                        mainViewModel.trySendAction(MainHomeAction.Ui.ShowSnackbar(snackbarState))
+        Row {
+            if(windowSize != ScaffoldSize.COMPACT){
+                MainHomeBottomBar(
+                    state = state.value,
+                    onTabSelected = { tab ->
+                        mainViewModel.trySendAction(MainHomeAction.Ui.ChangeTab(tab))
                     },
-                    onNavigateToFolder = { folder->
-                        onNavigateToFolder(folder)
-                    }
+                    isVertical = true,
+                    modifier = Modifier.padding(padding)
                 )
             }
+            when(state.value.currentTab) {
+                MainHomeTabs.HOME -> {
+                    HomeScreen(
+                        viewModel = mainViewModel,
+                        windowSize = windowSize,
+                        padding = padding,
+                        onDocumentClick = onNavigateDocument,
+                    )
+                }
+                MainHomeTabs.FILES -> {
+                    HomeFilesScreen(
+                        windowSize = windowSize,
+                        padding = padding,
+                        viewModel = filesViewModel,
+                        mainHomeState = state.value,
+                        onShowSnackbar = { snackbarState ->
+                            mainViewModel.trySendAction(MainHomeAction.Ui.ShowSnackbar(snackbarState))
+                        },
+                        onNavigateToFolder = { folder->
+                            onNavigateToFolder(folder)
+                        }
+                    )
+                }
 //            MainHomeTabs.SUBSCRIPTION -> {
 //                SubscriptionScreen(
 //                    windowSize = windowSize,
@@ -177,14 +197,16 @@ fun MainHomeScreen(
 //                    mainHomeState = state.value
 //                )
 //            }
-            MainHomeTabs.SETTINGS -> {
-                SettingsScreen(
-                    windowSize = windowSize,
-                    padding = padding,
-                    viewModel = settingsViewModel,
-                    mainHomeState = state.value,
-                    onNavigateToAboutPage = onNavigateToAboutPage
-                )
+                MainHomeTabs.SETTINGS -> {
+                    SettingsScreen(
+                        windowSize = windowSize,
+                        padding = padding,
+                        viewModel = settingsViewModel,
+                        mainHomeState = state.value,
+                        onNavigateToAboutPage = onNavigateToAboutPage,
+                        onNavigateToDocumentSettings = onNavigateToDocumentSettings
+                    )
+                }
             }
         }
     }
@@ -217,10 +239,11 @@ fun MainHomeBottomBar(
     state: MainHomeState,
     isVertical: Boolean = false,
     onTabSelected: (MainHomeTabs) -> Unit = {},
+    modifier: Modifier = Modifier
 ) {
     if (isVertical) {
         Column(
-            Modifier
+            modifier
                 .fillMaxHeight()
                 .widthIn(min = 80.dp)
                 .selectableGroup(),
@@ -442,6 +465,39 @@ fun MainHomeDialog(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                     textAlign = TextAlign.Center,
+                )
+            }
+        }
+
+        is MainHomeState.MainHomeDialogState.ShowPasswordDialog -> {
+            val password = remember { mutableStateOf("") }
+            IconAlertDialog(
+                icon = Icons.Rounded.Lock,
+                onDismiss = onDismiss,
+                onConfirm = {
+                    onDismiss()
+                    dialogState.onPasswordEntered(password.value)
+                },
+            ) {
+                Text(
+                    "Password Protected",
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Please enter the password to import.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                AppTextField(
+                    value = password.value,
+                    onValueChange = { password.value = it },
+                    label = "Password",
+                    placeholder = {
+                        Text("Enter Password")
+                    },
                 )
             }
         }

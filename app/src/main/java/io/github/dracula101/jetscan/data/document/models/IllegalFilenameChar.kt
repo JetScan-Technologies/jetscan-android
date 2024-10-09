@@ -34,15 +34,13 @@ enum class IllegalFilenameChar(val value: Char) {
             return false
         }
 
-        fun removeIllegalChar(string: String): String {
+        fun removeIllegalChar(string: String, replaceWith: String = ""): String {
             var result = string
             entries.forEach {
-                result = result.replace(it.value.toString(), "")
+                result = result.replace(it.value.toString(), replaceWith)
             }
             return result
         }
-
-
     }
 
 }

@@ -11,6 +11,7 @@ import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.presentation.platform.base.ImportBaseViewModel
 import io.github.dracula101.jetscan.presentation.platform.base.ImportDocumentState
+import io.github.dracula101.pdf.manager.PdfManager
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -26,11 +27,14 @@ class CompressPdfViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val contentResolver: ContentResolver,
     private val documentManager: DocumentManager,
-    private val documentRepository: DocumentRepository
+    private val documentRepository: DocumentRepository,
+    private val pdfManager: PdfManager,
 ) : ImportBaseViewModel<CompressPdfState, Unit, CompressPdfAction>(
     initialState = savedStateHandle[COMPRESS_PDF_STATE] ?: CompressPdfState(),
     documentRepository = documentRepository,
-    documentManager = documentManager
+    documentManager = documentManager,
+    pdfManager = pdfManager,
+    contentResolver = contentResolver
 ) {
 
     init {

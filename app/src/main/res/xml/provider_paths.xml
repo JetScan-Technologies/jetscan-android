@@ -3,4 +3,7 @@
     <files-path
         name="scanned_documents"
         path="Scanned Documents/" />
+    <files-path
+        name="extra_documents"
+        path="Extra Documents/" />
 </paths>

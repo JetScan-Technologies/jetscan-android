@@ -190,8 +190,8 @@ itext-core = { group = "com.itextpdf", name = "itext-core", version.ref = "itext
 itext-kernel = { group = "com.itextpdf.android", name = "kernel-android", version.ref = "itextVersion" }
 itext-layout = { group = "com.itextpdf.android", name = "layout-android", version.ref = "itextVersion" }
 itext-io = { group = "com.itextpdf.android", name = "io-android", version.ref = "itextVersion" }
-itext-bouncycastle-adpaters = { group = "com.itextpdf", name = "bouncy-castle-adapter", version.ref = "itextVersion" }
-itext-bouncycastle-figsadpater = { group = "com.itextpdf", name = "bouncy-castle-fips-adapter", version.ref = "itextVersion" }
+itext-bouncycastle-adpaters = { group = "com.itextpdf.android", name = "bouncy-castle-adapter-android", version.ref = "itextVersion" }
+itext-bouncycastle-figsadpater = { group = "com.itextpdf.android", name = "bouncy-castle-fips-adapter-android", version.ref = "itextVersion" }
 
 itext7-core = { group = "com.itextpdf", name = "itext7-core", version.ref = "itext7Version" }
 itext7-kernel = { group = "com.itextpdf", name = "itext7-kernel", version.ref = "itext7Version" }

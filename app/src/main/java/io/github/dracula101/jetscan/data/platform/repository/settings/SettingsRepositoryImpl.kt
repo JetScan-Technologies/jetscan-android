@@ -1,6 +1,6 @@
-package io.github.dracula101.jetscan.data.platform.repository
+package io.github.dracula101.jetscan.data.platform.repository.settings
 
-import io.github.dracula101.jetscan.data.platform.datasource.disk.SettingsDiskSource
+import io.github.dracula101.jetscan.data.platform.datasource.disk.settings.SettingsDiskSource
 import io.github.dracula101.jetscan.presentation.platform.feature.setting.model.AppTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

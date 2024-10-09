@@ -81,4 +81,5 @@ object AppModule {
     fun provideOpenCvManager(): OpenCvManager {
         return OpenCvManagerImpl()
     }
+
 }

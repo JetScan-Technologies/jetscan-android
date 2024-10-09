@@ -56,7 +56,8 @@ dependencies {
 
     // implementation(libs.itext.kernel)
     // implementation(libs.itext.layout)
-    // implementation(libs.itext.io)
     implementation(libs.itext.kernel)
     implementation(libs.itext.layout)
+    implementation(libs.itext.io)
+    implementation(libs.itext.bouncycastle.adpaters)
 }

@@ -11,10 +11,16 @@ import android.util.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
+import androidx.core.net.toUri
 
 import com.itextpdf.io.image.ImageDataFactory
+import com.itextpdf.kernel.geom.PageSize
+import com.itextpdf.kernel.pdf.EncryptionConstants
 import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.kernel.pdf.PdfReader
 import com.itextpdf.kernel.pdf.PdfWriter
+import com.itextpdf.kernel.pdf.ReaderProperties
+import com.itextpdf.kernel.pdf.WriterProperties
 import com.itextpdf.layout.Document
 import com.itextpdf.layout.element.Image
 import com.itextpdf.layout.properties.HorizontalAlignment
@@ -177,7 +183,7 @@ class PdfManagerImpl : PdfManager {
         return withContext(Dispatchers.IO) {
             val pdfWriter = PdfWriter(file)
             val pdfDocument = PdfDocument(pdfWriter)
-            val document = Document(pdfDocument)
+            val document = Document(pdfDocument, PageSize.A4)
             document.setMargins(margins, margins, margins, margins)
             try {
                 files.forEachIndexed { index, it ->
@@ -188,12 +194,10 @@ class PdfManagerImpl : PdfManager {
                     image.setMargins(margins, margins, margins, margins)
                     image.setPadding(0f)
                     if(imageWidth > imageHeight) {
-                        image.setMaxWidth(pdfSize.width - margins * 2)
-                        image.setAutoScaleHeight(true)
-                        val top = (pdfSize.height - imageHeight * pdfSize.width / imageWidth) / 2
+                        image.setMinWidth(pdfSize.width - margins * 2)
+                        val top = (pdfSize.height - imageHeight * pdfSize.width / imageWidth - margins) / 2
                         image.setRelativePosition(margins, top, 0f, 0f)
                     } else {
-                        Log.d("PdfManagerImpl", "imageWidth: $imageWidth, imageHeight: $imageHeight")
                         image.setMaxHeight(pdfSize.height - margins * 2)
                     }
                     image.setHorizontalAlignment(HorizontalAlignment.CENTER)
@@ -229,20 +233,22 @@ class PdfManagerImpl : PdfManager {
                 files.forEach {
                     val imageFactory = ImageDataFactory.create(it.absolutePath)
                     val image = Image(imageFactory)
-                    if (image.width.value > pdfSize.width) {
-                        val width = pdfSize.width.toFloat()
-                        val height = image.imageHeight * pdfSize.width / image.width.value
-                        image.scaleToFit(width, height)
-                        val left = 0f
-                        val bottom = (pdfSize.height - height) / 2
-                        image.setRelativePosition(left, bottom, 0f, 0f)
+                    image.setMargins(margins, margins, margins, margins)
+                    image.setPadding(0f)
+                    val imageWidth = image.imageWidth
+                    val imageHeight = image.imageHeight
+                    if(imageWidth > imageHeight) {
+                        image.setMinWidth(pdfSize.width - margins * 2)
+                        val top = (pdfSize.height - imageHeight * pdfSize.width / imageWidth - margins) / 2
+                        image.setRelativePosition(margins, top, 0f, 0f)
                     } else {
-                        val width = image.width.value
-                        val height = image.imageHeight
-                        image.scaleToFit(width, height)
-                        val left = (pdfSize.width - width) / 2
-                        val bottom = (pdfSize.height - height) / 2
-                        image.setRelativePosition(left, bottom, 0f, 0f)
+                        image.setMaxHeight(pdfSize.height - margins * 2)
+                    }
+                    image.setHorizontalAlignment(HorizontalAlignment.CENTER)
+                    image.objectFit = ObjectFit.CONTAIN
+                    document.add(image)
+                    if (files.indexOf(it) < files.size - 1) {
+                        pdfDocument.addNewPage()
                     }
                 }
                 true
@@ -256,13 +262,74 @@ class PdfManagerImpl : PdfManager {
         }
     }
 
-    override suspend fun protectPdf(
-        file: File,
+    override suspend fun encryptPdf(
+        inputFile: File,
+        outputFile: File,
         password: String,
         masterPassword: String,
     ): Boolean {
         return withContext(Dispatchers.IO) {
-            true
+            try {
+                val pdfReader = PdfReader(inputFile)
+                val writerProperties = WriterProperties()
+                writerProperties.setStandardEncryption(
+                    password.toByteArray(),
+                    masterPassword.toByteArray(),
+                    EncryptionConstants.ALLOW_PRINTING,
+                    EncryptionConstants.ENCRYPTION_AES_128 or EncryptionConstants.DO_NOT_ENCRYPT_METADATA
+                )
+                val pdfWriter = PdfWriter(outputFile.outputStream(), writerProperties)
+                val pdfDocument = PdfDocument(pdfReader, pdfWriter)
+                pdfDocument.close()
+                true
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
+            }
+
+        }
+    }
+
+    override suspend fun decryptPdf(uri: Uri, outputFile: File, contentResolver: ContentResolver, password: String): Boolean {
+        return withContext(Dispatchers.IO){
+            try {
+                contentResolver.openInputStream(uri)?.use { inputStream ->
+                    val pdfReader = PdfReader(
+                        inputStream,
+                        ReaderProperties()
+                            .setPassword(password.toByteArray())
+                    )
+                    val pdfWriter = PdfWriter(outputFile)
+                    val pdfDocument = PdfDocument(pdfReader, pdfWriter)
+                    pdfDocument.close()
+                    Log.d("PdfManagerImpl", "Decrypted file: ${outputFile.absolutePath}, size: ${outputFile.length()}")
+                }
+                val isDecrypted = pdfHasPassword(outputFile.toUri(), contentResolver)
+                !isDecrypted
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
+            }
+        }
+    }
+
+    override suspend fun pdfHasPassword(uri: Uri, contentResolver: ContentResolver): Boolean {
+        return withContext(Dispatchers.IO){
+            val inputTempFile = File.createTempFile("temp_locked", ".pdf")
+            try {
+                inputTempFile.outputStream().use { outputStream ->
+                    contentResolver.openInputStream(uri)?.use { inputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+                val pdfRenderer = PdfRenderer(ParcelFileDescriptor.open(inputTempFile, ParcelFileDescriptor.MODE_READ_ONLY))
+                pdfRenderer.close()
+                false
+            } catch (e: SecurityException) {
+                true
+            } finally {
+                inputTempFile.delete()
+            }
         }
     }
 

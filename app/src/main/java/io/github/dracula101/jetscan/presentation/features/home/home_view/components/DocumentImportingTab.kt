@@ -57,7 +57,7 @@ fun DocumentImportingState(
                     text = when (importDocumentState) {
                         is ImportDocumentState.InProgress -> "Importing Document - ${importDocumentState.fileName}"
                         is ImportDocumentState.Success -> "Document Imported"
-                        is ImportDocumentState.Error -> "Error Importing Document"
+                        is ImportDocumentState.Error -> importDocumentState.message ?: "Error Importing Document"
                         is ImportDocumentState.Started -> "Importing Document"
                         else -> "---"
                     },
@@ -99,11 +99,10 @@ fun DocumentImportingState(
 
                     is ImportDocumentState.Error -> {
                         Text(
-                            text = "Error Importing Document",
+                            text = importDocumentState.error.message ?: "Error",
                             style = MaterialTheme.typography.labelSmall,
                         )
                     }
-
                     else -> {}
                 }
             }
