@@ -14,12 +14,20 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridScope
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.FolderDelete
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -40,6 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dracula101.jetscan.R
+import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.models.doc.DocumentFolder
 import io.github.dracula101.jetscan.presentation.features.home.files_view.components.FileTopbar
 import io.github.dracula101.jetscan.presentation.features.home.files_view.components.FolderItem
@@ -49,6 +58,7 @@ import io.github.dracula101.jetscan.presentation.platform.component.dialog.AppBa
 import io.github.dracula101.jetscan.presentation.platform.component.dialog.IconAlertDialog
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.ScaffoldSize
 import io.github.dracula101.jetscan.presentation.platform.feature.app.model.SnackbarState
+import timber.log.Timber
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -58,9 +68,11 @@ fun HomeFilesScreen(
     padding: PaddingValues,
     mainHomeState: MainHomeState,
     onShowSnackbar: (SnackbarState) -> Unit,
+    onDocumentClick: (Document) -> Unit,
     onNavigateToFolder: (DocumentFolder) -> Unit
 ) {
     val state = viewModel.stateFlow.collectAsStateWithLifecycle()
+    val gridState = rememberLazyGridState()
     state.value.dialogState?.let { dialogState->
         HomeFilesDialog(
             dialogState,
@@ -79,12 +91,33 @@ fun HomeFilesScreen(
         onShowSnackbar(snackbarState)
         viewModel.trySendAction(HomeFilesAction.Ui.DismissSnackbar)
     }
-    LazyColumn(
+    LazyVerticalGrid(
         modifier = Modifier
-            .padding(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding())
-            .padding(horizontal = 16.dp)
+            .padding(padding)
+            .padding(horizontal = 16.dp),
+        state = gridState,
+        columns = GridCells.Fixed(
+            when(windowSize){
+                ScaffoldSize.COMPACT -> 1
+                ScaffoldSize.MEDIUM -> 2
+                ScaffoldSize.EXPANDED -> 3
+            }
+        ),
+        contentPadding = PaddingValues(vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        stickyHeader {
+        item(
+            span = {
+                GridItemSpan(
+                    when(windowSize){
+                        ScaffoldSize.COMPACT -> 1
+                        ScaffoldSize.MEDIUM -> 2
+                        ScaffoldSize.EXPANDED -> 3
+                    }
+                )
+            }
+        ) {
             FileTopbar(
                 state = state.value,
                 mainHomeState = mainHomeState,
@@ -100,45 +133,50 @@ fun HomeFilesScreen(
                         .padding(top = 32.dp)
                 )
             }
-        }
-        seperatedItems(
-            items = state.value.folders.reversed(),
-            key = { it.dateCreated },
-            itemContent =  { folder->
-                FolderItem(
-                    folder = folder,
-                    modifier = Modifier
-                        .animateItemPlacement(),
-                    onFolderDelete = {
-                        viewModel.trySendAction(HomeFilesAction.Alerts.ShowDeleteFolderAlert(folder))
-                    },
-                    onClickFolder = {
-                        onNavigateToFolder(folder)
-                    },
-                )
-            },
-            separatorContent = {
-                Spacer(modifier = Modifier.size(12.dp))
+        }else {
+            itemsIndexed(
+                items = state.value.folders.reversed(),
+                key = { _, folder -> folder.id },
+                itemContent = { _, folder ->
+                    FolderItem(
+                        folder = folder,
+                        modifier = Modifier
+                            .animateItemPlacement(),
+                        onFolderDelete = {
+                            viewModel.trySendAction(
+                                HomeFilesAction.Alerts.ShowDeleteFolderAlert(folder)
+                            )
+                        },
+                        onClickFolder = {
+                            onNavigateToFolder(folder)
+                        },
+                    )
+                }
+            )
+            if(state.value.folders.isNotEmpty() && state.value.documents.isNotEmpty() && windowSize == ScaffoldSize.COMPACT){
+                item {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 4.dp, horizontal = 12.dp),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+                    )
+                }
             }
-        )
-        item{
-            Spacer(modifier = Modifier.size(12.dp))
+            itemsIndexed(
+                items = state.value.documents,
+                key = { _, document -> document.id },
+                itemContent = { _, document ->
+                    DocumentItem(
+                        document = document,
+                        onClick = {
+                            onDocumentClick(document)
+                        },
+                        modifier = Modifier
+                            .animateItemPlacement(),
+                    )
+                }
+            )
         }
-        seperatedItems(
-            items = state.value.documents,
-            key = { it.id },
-            itemContent = { document ->
-                DocumentItem(
-                    document = document,
-                    onClick = {  },
-                    modifier = Modifier
-                        .animateItemPlacement()
-                )
-            },
-            separatorContent = {
-                Spacer(modifier = Modifier.size(12.dp))
-            }
-        )
+
     }
 }
 
@@ -280,7 +318,9 @@ fun NoFolderView(
             Image(
                 painter = painterResource(R.drawable.no_folder_bg),
                 contentDescription = "No Folders",
-                modifier = Modifier.widthIn(max = 280.dp).fillMaxWidth()
+                modifier = Modifier
+                    .widthIn(max = 280.dp)
+                    .fillMaxWidth()
             )
             Text(
                 text = "No Folders or Documents",
@@ -295,19 +335,5 @@ fun NoFolderView(
                 textAlign = TextAlign.Center
             )
         }
-    }
-}
-
-fun <T> LazyListScope.seperatedItems(
-    items: List<T>,
-    key: ((item: T) -> Any)? = null,
-    contentType: (item: T) -> Any? = { null },
-    itemContent: @Composable LazyItemScope.(item: T) -> Unit,
-    separatorContent: @Composable LazyItemScope.() -> Unit
-) = items(items.size) { index ->
-    val item = items[index]
-    itemContent(item)
-    if (index < items.size - 1) {
-        separatorContent()
     }
 }

@@ -29,6 +29,7 @@ import io.github.dracula101.jetscan.presentation.features.home.files_view.HomeFi
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeState
 import io.github.dracula101.jetscan.presentation.platform.component.dropdown.AppDropDown
 import io.github.dracula101.jetscan.presentation.platform.component.dropdown.MenuItem
+import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.debugBorder
 
 @Composable
 fun FileTopbar(
@@ -47,8 +48,7 @@ fun FileTopbar(
                     ),
                     startY = 120f,
                 )
-            )
-            .padding(bottom = 4.dp),
+            ),
         verticalAlignment = Alignment.CenterVertically
     ){
         Text(

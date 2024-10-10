@@ -177,6 +177,9 @@ dependencies {
     // ==================== SHARED PREFERENCES ====================
     implementation(libs.androidx.sharedPrefs)
 
+    // ==================== LOTTIE ====================
+    implementation(libs.lottie)
+
     // ==================== COIL ====================
     implementation(libs.coil)
 

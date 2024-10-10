@@ -184,6 +184,9 @@ fun MainHomeScreen(
                         onShowSnackbar = { snackbarState ->
                             mainViewModel.trySendAction(MainHomeAction.Ui.ShowSnackbar(snackbarState))
                         },
+                        onDocumentClick = { document ->
+                            onNavigateDocument(document)
+                        },
                         onNavigateToFolder = { folder->
                             onNavigateToFolder(folder)
                         }

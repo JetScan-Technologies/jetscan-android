@@ -81,6 +81,20 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun loginPasswordLess(): LoginResult {
+        return try {
+            val authResult = firebaseAuth.signInAnonymously().await()
+            if(authResult.user == null){
+                return LoginResult.Error("Couldn't Authenticate User", "AUTH_FAIL")
+            }else {
+                LoginResult.Success(authResult.user!!.toUserState())
+            }
+        } catch (e: Exception) {
+            Timber.e(e)
+            LoginResult.Error(e.localizedMessage ?: "An unexpected error occurred", "UNKNOWN_ERROR")
+        }
+    }
+
     private fun buildGoogleSignInRequest(): BeginSignInRequest {
         return BeginSignInRequest.Builder()
             .setGoogleIdTokenRequestOptions(

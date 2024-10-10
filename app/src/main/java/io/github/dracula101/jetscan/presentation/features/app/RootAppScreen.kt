@@ -22,6 +22,9 @@ import io.github.dracula101.jetscan.presentation.features.auth.register.REGISTER
 import io.github.dracula101.jetscan.presentation.features.home.HOME_GRAPH_ROUTE
 import io.github.dracula101.jetscan.presentation.features.home.homeGraph
 import io.github.dracula101.jetscan.presentation.features.home.navigateToHomeGraph
+import io.github.dracula101.jetscan.presentation.features.onboarding.ONBOARDING_ROUTE
+import io.github.dracula101.jetscan.presentation.features.onboarding.navigateToOnboarding
+import io.github.dracula101.jetscan.presentation.features.onboarding.onboardingGraph
 import io.github.dracula101.jetscan.presentation.features.splash.SPLASH_ROUTE
 import io.github.dracula101.jetscan.presentation.features.splash.navigateToSplashRoute
 import io.github.dracula101.jetscan.presentation.features.splash.splashDestination
@@ -66,13 +69,15 @@ fun RootAppScreen(
         popExitTransition = { toExitTransition()(this) },
     ) {
         splashDestination()
+        onboardingGraph(navController)
         authGraph(navController)
         homeGraph(navController)
     }
     val targetRoute = when (state) {
-        RootAppState.Auth -> AUTH_GRAPH_ROUTE
         RootAppState.Splash -> SPLASH_ROUTE
-        RootAppState.Home, RootAppState.PreviewDocument -> HOME_GRAPH_ROUTE
+        RootAppState.Onboarding -> ONBOARDING_ROUTE
+        RootAppState.Auth -> AUTH_GRAPH_ROUTE
+        RootAppState.Home -> HOME_GRAPH_ROUTE
     }
     val currentRoute = navController.currentDestination?.rootLevelRoute()
 
@@ -107,8 +112,9 @@ fun RootAppScreen(
     LaunchedEffect(state) {
         when (state) {
             RootAppState.Auth -> navController.navigateToAuthGraph(rootNavOptions)
+            RootAppState.Onboarding -> navController.navigateToOnboarding()
             RootAppState.Splash -> navController.navigateToSplashRoute(rootNavOptions)
-            RootAppState.Home, RootAppState.PreviewDocument -> navController.navigateToHomeGraph(rootNavOptions)
+            RootAppState.Home -> navController.navigateToHomeGraph(rootNavOptions)
         }
     }
 }
@@ -133,8 +139,6 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.toEnterTransition(
         else -> when (initialState.destination.rootLevelRoute()) {
             // Disable transitions when coming from the splash screen
             SPLASH_ROUTE -> RootTransitionProviders.Enter.none
-            // The RESET_PASSWORD_ROUTE animation should be stay but due to an issue when combining
-            // certain animations, we are just using a fadeIn instead.
             else -> RootTransitionProviders.Enter.fadeIn
         }
     }

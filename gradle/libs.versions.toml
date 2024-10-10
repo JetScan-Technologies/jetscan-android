@@ -38,6 +38,7 @@ coil = "2.4.0"
 picasso = "2.8"
 palette = "1.0.0"
 liveData = "1.5.1"
+lottie = "6.5.2"
 firebaseCrashlyticsPlugin = "2.9.9"
 firebaseAuth = "22.1.1"
 firebaseBom = "32.3.1"
@@ -124,6 +125,9 @@ androidx-liveData = { group = "androidx.lifecycle", name = "lifecycle-livedata-k
 
 # ======================= SHARED_PREFENCES =======================
 androidx-sharedPrefs = { group = "androidx.preference", name = "preference-ktx", version.ref = "sharedPrefs" }
+
+# ======================= LOTTIE =======================
+lottie = { group = "com.airbnb.android", name = "lottie-compose", version.ref = "lottie" }
 
 # ======================= COIL =======================
 coil = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }

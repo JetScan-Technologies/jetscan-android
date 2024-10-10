@@ -33,6 +33,11 @@ interface AuthRepository {
     suspend fun register(name: String, email: String, password: String): RegisterResult
 
     /*
+    * Login without password
+     */
+    suspend fun loginPasswordLess(): LoginResult
+
+    /*
     * Set the avatar of the user
      */
     suspend fun setAvatar(): UpdateProfileResult

@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.dracula101.jetscan.data.auth.model.UserState
 import io.github.dracula101.jetscan.data.auth.repository.AuthRepository
+import io.github.dracula101.jetscan.data.platform.repository.config.ConfigRepository
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -24,6 +25,7 @@ import javax.inject.Inject
 class RootAppViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val authRepository: AuthRepository,
+    private val configRepository: ConfigRepository,
 ) : BaseViewModel<RootAppState, Unit, RootAppAction>(
     initialState = RootAppState.Splash,
 ) {
@@ -58,9 +60,12 @@ class RootAppViewModel @Inject constructor(
     private fun handleUserStateUpdateReceive(
         action: RootAppAction.Internal.UserStateUpdateReceive,
     ) {
+        // Handle all navigation from here
         mutableStateFlow.update {
             when (action.userState) {
-                null -> RootAppState.Auth
+                null -> configRepository.isOnboardingCompleted.let { isOnboardingCompleted ->
+                    if (isOnboardingCompleted) RootAppState.Auth else RootAppState.Onboarding
+                }
                 else -> RootAppState.Home
             }
         }
@@ -68,12 +73,6 @@ class RootAppViewModel @Inject constructor(
 
     private fun handleInitializeApp() {
         Firebase.initialize(context)
-        val state = mutableStateFlow.value
-        if (state == RootAppState.Splash) {
-            mutableStateFlow.update {
-                RootAppState.Auth
-            }
-        }
     }
 }
 
@@ -101,10 +100,10 @@ sealed class RootAppState : Parcelable {
     data object Home : RootAppState()
 
     /**
-     * App should show preview Document
+     * App should show onboarding
      */
     @Parcelize
-    data object PreviewDocument : RootAppState()
+    data object Onboarding : RootAppState()
 
 }
 

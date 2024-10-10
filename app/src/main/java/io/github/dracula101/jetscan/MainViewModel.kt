@@ -6,6 +6,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.dracula101.jetscan.data.platform.manager.opencv.OpenCvManager
+import io.github.dracula101.jetscan.data.platform.repository.config.ConfigRepository
 import io.github.dracula101.jetscan.data.platform.repository.settings.SettingsRepository
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
 import io.github.dracula101.jetscan.presentation.platform.feature.setting.model.AppTheme
@@ -22,6 +23,7 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
+    private val configRepository: ConfigRepository,
     private val savedStateHandle: SavedStateHandle,
     private val opencvManager: OpenCvManager,
 ) : BaseViewModel<MainState, MainEvent, MainAction>(
@@ -52,7 +54,6 @@ class MainViewModel @Inject constructor(
             is MainAction.ReceiveNewIntent -> {
                 handleNewIntentReceived(action)
             }
-            else -> {}
         }
     }
 
@@ -83,6 +84,10 @@ class MainViewModel @Inject constructor(
         intent: Intent,
         isFirstIntent: Boolean,
     ) {
+    }
+
+    private fun onFirstLaunch() {
+        configRepository.isFirstLaunch = false
     }
 
     private fun recreateUiAndGarbageCollect() {
