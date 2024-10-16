@@ -9,6 +9,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.models.doc.DocumentFolder
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
+import io.github.dracula101.jetscan.presentation.features.home.main.components.MainHomeSubPage
+import io.github.dracula101.jetscan.presentation.features.home.main.components.PdfActionPage
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -52,6 +54,7 @@ class FolderDocViewModel @Inject constructor(
 
             is FolderDocAction.Alerts.ShowAddFolderDialog -> handleAddFolderDialog()
             is FolderDocAction.Alerts.DismissDialog -> handleDismissAlert(dialog = true)
+
         }
     }
 

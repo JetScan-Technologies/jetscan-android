@@ -5,6 +5,7 @@ import android.net.Uri
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.models.doc.DocumentFolder
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
+import io.github.dracula101.jetscan.data.document.repository.models.DocumentResult
 import kotlinx.coroutines.flow.Flow
 import java.io.File
 
@@ -30,7 +31,7 @@ interface DocumentRepository {
         fileName: String,
         imageQuality: ImageQuality,
         progressListener: (currentProgress: Float, totalProgress: Int) -> Unit = { _, _ -> }
-    ): Boolean
+    ): DocumentResult<Document>
 
     suspend fun addDocumentFromScanner(
         originalBitmaps: List<Bitmap>,
@@ -38,21 +39,21 @@ interface DocumentRepository {
         fileName: String,
         imageQuality: Int,
         progressListener: (currentProgress: Float, totalProgress: Int) -> Unit = { _, _ -> }
-    ): String?
+    ): DocumentResult<Document>
 
     // ================= Insert Folder =================
-    suspend fun addFolder(folderName: String, path: String): Boolean
-    suspend fun addDocumentToFolder(document: Document, folder: DocumentFolder): Boolean
+    suspend fun addFolder(folderName: String, path: String): DocumentResult<Long>
+    suspend fun addDocumentToFolder(document: Document, folder: DocumentFolder): DocumentResult<Long>
 
     // ================= Update Documents =================
-    suspend fun updateDocument(document: Document): Boolean
+    suspend fun updateDocument(document: Document): DocumentResult<Nothing>
 
     // ================= Delete Documents =================
-    suspend fun deleteAllDocuments(): Boolean
-    suspend fun deleteDocument(document: Document): Boolean
+    suspend fun deleteAllDocuments(): DocumentResult<Nothing>
+    suspend fun deleteDocument(document: Document): DocumentResult<Nothing>
 
     // ================= Delete Folder =================
-    suspend fun deleteFolder(folder: DocumentFolder): Boolean
-    suspend fun deleteDocumentFromFolder(document: Document, folder: DocumentFolder): Boolean
+    suspend fun deleteFolder(folder: DocumentFolder): DocumentResult<Nothing>
+    suspend fun deleteDocumentFromFolder(document: Document, folder: DocumentFolder): DocumentResult<Nothing>
 
 }

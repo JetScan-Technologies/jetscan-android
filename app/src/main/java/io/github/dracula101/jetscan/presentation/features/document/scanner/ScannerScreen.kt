@@ -133,6 +133,11 @@ fun ScannerScreen(
         rememberPermissionState(permission = android.Manifest.permission.CAMERA) { isGranted ->
             isPermissionGranted.value = isGranted
         }
+    LaunchedEffect(Unit){
+        if(isPermissionGranted.value == null){
+            isCameraPermissionGranted.launchPermissionRequest()
+        }
+    }
     when (isCameraPermissionGranted.status) {
         is PermissionStatus.Denied -> NoPermissionView(
             modifier = modifier,

@@ -4,7 +4,6 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android) apply false
     alias(libs.plugins.crashlytics) apply false
     alias(libs.plugins.kotlin.parcelize) apply false
-    alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.dagger.hilt.android) apply false
     alias(libs.plugins.kotlin.ksp) apply false
     alias(libs.plugins.google.services) apply false

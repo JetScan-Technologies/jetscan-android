@@ -1,17 +1,22 @@
 package io.github.dracula101.jetscan.presentation.features.document.preview
 
 import android.os.Parcelable
+import android.webkit.MimeTypeMap
+import androidx.core.net.toFile
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.dracula101.jetscan.data.document.datasource.disk.converters.toDocument
 import io.github.dracula101.jetscan.data.document.datasource.disk.dao.DocumentDao
 import io.github.dracula101.jetscan.data.document.models.doc.Document
+import io.github.dracula101.jetscan.data.ocr.repository.OcrRepository
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
+import timber.log.Timber
 import javax.inject.Inject
 
 const val PREVIEW_STATE = "preview_state"
@@ -20,6 +25,7 @@ const val PREVIEW_STATE = "preview_state"
 class PreviewViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val documentDao: DocumentDao,
+    private val ocrRepository: OcrRepository,
 ) : BaseViewModel<PreviewState, Unit, PreviewAction>(
     initialState = savedStateHandle[PREVIEW_STATE] ?: PreviewState()
 ) {

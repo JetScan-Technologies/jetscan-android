@@ -11,17 +11,22 @@ import io.github.dracula101.jetscan.data.document.datasource.disk.converters.toS
 import io.github.dracula101.jetscan.data.document.datasource.disk.dao.DocumentDao
 import io.github.dracula101.jetscan.data.document.datasource.disk.dao.DocumentFolderDao
 import io.github.dracula101.jetscan.data.document.manager.DocumentManager
+import io.github.dracula101.jetscan.data.document.manager.models.DocManagerErrorType
+import io.github.dracula101.jetscan.data.document.manager.models.DocManagerResult
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.models.doc.DocumentFolder
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import io.github.dracula101.jetscan.data.document.models.image.ScannedImage
+import io.github.dracula101.jetscan.data.document.repository.models.DocumentErrorType
+import io.github.dracula101.jetscan.data.document.repository.models.DocumentResult
 import io.github.dracula101.jetscan.data.document.utils.Task
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
-import java.io.File
+import java.io.IOException
+import java.sql.SQLException
 import javax.inject.Inject
 
 class DocumentRepositoryImpl @Inject constructor(
@@ -99,7 +104,9 @@ class DocumentRepositoryImpl @Inject constructor(
     }
 
     override suspend fun isDocumentExists(name: String): Boolean {
-        return documentDao.isDocumentExists(name)
+        return try {
+            documentDao.isDocumentExists(name)
+        } catch (e: Exception) { false }
     }
 
     override suspend fun addImportDocument(
@@ -107,36 +114,78 @@ class DocumentRepositoryImpl @Inject constructor(
         fileName: String,
         imageQuality: ImageQuality,
         progressListener: (currentProgress: Float, totalProgress: Int) -> Unit,
-    ): Boolean {
+    ): DocumentResult<Document> {
         return try {
+            val documentExists = documentDao.isDocumentExists(fileName)
+            if (documentExists) {
+                return DocumentResult.Error(
+                    message = "Document already exists",
+                    type = DocumentErrorType.DUPLICATE_DOCUMENT
+                )
+            }
             val timeCreated = System.currentTimeMillis()
-            val task = documentManager.addDocument(
+            val result = documentManager.addDocument(
                 imageQuality =  imageQuality,
                 uri = uri,
                 fileName = fileName,
                 progressListener = progressListener
             )
             delay(500)
-            if (task is Task.Success) {
-                val document = Document(
-                    name = fileName,
-                    dateCreated = timeCreated,
-                    dateModified = System.currentTimeMillis(),
-                    size = documentManager.getFileLength(uri),
-                    uri = task.data.originalFile.toUri(),
-                    previewImageUri = task.data.previewFile?.toUri(),
-                    mimeType = documentManager.getMimeType(uri),
-                    extension = documentManager.getExtension(uri),
-                )
-                val documentId = documentDao.insertDocument(document.toDocumentEntity())
-                val scannedImages = task.data.imageDir.listFiles()?.map { ScannedImage.fromFile(it) }
-                    ?: emptyList()
-                documentDao.insertImages(scannedImages.map { it.toScannedImageEntity(documentId) })
-                true
-            } else { false }
-        } catch (e: Exception) {
-            Timber.e(e)
-            false
+            return when(result){
+                is DocManagerResult.Success -> {
+                    val document = Document(
+                        name = fileName,
+                        dateCreated = timeCreated,
+                        dateModified = System.currentTimeMillis(),
+                        size = documentManager.getFileLength(uri),
+                        uri = result.data.originalFile.toUri(),
+                        previewImageUri = result.data.previewFile?.toUri(),
+                        mimeType = documentManager.getMimeType(uri),
+                        extension = documentManager.getExtension(uri),
+                    )
+                    val documentId = documentDao.insertDocument(document.toDocumentEntity())
+                    val scannedImages = result.data.imageDir.listFiles()?.map { ScannedImage.fromFile(it) }
+                        ?: emptyList()
+                    documentDao.insertImages(scannedImages.map { it.toScannedImageEntity(documentId) })
+                    DocumentResult.Success(document)
+                }
+                is DocManagerResult.Error -> {
+                    DocumentResult.Error(
+                        message = when(result.type) {
+                            DocManagerErrorType.UNKNOWN -> "Failed to import document"
+                            DocManagerErrorType.IO_EXCEPTION -> "Failed to read file"
+                            DocManagerErrorType.FILE_NOT_CREATED -> "Failed to create file"
+                            DocManagerErrorType.INVALID_EXTENSION -> "Invalid file extension"
+                        },
+                        error = result.error,
+                        type = when(result.type) {
+                            DocManagerErrorType.UNKNOWN -> DocumentErrorType.UNKNOWN
+                            DocManagerErrorType.IO_EXCEPTION -> DocumentErrorType.INVALID_DOCUMENT
+                            DocManagerErrorType.FILE_NOT_CREATED -> DocumentErrorType.INVALID_DOCUMENT
+                            DocManagerErrorType.INVALID_EXTENSION -> DocumentErrorType.INVALID_DOCUMENT
+                        }
+                    )
+                }
+            }
+        } catch (error: Exception) {
+            Timber.e(error)
+            DocumentResult.Error(
+                message = when(error) {
+                    is IllegalStateException -> "Invalid file"
+                    is IOException -> "Failed to read file"
+                    is SQLException -> "Database File Operation"
+                    is SecurityException -> "Exceeded file size limit"
+                    else -> "Failed to import document"
+                },
+                error = error,
+                type = when(error){
+                    is IllegalStateException -> DocumentErrorType.INVALID_DOCUMENT
+                    is IOException -> DocumentErrorType.INVALID_DOCUMENT
+                    is SQLException -> DocumentErrorType.DB_EXCEPTION
+                    is SecurityException -> DocumentErrorType.SECURITY_EXCEPTION
+                    else -> DocumentErrorType.UNKNOWN
+                }
+            )
         }
     }
 
@@ -146,9 +195,15 @@ class DocumentRepositoryImpl @Inject constructor(
         fileName: String,
         imageQuality: Int,
         progressListener: (currentProgress: Float, totalProgress: Int) -> Unit
-    ): String? {
+    ): DocumentResult<Document> {
         return try {
-            val task = documentManager.addDocumentFromScanner(
+            if (documentDao.isDocumentExists(fileName)) {
+                return DocumentResult.Error(
+                    message = "Document already exists",
+                    type = DocumentErrorType.DUPLICATE_DOCUMENT
+                )
+            }
+            val result = documentManager.addDocumentFromScanner(
                 originalBitmaps = originalBitmaps,
                 scannedBitmaps = scannedBitmaps,
                 imageQuality = imageQuality,
@@ -156,113 +211,238 @@ class DocumentRepositoryImpl @Inject constructor(
                 progressListener = progressListener
             )
             delay(500)
-            if (task is Task.Success) {
-                val timeCreated = System.currentTimeMillis()
-                val document = Document(
-                    name = fileName,
-                    dateCreated = timeCreated,
-                    dateModified = System.currentTimeMillis(),
-                    size = task.data.originalFile.length(),
-                    uri = task.data.originalFile.toUri(),
-                    previewImageUri = task.data.previewFile?.toUri()
-                )
-                val documentId = documentDao.insertDocument(document.toDocumentEntity())
-                val scannedImages = task.data.scannedImageDir?.listFiles()?.map { ScannedImage.fromFile(it) }
-                    ?: emptyList()
-                documentDao.insertImages(scannedImages.map { it.toScannedImageEntity(documentId) })
-                document.id
-            } else { null }
+            return when(result){
+                is DocManagerResult.Success -> {
+                    val timeCreated = System.currentTimeMillis()
+                    val document = Document(
+                        name = fileName,
+                        dateCreated = timeCreated,
+                        dateModified = System.currentTimeMillis(),
+                        size = result.data.originalFile.length(),
+                        uri = result.data.originalFile.toUri(),
+                        previewImageUri = result.data.previewFile?.toUri()
+                    )
+                    val documentId = documentDao.insertDocument(document.toDocumentEntity())
+                    val scannedImages = result.data.scannedImageDir?.listFiles()?.map { ScannedImage.fromFile(it) }
+                        ?: emptyList()
+                    documentDao.insertImages(scannedImages.map { it.toScannedImageEntity(documentId) })
+                    DocumentResult.Success(document)
+                }
+                is DocManagerResult.Error -> {
+                    DocumentResult.Error(
+                        message = result.message,
+                        error = result.error,
+                        type = when(result.type) {
+                            DocManagerErrorType.UNKNOWN -> DocumentErrorType.UNKNOWN
+                            DocManagerErrorType.IO_EXCEPTION -> DocumentErrorType.INVALID_DOCUMENT
+                            DocManagerErrorType.FILE_NOT_CREATED -> DocumentErrorType.INVALID_DOCUMENT
+                            DocManagerErrorType.INVALID_EXTENSION -> DocumentErrorType.INVALID_DOCUMENT
+                        }
+                    )
+                }
+            }
         } catch (e: Exception) {
             Timber.e(e)
-            null
+            DocumentResult.Error(
+                message = when(e) {
+                    is IllegalStateException -> "Invalid file"
+                    is IOException -> "Failed to read file"
+                    is SQLException -> "Database File Operation"
+                    is SecurityException -> "Exceeded file size limit"
+                    else -> "Failed to import document"
+                },
+                error = e,
+                type = when(e){
+                    is IllegalStateException -> DocumentErrorType.INVALID_DOCUMENT
+                    is IOException -> DocumentErrorType.INVALID_DOCUMENT
+                    is SQLException -> DocumentErrorType.DB_EXCEPTION
+                    is SecurityException -> DocumentErrorType.SECURITY_EXCEPTION
+                    else -> DocumentErrorType.UNKNOWN
+                }
+            )
         }
     }
 
-    override suspend fun addFolder(folderName: String, path: String): Boolean {
+    override suspend fun addFolder(folderName: String, path: String): DocumentResult<Long> {
         return try {
             val folder = DocumentFolder(name = folderName, dateCreated = System.currentTimeMillis(), documentCount = 0, documents = emptyList(), path = path)
-            folderDocumentDao.insertFolder(folder.toDocumentFolderEntity())
-            true
-        } catch (e: Exception) {
-            Timber.e(e)
-            false
+            val folderId = folderDocumentDao.insertFolder(folder.toDocumentFolderEntity())
+            DocumentResult.Success(folderId)
+        } catch (error: Exception) {
+            Timber.e(error)
+            DocumentResult.Error(
+                message = when(error){
+                    is SQLException -> "Error in database operation"
+                    is IllegalStateException -> "Invalid folder name"
+                    is IOException -> "Failed to create folder"
+                    else -> "Failed to create folder"
+                },
+                error = error,
+                type = when(error){
+                    is SQLException -> DocumentErrorType.DB_EXCEPTION
+                    is IllegalStateException, is IOException -> DocumentErrorType.INVALID_FOLDER
+                    else -> DocumentErrorType.UNKNOWN
+                }
+            )
         }
     }
 
-    override suspend fun addDocumentToFolder(document: Document, folder: DocumentFolder): Boolean {
+    override suspend fun addDocumentToFolder(document: Document, folder: DocumentFolder): DocumentResult<Long> {
         return try {
             val folderPrimaryId = folderDocumentDao.getFolderByUid(folder.id).firstOrNull()?.folderEntity?.id
-                ?: return false
+                ?: return DocumentResult.Error(
+                    message = "Folder not found",
+                    type = DocumentErrorType.FOLDER_NOT_FOUND
+                )
             documentDao.addDocumentToFolder(
                 documentUid = document.id,
                 folderId = folderPrimaryId
             )
             folderDocumentDao.updateFolder(folder.toDocumentFolderEntity().copy(dateModified = System.currentTimeMillis()))
-            true
+            DocumentResult.Success(folderPrimaryId)
         } catch (e: Exception) {
             Timber.e(e)
-            false
+            DocumentResult.Error(
+                message = when(e){
+                    is SQLException -> "Error in database operation"
+                    else -> "Failed to add document to folder"
+                },
+                error = e,
+                type = when(e){
+                    is SQLException -> DocumentErrorType.DB_EXCEPTION
+                    else -> DocumentErrorType.UNKNOWN
+                }
+            )
         }
     }
 
-    override suspend fun updateDocument(document: Document): Boolean {
+    override suspend fun updateDocument(document: Document): DocumentResult<Nothing> {
         return try {
             documentDao.updateDocument(document.toDocumentEntity().copy(dateModified = System.currentTimeMillis()))
-            true
+            DocumentResult.Success()
         } catch (e: Exception) {
             Timber.e(e)
-            false
+            DocumentResult.Error(
+                message = when(e){
+                    is SQLException -> "Error in database operation"
+                    else -> "Failed to update document"
+                },
+                error = e,
+                type = when(e){
+                    is SQLException -> DocumentErrorType.DB_EXCEPTION
+                    else -> DocumentErrorType.UNKNOWN
+                }
+            )
         }
     }
 
-    override suspend fun deleteAllDocuments(): Boolean {
+    override suspend fun deleteAllDocuments(): DocumentResult<Nothing> {
         return try {
             documentDao.deleteAllDocuments()
-            true
+            DocumentResult.Success()
         } catch (e: Exception) {
             Timber.e(e)
-            false
+            DocumentResult.Error(
+                message = when(e){
+                    is SQLException -> "Error in database operation"
+                    else -> "Failed to delete all documents"
+                },
+                error = e,
+                type = when(e){
+                    is SQLException -> DocumentErrorType.DB_EXCEPTION
+                    else -> DocumentErrorType.UNKNOWN
+                }
+            )
         }
     }
 
-    override suspend fun deleteDocument(document: Document): Boolean {
+    override suspend fun deleteDocument(document: Document): DocumentResult<Nothing> {
         return try {
-            val isDeleted = documentManager.deleteDocument(document.name)
-            if (isDeleted) {
-                val documentPrimaryId = documentDao.getDocumentByUid(document.id).firstOrNull()?.documentEntity?.id
-                    ?: return false
-                documentDao.deleteDocumentById(documentPrimaryId)
-                true
-            } else { false }
+            when(val result = documentManager.deleteDocument(document.name)){
+                is DocManagerResult.Success -> {
+                    val documentPrimaryId = documentDao.getDocumentByUid(document.id).firstOrNull()?.documentEntity?.id
+                        ?: return DocumentResult.Error(
+                            message = "Document not found",
+                            type = DocumentErrorType.DOCUMENT_NOT_FOUND
+                        )
+                    documentDao.deleteDocumentById(documentPrimaryId)
+                    DocumentResult.Success()
+                }
+                is DocManagerResult.Error -> {
+                    DocumentResult.Error(
+                        message = result.message,
+                        error = result.error,
+                        type = when(result.type) {
+                            DocManagerErrorType.UNKNOWN -> DocumentErrorType.UNKNOWN
+                            DocManagerErrorType.IO_EXCEPTION -> DocumentErrorType.INVALID_DOCUMENT
+                            DocManagerErrorType.FILE_NOT_CREATED -> DocumentErrorType.INVALID_DOCUMENT
+                            DocManagerErrorType.INVALID_EXTENSION -> DocumentErrorType.INVALID_DOCUMENT
+                        }
+                    )
+                }
+            }
         } catch (e: Exception) {
             Timber.e(e)
-            false
+            DocumentResult.Error(
+                message = when(e){
+                    is SQLException -> "Error in database operation"
+                    else -> "Failed to delete document"
+                },
+                error = e,
+                type = when(e){
+                    is SQLException -> DocumentErrorType.DB_EXCEPTION
+                    else -> DocumentErrorType.UNKNOWN
+                }
+            )
         }
     }
 
-    override suspend fun deleteFolder(folder: DocumentFolder): Boolean {
+    override suspend fun deleteFolder(folder: DocumentFolder): DocumentResult<Nothing> {
         return try {
             folder.documents.forEach { document ->
                 documentDao.deleteFolderRefByDocUid(document.id)
             }
             folderDocumentDao.deleteFolderByUid(folder.id)
-            true
+            DocumentResult.Success()
         } catch (e: Exception) {
             Timber.e(e)
-            false
+            DocumentResult.Error(
+                message = when(e){
+                    is SQLException -> "Error in database operation"
+                    else -> "Failed to delete folder"
+                },
+                error = e,
+                type = when(e){
+                    is SQLException -> DocumentErrorType.DB_EXCEPTION
+                    else -> DocumentErrorType.UNKNOWN
+                }
+            )
         }
     }
 
-    override suspend fun deleteDocumentFromFolder(document: Document, folder: DocumentFolder): Boolean {
+    override suspend fun deleteDocumentFromFolder(document: Document, folder: DocumentFolder): DocumentResult<Nothing> {
         return try {
             documentDao.deleteFolderRefByDocUid(document.id)
             val folderEntity = folderDocumentDao.getFolderByUid(folder.id).firstOrNull()?.folderEntity
-                ?: return false
+                ?: return DocumentResult.Error(
+                    message = "Folder not found",
+                    type = DocumentErrorType.FOLDER_NOT_FOUND
+                )
             folderDocumentDao.updateFolder(folderEntity.copy(dateModified = System.currentTimeMillis()))
-            true
+            DocumentResult.Success()
         } catch (e: Exception) {
             Timber.e(e)
-            false
+            DocumentResult.Error(
+                message = when(e){
+                    is SQLException -> "Error in database operation"
+                    else -> "Failed to delete document from folder"
+                },
+                error = e,
+                type = when(e){
+                    is SQLException -> DocumentErrorType.DB_EXCEPTION
+                    else -> DocumentErrorType.UNKNOWN
+                }
+            )
         }
     }
 }

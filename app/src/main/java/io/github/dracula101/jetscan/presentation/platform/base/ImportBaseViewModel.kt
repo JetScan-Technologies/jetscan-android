@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.dracula101.jetscan.data.document.manager.DocumentManager
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
+import io.github.dracula101.jetscan.data.document.repository.models.DocumentResult
 import io.github.dracula101.pdf.manager.PdfManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,7 +56,8 @@ abstract class ImportBaseViewModel<S, E, A>(
                     )
                     return@launch
                 }
-            } else {
+            }
+            else {
                 val hasPassword = pdfManager.pdfHasPassword(uri, contentResolver)
                 if (hasPassword) {
                     if (passwordRequest == null) {
@@ -64,9 +66,7 @@ abstract class ImportBaseViewModel<S, E, A>(
                             error = SecurityException("Password protected document")
                         )
                     }
-                    else {
-                        passwordRequest()
-                    }
+                    else { passwordRequest() }
                     return@launch
                 }
             }
@@ -74,7 +74,7 @@ abstract class ImportBaseViewModel<S, E, A>(
             importDocumentStateFlow.value = ImportDocumentState.Started(fileUri, imageQuality)
             val fileName = documentManager.getFileName(uri) ?: ""
             val fileLength = documentManager.getFileLength(fileUri)
-            documentRepository
+            val importResult = documentRepository
                 .addImportDocument(
                     uri = fileUri,
                     fileName = fileName,
@@ -88,12 +88,16 @@ abstract class ImportBaseViewModel<S, E, A>(
                         )
                     },
                 )
-                .runCatching { this }
-                .onSuccess {
-                    importDocumentStateFlow.value = ImportDocumentState.Success
-                }
-                .onFailure { error ->
-                    importDocumentStateFlow.value = ImportDocumentState.Error(error = Exception(error))
+                when(importResult){
+                    is DocumentResult.Success -> {
+                        importDocumentStateFlow.value = ImportDocumentState.Success
+                    }
+                    is DocumentResult.Error -> {
+                        importDocumentStateFlow.value = ImportDocumentState.Error(
+                            message = importResult.message,
+                            error = importResult.error ?: Exception("Failed to import document")
+                        )
+                    }
                 }
         }
     }

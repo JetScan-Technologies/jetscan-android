@@ -39,16 +39,7 @@ fun FileTopbar(
 ) {
     val isMenuExpanded = remember { mutableStateOf(false) }
     Row (
-        modifier = Modifier
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.background,
-                        Color.Transparent
-                    ),
-                    startY = 120f,
-                )
-            ),
+        modifier = Modifier,
         verticalAlignment = Alignment.CenterVertically
     ){
         Text(

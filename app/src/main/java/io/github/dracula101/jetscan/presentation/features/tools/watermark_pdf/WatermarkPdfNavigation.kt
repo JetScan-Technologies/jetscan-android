@@ -4,6 +4,7 @@ package io.github.dracula101.jetscan.presentation.features.tools.watermark_pdf
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
+import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.presentation.platform.base.util.composableWithPushTransitions
 import io.github.dracula101.jetscan.presentation.platform.composition.LockOrientation
 
@@ -29,6 +30,7 @@ fun NavGraphBuilder.createWatermarkPdfDestination(
  */
 fun NavController.navigateToWatermarkPdfScreen(
     navOptions: NavOptions? = null,
+    document: Document? = null,
 ) {
     navigate(WATERMARK_PDF_ROUTE, navOptions)
 }

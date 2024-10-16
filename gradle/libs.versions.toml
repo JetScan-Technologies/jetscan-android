@@ -27,14 +27,17 @@ appCompat = "1.6.0"
 reorderingCompose = "0.9.6"
 daggerHilt = "2.50"
 parcelize = "1.5.2"
+okhttp = "4.12.0"
+retrofitBom = "2.11.0"
 room = "2.5.2"
-moshi = "1.12.0"
+gson = "2.8.8"
 kotlinCoroutines = "1.5.2"
 hiltCompiler = "2.50"
 hiltNavigationCompose = "1.2.0"
 ksp = "1.9.0-1.0.12"
 sharedPrefs = "1.2.1"
 coil = "2.4.0"
+kotlinxSerialization = "1.6.0"
 picasso = "2.8"
 palette = "1.0.0"
 liveData = "1.5.1"
@@ -65,7 +68,7 @@ itext7Version = "7.1.13"
 itextgVersion = "5.5.13.4"
 itextPdfVersion = "5.5.13"
 spongyCastle = "1.58.0.0"
-bouncyCastle = "1.78.1"
+bouncyCastle = "1.70"
 aboutLibrariesVersion = "11.2.3"
 
 [libraries]
@@ -132,10 +135,6 @@ lottie = { group = "com.airbnb.android", name = "lottie-compose", version.ref = 
 # ======================= COIL =======================
 coil = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 
-# ======================= PICASSO =======================
-picasso = { group = "com.squareup.picasso", name = "picasso", version.ref = "picasso" }
-palette = { group = "androidx.palette", name = "palette", version.ref = "palette" }
-
 # ======================= FIREBASE =======================
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx", version.ref = "firebaseAuth" }
@@ -150,15 +149,13 @@ google-auth = { group = "com.google.android.gms", name = "play-services-auth", v
 google-mlkit-barcode = { group = "com.google.mlkit", name = "barcode-scanning", version.ref = "mlKitBarcode" }
 google-mlkit-common = { group = "com.google.mlkit", name = "common", version.ref = "mlKitCommon" }
 
-# ======================= RETROFIT =======================
-retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
-retrofit-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
-interpretor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "interpretor" }
-
-# ======================= MOSHI =======================
-moshi-kotlin = { group = "com.squareup.moshi", name = "moshi-kotlin", version.ref = "moshi" }
-moshi-adapters = { group = "com.squareup.moshi", name = "moshi-adapters", version.ref = "moshi" }
-retrofit-moshi = { group = "com.squareup.retrofit2", name = "converter-moshi", version.ref = "retrofit" }
+# ======================= HTTP CLIENT =======================
+square-retrofit-bom = { module = "com.squareup.retrofit2:retrofit-bom", version.ref = "retrofitBom" }
+square-retrofit = { module = "com.squareup.retrofit2:retrofit" }
+square-retrofit-gson = { module = "com.squareup.retrofit2:converter-gson" }
+square-okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+square-okhttp-logging = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "okhttp" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref =  "gson"}
 
 # ======================= LOGGER =======================
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
@@ -208,6 +205,7 @@ spongycastle = { group = "com.madgag.spongycastle", name = "core", version.ref =
 spongycastle-prov = { group = "com.madgag.spongycastle", name = "prov", version.ref = "spongyCastle" }
 spongycastle-pkix = { group = "com.madgag.spongycastle", name = "bcpkix-jdk15on", version.ref = "spongyCastle" }
 bouncycastle-prov = { group = "org.bouncycastle", name = "bcprov-jdk18on", version.ref = "bouncyCastle" }
+bouncycastle-pkix = { group = "org.bouncycastle", name = "bcpkix-jdk15on", version.ref = "bouncyCastle" }
 
 # ======================= ABOUT LIBRARIES =======================
 about-libraries-core = { group = "com.mikepenz", name = "aboutlibraries-core", version.ref = "aboutLibrariesVersion" }
@@ -232,7 +230,6 @@ androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit
 android-application = { id = "com.android.application", version.ref = "agp" }
 jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 dagger-hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "daggerHilt" }
 kotlin-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }

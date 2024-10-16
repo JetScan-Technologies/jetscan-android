@@ -62,7 +62,6 @@ import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-import io.github.dracula101.jetscan.presentation.features.document.pdfview.shareToApp
 import io.github.dracula101.jetscan.presentation.features.document.scanner.openAppSettings
 import io.github.dracula101.jetscan.presentation.features.tools.merge_pdf.components.DocumentTile
 import io.github.dracula101.jetscan.presentation.platform.component.bottomsheet.DocumentFilesBottomSheet

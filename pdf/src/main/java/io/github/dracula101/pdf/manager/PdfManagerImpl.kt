@@ -160,7 +160,7 @@ class PdfManagerImpl : PdfManager {
             canvas.setBitmap(bitmap)
             canvas.drawColor(Color.White.toArgb())
             page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-            val file = File(scannedImageDirectory, "${fileNamePrefix}_$i$fileExtension")
+            val file = File(scannedImageDirectory, "${fileNamePrefix}_$i.$fileExtension")
             file.outputStream().use {
                 bitmap.compress(Bitmap.CompressFormat.JPEG, imageQuality, it)
             }

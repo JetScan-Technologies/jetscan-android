@@ -20,6 +20,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.dracula101.jetscan.data.document.manager.DocumentManager
 import io.github.dracula101.jetscan.data.document.models.IllegalFilenameChar
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
+import io.github.dracula101.jetscan.data.document.repository.models.DocumentResult
 import io.github.dracula101.jetscan.data.platform.manager.opencv.OpenCvManager
 import io.github.dracula101.jetscan.data.platform.utils.readableSize
 import io.github.dracula101.jetscan.data.platform.utils.rotate
@@ -669,48 +670,32 @@ class ScannerViewModel @Inject constructor(
             else -> 25
         }
         viewModelScope.launch(Dispatchers.IO + SupervisorJob()) {
-            documentRepository.addDocumentFromScanner(
+            val result = documentRepository.addDocumentFromScanner(
                 originalBitmaps,
                 filteredCroppedBitmaps,
                 fileName = IllegalFilenameChar.removeIllegalChar(state.documentName),
                 imageQuality = imageQuality,
-            ) { currentProgress: Float, totalProgress: Int ->
-            }.runCatching {
-                this
-            }.getOrElse {
-                mutableStateFlow.update {
-                    it.copy(
-                        savingDocState = SavingDocumentState(
-                            hasError = Exception("Error saving document")
-                        ),
-                        snackbarState = SnackbarState.ShowError(
-                            title = "Error Saving Document",
-                            message = "An unexpected error occurred"
-                        ),
-                        documentUid = null,
-                        dialogState = null
-                    )
-                }
-                return@launch
-            }.also { documentUid ->
-                if (documentUid != null) {
+            )
+            when (result) {
+                is DocumentResult.Success -> {
                     mutableStateFlow.update {
                         it.copy(
-                            savingDocState = SavingDocumentState(
-                                saved = true,
-                                currentProgress = 1f
+                            savingDocState = it.savingDocState?.copy(
+                                currentProgress = 100.0f
                             ),
-                            documentUid = documentUid,
-                            snackbarState = SnackbarState.ShowSuccess(
-                                title = "Document Saved",
-                            )
+                            documentUid = result.data?.id
                         )
                     }
-                }else {
+                    trySendAction(ScannerAction.Alert.DismissAlert(dialog = true))
+                }
+                is DocumentResult.Error -> {
                     mutableStateFlow.update {
                         it.copy(
-                            savingDocState = SavingDocumentState(
-                                hasError = Exception("Error saving document")
+                            savingDocState = null,
+                            snackbarState = SnackbarState.ShowError(
+                                title = "Error saving document",
+                                message = result.message,
+                                errorCode = result.type.toString().split(".").last()
                             )
                         )
                     }

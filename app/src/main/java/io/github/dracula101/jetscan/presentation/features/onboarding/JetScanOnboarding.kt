@@ -60,6 +60,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dracula101.jetscan.R
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.JetScanScaffold
+import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.debugBorder
 import io.github.dracula101.jetscan.presentation.theme.JetScanAppTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -80,20 +81,27 @@ fun JetScanOnboarding(
     }
 
     JetScanScaffold(
+        alwaysShowBottomBar = true,
         bottomBar = {
             Column (
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
                     .padding(horizontal = 12.dp)
-                    .padding(bottom = 8.dp)
+                    .padding(bottom = 8.dp),
             ){
                 if(currentPage.value == 2){
-                    Row {
+                    Row{
                         if(state.value.isLoadingAuthSignIn){
-                            CircularProgressIndicator(
-                                strokeWidth = 1.5.dp
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ){
+                                CircularProgressIndicator(
+                                    strokeWidth = 1.5.dp
+                                )
+                            }
                         }else {
                             Box(
                                 modifier = Modifier

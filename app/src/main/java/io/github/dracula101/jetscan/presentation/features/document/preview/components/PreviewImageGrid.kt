@@ -95,6 +95,7 @@ fun PreviewImageListItem(
     modifier: Modifier = Modifier,
     scannedImage: ScannedImage,
     onClick: () -> Unit,
+    onDetailClick: () -> Unit = {},
     index: Int,
 ) {
     val dateCreated = remember { DateFormatter.getReadableDate(scannedImage.date) }
@@ -136,7 +137,7 @@ fun PreviewImageListItem(
                         style = MaterialTheme.typography.titleLarge,
                     )
                     Text(
-                        text = "${fileSize ?: "None"} • ${scannedImage.width} x ${scannedImage.height}",
+                        text = "$fileSize • ${scannedImage.width} x ${scannedImage.height}",
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier
                             .alpha(0.65f)
@@ -149,7 +150,7 @@ fun PreviewImageListItem(
                         .alpha(0.5f)
                 )
             }
-            CircleButton()
+            CircleButton(onClick = onDetailClick)
         }
     }
 }

@@ -42,6 +42,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.max
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -123,7 +124,7 @@ fun InitialStartingScreen(
     ) {
         drawCircle(
             color = primaryColor,
-            radius = (size.height * boxAnimation.value)/1.5f,
+            radius = (max(size.width, size.height) * boxAnimation.value) / 1.5f,
             center = center
         )
     }

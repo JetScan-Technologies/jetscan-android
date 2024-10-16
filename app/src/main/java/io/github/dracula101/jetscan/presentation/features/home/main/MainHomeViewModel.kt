@@ -12,8 +12,10 @@ import io.github.dracula101.jetscan.data.document.manager.DocumentManager
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
+import io.github.dracula101.jetscan.data.document.repository.models.DocumentResult
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeState.MainHomeDialogState
 import io.github.dracula101.jetscan.presentation.features.home.main.components.MainHomeSubPage
+import io.github.dracula101.jetscan.presentation.features.home.main.components.PdfActionPage
 import io.github.dracula101.jetscan.presentation.platform.base.ImportBaseViewModel
 import io.github.dracula101.jetscan.presentation.platform.base.ImportDocumentState
 import io.github.dracula101.jetscan.presentation.platform.feature.app.model.SnackbarState
@@ -89,7 +91,7 @@ class MainHomeViewModel @Inject constructor(
             is MainHomeAction.Ui.Logout -> handleLogout()
             is MainHomeAction.Ui.ChangeTab -> handleTabChange(action.tab)
 
-            is MainHomeAction.MainHomeNavigate -> handleNavigateTo(action.navigatePage)
+            is MainHomeAction.MainHomeNavigate -> handleNavigateTo(action.navigatePage, action.document)
             is MainHomeAction.MainHomeClearNavigate -> handleClearNavigate()
 
 
@@ -123,8 +125,8 @@ class MainHomeViewModel @Inject constructor(
         Timber.d("Importing Document: ${importState.fileName} - ${importState.currentProgress} / ${importState.totalProgress}")
     }
 
-    private fun handleNavigateTo(subPage: MainHomeSubPage) {
-        mutableStateFlow.update { state.copy(navigateTo = subPage) }
+    private fun handleNavigateTo(subPage: MainHomeSubPage, document: Document?) {
+        mutableStateFlow.update { state.copy(navigateTo = PdfActionPage(page = subPage, document = document)) }
     }
 
     private fun handleClearNavigate() {
@@ -219,33 +221,27 @@ class MainHomeViewModel @Inject constructor(
 
     private fun handleDeleteDocument(document: Document) {
         viewModelScope.launch(Dispatchers.IO) {
-            val isDeleted = documentRepository
-                .deleteDocument(document)
-                .runCatching {
-                    this
+            val deleteResult = documentRepository.deleteDocument(document)
+            when(deleteResult){
+                is DocumentResult.Success -> {
+                    mutableStateFlow.update {
+                        state.copy(
+                            snackbarState = SnackbarState.ShowSuccess(title = "Document Deleted Successfully"),
+                            documents = state.documents.filter { it.id != document.id }
+                        )
+                    }
                 }
-                .getOrElse { error ->
-                    Timber.e(error)
+                is DocumentResult.Error -> {
                     mutableStateFlow.update {
                         state.copy(
                             snackbarState = SnackbarState.ShowError(
                                 title = "Error Deleting Document",
-                                message = error.message ?: "Unknown error occurred"
+                                message = deleteResult.message,
+                                errorCode = deleteResult.type.toString().split(".").last()
                             )
                         )
                     }
-                    return@launch
                 }
-            mutableStateFlow.update {
-                state.copy(
-                    snackbarState =
-                    if (isDeleted) SnackbarState.ShowSuccess(title = "Document Deleted")
-                    else SnackbarState.ShowError(
-                        title = "Error Deleting Document",
-                        message = "Unknown error occurred"
-                    ),
-                    documents = if (isDeleted) state.documents.filter { it.id != document.id } else state.documents
-                )
             }
         }
     }
@@ -314,7 +310,7 @@ enum class MainHomeTabs {
             HOME -> "JetScan"
             FILES -> "Files"
 //            SUBSCRIPTION -> "Premium"
-            SETTINGS -> "Account"
+            SETTINGS -> "Settings"
         }
     }
 
@@ -337,7 +333,7 @@ data class MainHomeState(
     val importQuality: ImageQuality = ImageQuality.MEDIUM,
     val dialogState: MainHomeDialogState? = null,
     val snackbarState: SnackbarState? = null,
-    val navigateTo: MainHomeSubPage? = null,
+    val navigateTo: PdfActionPage? = null,
     val currentTab: MainHomeTabs = MainHomeTabs.HOME,
 ) : Parcelable {
 
@@ -373,7 +369,8 @@ sealed class MainHomeAction {
 
     @Parcelize
     data class MainHomeNavigate(
-        val navigatePage: MainHomeSubPage
+        val navigatePage: MainHomeSubPage,
+        val document: Document? = null,
     ) : MainHomeAction(), Parcelable
 
     @Parcelize

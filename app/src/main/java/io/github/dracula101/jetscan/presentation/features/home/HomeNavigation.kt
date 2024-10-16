@@ -11,6 +11,8 @@ import io.github.dracula101.jetscan.presentation.features.document.edit.navigate
 import io.github.dracula101.jetscan.presentation.features.document.folder.createFolderDocumentDestinationRoute
 import io.github.dracula101.jetscan.presentation.features.document.folder.navigateToFolder
 import io.github.dracula101.jetscan.presentation.features.document.folder.navigateToFolderDest
+import io.github.dracula101.jetscan.presentation.features.document.ocr.createOcrDestination
+import io.github.dracula101.jetscan.presentation.features.document.ocr.navigateToOcr
 import io.github.dracula101.jetscan.presentation.features.document.pdfview.createPdfViewDestination
 import io.github.dracula101.jetscan.presentation.features.document.pdfview.navigateToPdfViewScreen
 import io.github.dracula101.jetscan.presentation.features.document.preview.createPreviewDocumentDestination
@@ -56,15 +58,15 @@ fun NavGraphBuilder.homeGraph(navController: NavHostController) {
                 navController.navigateToScannerRoute()
             },
             navigateToSubPage = { subPage ->
-                when (subPage) {
+                when (subPage.page) {
                     MainHomeSubPage.QR_CODE -> navController.navigateToScannerRoute(documentType = DocumentType.QR_CODE)
-                    MainHomeSubPage.WATERMARK -> navController.navigateToWatermarkPdfScreen()
-                    MainHomeSubPage.ESIGN_PDF -> navController.navigateToESignPdfScreen()
-                    MainHomeSubPage.SPLIT_PDF -> navController.navigateToSplitPdfScreen()
-                    MainHomeSubPage.MERGE_PDF -> navController.navigateToMergePdfScreen()
-                    MainHomeSubPage.PROTECT_PDF -> navController.navigateToProtectPdfScreen()
-                    MainHomeSubPage.COMPRESS_PDF -> navController.navigateToCompressPdfScreen()
-                    MainHomeSubPage.ALL_TOOLS -> TODO()
+                    MainHomeSubPage.WATERMARK -> navController.navigateToWatermarkPdfScreen(document = subPage.document)
+                    MainHomeSubPage.ESIGN_PDF -> navController.navigateToESignPdfScreen(document = subPage.document)
+                    MainHomeSubPage.SPLIT_PDF -> navController.navigateToSplitPdfScreen(document = subPage.document)
+                    MainHomeSubPage.MERGE_PDF -> navController.navigateToMergePdfScreen(document = subPage.document)
+                    MainHomeSubPage.PROTECT_PDF -> navController.navigateToProtectPdfScreen(document = subPage.document)
+                    MainHomeSubPage.COMPRESS_PDF -> navController.navigateToCompressPdfScreen(document = subPage.document)
+                    MainHomeSubPage.ALL_TOOLS -> {  }
                 }
             },
             onNavigateToFolder = { folderId, path->
@@ -102,7 +104,19 @@ fun NavGraphBuilder.homeGraph(navController: NavHostController) {
                     documentId = document.id,
                     documentName = document.name
                 )
+            },
+            onNavigateToOcr = { document, pageIndex ->
+                navController.navigateToOcr(
+                    documentId = document.id,
+                    documentName = document.name,
+                    pageIndex = pageIndex,
+                )
             }
+        )
+        createOcrDestination(
+            onNavigateBack = {
+                navController.navigateUp()
+            },
         )
         createScannerDestination(
             onNavigateBack = {

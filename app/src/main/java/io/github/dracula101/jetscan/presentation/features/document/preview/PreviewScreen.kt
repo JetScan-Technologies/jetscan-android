@@ -107,7 +107,7 @@ fun PreviewScreen(
                     if (state.value.scannedDocument != null){
                         onEdit(state.value.scannedDocument!!, index)
                     }
-                }
+                },
             )
             ScaffoldSize.MEDIUM, ScaffoldSize.EXPANDED -> ExpandedUiScreen(
                 padding = padding,

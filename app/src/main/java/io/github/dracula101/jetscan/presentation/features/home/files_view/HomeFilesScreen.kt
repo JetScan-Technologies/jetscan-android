@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.FolderDelete
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -33,19 +34,24 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
+import androidx.core.net.toFile
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dracula101.jetscan.R
 import io.github.dracula101.jetscan.data.document.models.doc.Document
@@ -54,13 +60,19 @@ import io.github.dracula101.jetscan.presentation.features.home.files_view.compon
 import io.github.dracula101.jetscan.presentation.features.home.files_view.components.FolderItem
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeState
 import io.github.dracula101.jetscan.presentation.features.home.main.components.DocumentItem
+import io.github.dracula101.jetscan.presentation.features.home.main.components.DocumentItemUI
+import io.github.dracula101.jetscan.presentation.features.home.main.components.MainHomeSubPage
+import io.github.dracula101.jetscan.presentation.platform.component.bottomsheet.DocumentAction
+import io.github.dracula101.jetscan.presentation.platform.component.bottomsheet.DocumentDetailBottomSheet
 import io.github.dracula101.jetscan.presentation.platform.component.dialog.AppBasicDialog
 import io.github.dracula101.jetscan.presentation.platform.component.dialog.IconAlertDialog
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.ScaffoldSize
+import io.github.dracula101.jetscan.presentation.platform.composition.LocalFileActionManager
 import io.github.dracula101.jetscan.presentation.platform.feature.app.model.SnackbarState
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun HomeFilesScreen(
     viewModel: HomeFilesViewModel,
@@ -69,10 +81,17 @@ fun HomeFilesScreen(
     mainHomeState: MainHomeState,
     onShowSnackbar: (SnackbarState) -> Unit,
     onDocumentClick: (Document) -> Unit,
-    onNavigateToFolder: (DocumentFolder) -> Unit
+    onNavigateToFolder: (DocumentFolder) -> Unit,
+    onNavigateToPdfActions: (Document?, MainHomeSubPage) -> Unit,
 ) {
+    val scope = rememberCoroutineScope()
     val state = viewModel.stateFlow.collectAsStateWithLifecycle()
     val gridState = rememberLazyGridState()
+    val context = LocalContext.current
+    val fileActionManager = LocalFileActionManager.current
+    val documentDetailItem = remember { mutableStateOf<Document?>(null) }
+    val saveToStorageLauncher = fileActionManager.saveFileWithLauncher { documentDetailItem.value!!.uri }
+    val bottomSheetState = rememberModalBottomSheetState()
     state.value.dialogState?.let { dialogState->
         HomeFilesDialog(
             dialogState,
@@ -90,6 +109,72 @@ fun HomeFilesScreen(
     state.value.snackbarState?.let { snackbarState ->
         onShowSnackbar(snackbarState)
         viewModel.trySendAction(HomeFilesAction.Ui.DismissSnackbar)
+    }
+    if(bottomSheetState.isVisible){
+        if (documentDetailItem.value != null ){
+            DocumentDetailBottomSheet(
+                document = documentDetailItem.value!!,
+                onDismiss = {
+                    scope.launch { bottomSheetState.hide() }
+                },
+                onAction = { action ->
+                    scope.launch {
+                        bottomSheetState.hide()
+                        val fileUri = FileProvider.getUriForFile(
+                            context,
+                            context.packageName + ".provider",
+                            documentDetailItem.value!!.uri.toFile()
+                        )
+                        when(action){
+                            DocumentAction.SAVE_TO_DEVICE -> {
+                                val intent = fileActionManager.saveFileIntent(
+                                    fileUri,
+                                    documentDetailItem.value!!.name
+                                )
+                                saveToStorageLauncher.launch(intent)
+                            }
+                            DocumentAction.SHARE -> {
+                                fileActionManager.shareFile(
+                                    uri = fileUri,
+                                    title = documentDetailItem.value!!.name,
+                                    subject = "Share PDF",
+                                    onActivityNotFound = {}
+                                )
+                            }
+                            DocumentAction.RENAME -> {
+                            }
+                            DocumentAction.PRINT -> {
+                                fileActionManager.shareToPrinter(
+                                    file = fileUri.toFile(),
+                                    subject = "Print ${documentDetailItem.value!!.name}",
+                                    activityNotFound = {}
+                                )
+                            }
+                            DocumentAction.DELETE -> {
+                            }
+
+                            DocumentAction.WATERMARK, DocumentAction.DIGITAL_SIGNATURE, DocumentAction.SPLIT, DocumentAction.MERGE, DocumentAction.PROTECT, DocumentAction.COMPRESS -> {
+                                onNavigateToPdfActions(
+                                    documentDetailItem.value!!,
+                                    when(action){
+                                        DocumentAction.WATERMARK -> MainHomeSubPage.WATERMARK
+                                        DocumentAction.DIGITAL_SIGNATURE -> MainHomeSubPage.ESIGN_PDF
+                                        DocumentAction.SPLIT -> MainHomeSubPage.SPLIT_PDF
+                                        DocumentAction.MERGE -> MainHomeSubPage.MERGE_PDF
+                                        DocumentAction.PROTECT -> MainHomeSubPage.PROTECT_PDF
+                                        DocumentAction.COMPRESS -> MainHomeSubPage.COMPRESS_PDF
+                                        else -> MainHomeSubPage.WATERMARK
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            )
+        }
+    }
+    state.value.pdfActionPage?.let { pdfActionPage ->
+        onNavigateToPdfActions(pdfActionPage.document, pdfActionPage.page)
     }
     LazyVerticalGrid(
         modifier = Modifier
@@ -172,6 +257,14 @@ fun HomeFilesScreen(
                         },
                         modifier = Modifier
                             .animateItemPlacement(),
+                        ui = DocumentItemUI.Compact(
+                            onDetailClicked = {
+                                documentDetailItem.value = document
+                                scope.launch {
+                                    bottomSheetState.show()
+                                }
+                            }
+                        )
                     )
                 }
             )

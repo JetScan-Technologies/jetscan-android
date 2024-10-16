@@ -10,6 +10,8 @@ import io.github.dracula101.jetscan.data.platform.manager.biometrics.BiometricsM
 import io.github.dracula101.jetscan.data.platform.manager.biometrics.BiometricsManagerImpl
 import io.github.dracula101.jetscan.data.platform.manager.exit.ExitManager
 import io.github.dracula101.jetscan.data.platform.manager.exit.ExitManagerImpl
+import io.github.dracula101.jetscan.data.platform.manager.file_action.FileActionManager
+import io.github.dracula101.jetscan.data.platform.manager.file_action.FileActionManagerImpl
 import io.github.dracula101.jetscan.data.platform.manager.permission.PermissionsManager
 import io.github.dracula101.jetscan.data.platform.manager.permission.PermissionsManagerImpl
 
@@ -20,6 +22,7 @@ fun LocalManagerProvider(content: @Composable () -> Unit) {
         LocalPermissionsManager provides PermissionsManagerImpl(activity),
         LocalExitManager provides ExitManagerImpl(activity),
         LocalBiometricsManager provides BiometricsManagerImpl(activity),
+        LocalFileActionManager provides FileActionManagerImpl(activity)
     ) {
         content()
     }
@@ -44,4 +47,8 @@ val LocalExitManager: ProvidableCompositionLocal<ExitManager> = compositionLocal
  */
 val LocalPermissionsManager: ProvidableCompositionLocal<PermissionsManager> = compositionLocalOf {
     error("CompositionLocal LocalPermissionsManager not present")
+}
+
+val LocalFileActionManager: ProvidableCompositionLocal<FileActionManager> = compositionLocalOf {
+    error("CompositionLocal LocalFileActionManager not present")
 }

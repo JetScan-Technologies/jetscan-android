@@ -25,7 +25,6 @@ import io.github.dracula101.jetscan.data.auth.model.UpdateProfileResult
 import io.github.dracula101.jetscan.data.auth.model.UserState
 import io.github.dracula101.jetscan.data.auth.util.getErrorMessage
 import io.github.dracula101.jetscan.data.auth.util.toUserState
-import io.github.dracula101.jetscan.data.platform.utils.Constants
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.onSubscription
@@ -210,7 +209,7 @@ class AuthRepositoryImpl @Inject constructor(
         return try {
             val user = firebaseAuth.currentUser
             val avatarUrl =
-                Uri.parse(Constants.AVATAR_URL + "?seed=${Uri.encode(user?.displayName ?: "")}")
+                Uri.parse(AVATAR_URL + "?seed=${Uri.encode(user?.displayName ?: "")}")
             val profileUpdates = UserProfileChangeRequest
                 .Builder()
                 .setDisplayName(user?.displayName)
@@ -244,6 +243,10 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun logout() {
         oneTapClient.signOut().await()
         firebaseAuth.signOut()
+    }
+
+    companion object {
+        const val AVATAR_URL: String = "https://api.dicebear.com/7.x/micah/png"
     }
 
 }

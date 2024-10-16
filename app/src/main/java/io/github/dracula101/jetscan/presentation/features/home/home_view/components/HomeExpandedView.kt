@@ -18,6 +18,7 @@ import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeBott
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeState
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeViewModel
 import io.github.dracula101.jetscan.presentation.features.home.main.components.DocumentItem
+import io.github.dracula101.jetscan.presentation.features.home.main.components.DocumentItemUI
 import io.github.dracula101.jetscan.presentation.features.home.main.components.EmptyDocumentView
 import io.github.dracula101.jetscan.presentation.features.home.main.components.MainHomePageComponent
 
@@ -31,6 +32,7 @@ fun ExpandedHomeScreen(
     viewModel: MainHomeViewModel,
     state: MainHomeState,
     onDocumentClick: (Document) -> Unit,
+    onDocumentDetailClick: (Document) -> Unit,
 ) {
     val lazyListState = rememberLazyListState()
     Row(
@@ -50,7 +52,7 @@ fun ExpandedHomeScreen(
                 .weight(1f),
             state = lazyListState,
         ) {
-            stickyHeader(key = "header") {
+            item(key = "header") {
                 DocumentsListTitle {
                     if (state.importDocumentState == null) {
                         permissionLauncher.launch(android.Manifest.permission.READ_EXTERNAL_STORAGE)
@@ -75,9 +77,9 @@ fun ExpandedHomeScreen(
                             .animateItemPlacement(),
                         document = document,
                         onClick = { onDocumentClick(document) },
-                        onDeleteClicked = {
-                            viewModel.trySendAction(MainHomeAction.Alerts.DeleteDocumentAlert(document))
-                        }
+                        ui = DocumentItemUI.Compact(
+                            onDetailClicked = { onDocumentDetailClick(document) }
+                        ),
                     )
                 }
             }else {

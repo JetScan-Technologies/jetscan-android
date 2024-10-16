@@ -3,7 +3,6 @@ package io.github.dracula101.jetscan.presentation.features.document.pdfview
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.print.PrintAttributes
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -11,11 +10,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -72,12 +69,10 @@ import io.github.dracula101.jetscan.presentation.features.document.pdfview.compo
 import io.github.dracula101.jetscan.presentation.platform.component.appbar.JetScanTopAppbar
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.JetScanScaffold
 import io.github.dracula101.jetscan.presentation.platform.component.text.FittedText
+import io.github.dracula101.jetscan.presentation.platform.composition.LocalFileActionManager
 import io.github.dracula101.pdf.ui.PdfReader
 import io.github.dracula101.pdf.ui.rememberPdfTransformState
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.time.debounce
-import org.burnoutcrew.reorderable.rememberReorderableLazyListState
-import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,25 +94,8 @@ fun PdfViewScreen(
     val context = LocalContext.current
     val showSaveBottomSheet = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val pdfLazyListState = rememberLazyListState()
-    val saveInternalStorageActivityLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val uri = result.data?.data
-            if (uri != null) {
-                val document = state.value.document
-                if (document != null) {
-                    val contentResolver = context.contentResolver
-                    contentResolver.openOutputStream(uri)?.use { outputStream ->
-                        contentResolver.openInputStream(document.uri)?.use { inputStream ->
-                            inputStream.copyTo(outputStream)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
+    val fileActionManager = LocalFileActionManager.current
+    val saveToStorageLauncher = fileActionManager.saveFileWithLauncher { state.value.document!!.uri }
 
     if (showSaveBottomSheet.isVisible && state.value.document != null) {
         SaveDocumentBottomSheet(
@@ -128,61 +106,38 @@ fun PdfViewScreen(
                 }
             },
             selectSaveOption = { saveOption ->
+                val uri = FileProvider.getUriForFile(
+                    context,
+                    context.packageName + ".provider",
+                    state.value.document!!.uri.toFile()
+                )
                 when (saveOption) {
                     SaveOption.INTERNAL_STORAGE -> {
-                        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-                            addCategory(Intent.CATEGORY_OPENABLE)
-                            type = "application/pdf"
-                            putExtra(Intent.EXTRA_TITLE, state.value.document!!.name)
-                        }
-                        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        intent.setFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
-                        intent.setFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                        saveInternalStorageActivityLauncher.launch(intent)
+                        val intent = fileActionManager.saveFileIntent(
+                            uri = uri,
+                            title = documentName ?: "JetScan Document"
+                        )
+                        saveToStorageLauncher.launch(intent)
                     }
                     SaveOption.GOOGLE_DRIVE -> {
-                        val uri = FileProvider.getUriForFile(
-                            context,
-                            context.packageName + ".provider",
-                            state.value.document!!.uri.toFile()
-                        )
-                        val activity = (context as ComponentActivity)
-                        activity.shareToApp(
+                        fileActionManager.shareToGDrive(
                             uri = uri,
-                            packageName = "com.google.android.apps.docs",
-                            mimeType = "application/pdf",
-                            subject = documentName ?: "JetScan Document",
-                            chooserTitle = "Share"
+                            subject = "Sharing ${documentName ?: "JetScan Document"}",
+                            activityNotFound = {},
                         )
                     }
                     SaveOption.EMAIL -> {
-                        val uri = FileProvider.getUriForFile(
-                            context,
-                            context.packageName + ".provider",
-                            state.value.document!!.uri.toFile()
-                        )
-                        val activity = (context as ComponentActivity)
-                        activity.shareToApp(
+                        fileActionManager.shareToEmail(
                             uri = uri,
-                            packageName = "com.google.android.gm",
-                            mimeType = "application/pdf",
                             subject = "Sharing ${documentName ?: "JetScan Document"}",
-                            chooserTitle = "Share"
+                            activityNotFound = {},
                         )
                     }
                     SaveOption.WHATSAPP -> {
-                        val uri = FileProvider.getUriForFile(
-                            context,
-                            context.packageName + ".provider",
-                            state.value.document!!.uri.toFile()
-                        )
-                        val activity = (context as ComponentActivity)
-                        activity.shareToApp(
+                        fileActionManager.shareToWhatsapp(
                             uri = uri,
-                            packageName = "com.whatsapp",
-                            mimeType = "application/pdf",
-                            subject = "Sharing from JetScan Document",
-                            chooserTitle = "Share"
+                            subject = "Sharing ${documentName ?: "JetScan Document"}",
+                            activityNotFound = {},
                         )
                     }
                 }
@@ -191,7 +146,7 @@ fun PdfViewScreen(
     }
 
     LaunchedEffect(Unit) {
-        viewModel.trySendAction(PdfAction.Internal.LoadPdf(documentId))
+        viewModel.trySendAction(PdfViewAction.Internal.LoadPdfView(documentId))
     }
     JetScanScaffold(
         topBar = {
@@ -283,18 +238,16 @@ fun PdfViewScreen(
                                 icon = Icons.Rounded.IosShare,
                                 onClick = {
                                     val uri = FileProvider.getUriForFile(
-                                            context,
-                                            context.packageName + ".provider",
-                                            state.value.document!!.uri.toFile()
-                                        )
-                                    val intent = Intent(Intent.ACTION_SEND).also{
-                                        it.setDataAndType(uri, "application/pdf")
-                                        it.putExtra(Intent.EXTRA_STREAM, uri)
-                                        it.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                        it.putExtra(Intent.EXTRA_SUBJECT, "Sharing from JetScan Document")
-                                    }
-                                    val activity = (context as ComponentActivity)
-                                    activity.startActivity(Intent.createChooser(intent, "Share"))
+                                        context,
+                                        context.packageName + ".provider",
+                                        state.value.document!!.uri.toFile()
+                                    )
+                                    fileActionManager.shareFile(
+                                        uri = uri,
+                                        title = state.value.document?.name ?: "JetScan Document",
+                                        subject = "Share PDF",
+                                        onActivityNotFound = {}
+                                    )
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -307,17 +260,18 @@ fun PdfViewScreen(
                                         showSaveBottomSheet.expand()
                                     }
                                 },
+                                modifier = Modifier.fillMaxWidth()
                             )
                             HorizontalDivider()
                             PdfActionTitle(
                                 title = "Print",
                                 icon = Icons.Rounded.Print,
                                 onClick = {
-                                    val printIntent = context.getSystemService(Context.PRINT_SERVICE) as android.print.PrintManager
-                                    val jobName = "${state.value.document?.name ?: ""} Document"
-                                    val printAdapter = PdfDocumentAdapter(state.value.document!!.uri.toFile())
-                                    printIntent.print(jobName, printAdapter, PrintAttributes.Builder().build())
-
+                                    fileActionManager.shareToPrinter(
+                                        file = state.value.document!!.uri.toFile(),
+                                        subject = "Printing ${state.value.document?.name ?: ""} Document",
+                                        activityNotFound = {}
+                                    )
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -412,28 +366,5 @@ fun PdfViewScreen(
                 }
             }
         }
-    }
-}
-
-
-fun Activity.shareToApp(
-    uri: Uri,
-    packageName: String,
-    mimeType: String,
-    subject: String,
-    chooserTitle: String,
-    onActivityNotFound: () -> Unit = {}
-){
-    val intent = Intent(Intent.ACTION_SEND).also {
-        it.setPackage(packageName)
-        it.setDataAndType(uri, mimeType)
-        it.putExtra(Intent.EXTRA_STREAM, uri)
-        it.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        it.putExtra(Intent.EXTRA_SUBJECT, subject)
-    }
-    try {
-        startActivity(Intent.createChooser(intent, chooserTitle))
-    } catch (e: Exception) {
-        onActivityNotFound()
     }
 }

@@ -3,6 +3,8 @@ package io.github.dracula101.jetscan.presentation.features.home.home_view.compon
 import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,13 +12,20 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.unit.dp
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeAction
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeState
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeViewModel
 import io.github.dracula101.jetscan.presentation.features.home.main.components.DocumentItem
+import io.github.dracula101.jetscan.presentation.features.home.main.components.DocumentItemUI
 import io.github.dracula101.jetscan.presentation.features.home.main.components.EmptyDocumentView
 import io.github.dracula101.jetscan.presentation.features.home.main.components.MainHomePageComponent
 
@@ -29,13 +38,15 @@ fun CompactHomeScreen(
     viewModel: MainHomeViewModel,
     state: MainHomeState,
     onDocumentClick: (Document) -> Unit,
+    onDocumentDetailClick: (Document) -> Unit,
 ) {
     val lazyListState = rememberLazyListState()
     LazyColumn(
-        modifier = Modifier
-            .padding(padding),
+        modifier = Modifier.padding(
+            top = padding.calculateTopPadding(),
+        ),
         state = lazyListState,
-        contentPadding = PaddingValues(bottom = 80.dp)
+        contentPadding = PaddingValues(bottom = 150.dp)
     ) {
         item {
             MainHomePageComponent(viewModel = viewModel)
@@ -44,7 +55,7 @@ fun CompactHomeScreen(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
             )
         }
-        stickyHeader {
+        item {
             DocumentsListTitle {
                 if (state.importDocumentState == null) {
                     permissionLauncher.launch(android.Manifest.permission.READ_EXTERNAL_STORAGE)
@@ -69,11 +80,9 @@ fun CompactHomeScreen(
                         .animateItemPlacement(),
                     document = document,
                     onClick = { onDocumentClick(document) },
-                    onDeleteClicked = {
-                        viewModel.trySendAction(
-                            MainHomeAction.Alerts.DeleteDocumentAlert(document)
-                        )
-                    }
+                    ui = DocumentItemUI.Compact(
+                        onDetailClicked = { onDocumentDetailClick(document) }
+                    ),
                 )
             }
         }else {

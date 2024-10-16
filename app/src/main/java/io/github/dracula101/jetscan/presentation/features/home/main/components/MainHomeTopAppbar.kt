@@ -40,6 +40,7 @@ fun MainHomeTopAppbar(
     scrollBehavior: TopAppBarScrollBehavior,
     onLogoutClicked: () -> Unit,
     state: MainHomeState,
+    modifier : Modifier = Modifier
 ) {
     val currentTab = remember { mutableStateOf(MainHomeTabs.HOME) }
     LaunchedEffect(state.currentTab) {

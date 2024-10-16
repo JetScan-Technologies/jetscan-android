@@ -17,6 +17,7 @@ const val EDIT_DOC_PAGE_INDEX_ARGUMENT = "page_index"
 fun NavGraphBuilder.createEditDocumentDestination(
     onNavigateBack: () -> Unit,
     onNavigateToPdf: (Document) -> Unit,
+    onNavigateToOcr: (Document, Int) -> Unit,
 ) {
     composableWithPushTransitions(
         route = "$EDIT_DOC_ROUTE/{$EDIT_DOC_ID_ARGUMENT}/{$EDIT_DOC_PAGE_INDEX_ARGUMENT}",
@@ -39,7 +40,8 @@ fun NavGraphBuilder.createEditDocumentDestination(
                 onNavigateBack = onNavigateBack,
                 onNavigateToPdf = onNavigateToPdf,
                 documentId = documentName,
-                documentPageIndex = pageIndex
+                documentPageIndex = pageIndex,
+                onNavigateToOcr = onNavigateToOcr,
             )
         }
     }

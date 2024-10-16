@@ -6,7 +6,9 @@ import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,12 +56,14 @@ import io.github.dracula101.jetscan.presentation.platform.component.dropdown.Men
 import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.customContainer
 import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.fadingEdge
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DocumentItem(
     document: Document,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
-    onDeleteClicked: () -> Unit = {},
+    onLongClick: () -> Unit = {},
+    ui: DocumentItemUI = DocumentItemUI.Compact(),
 ) {
     val coroutineScope = rememberCoroutineScope()
     val isChildrenShown = remember { mutableStateOf(false) }
@@ -80,8 +84,6 @@ fun DocumentItem(
         label = "Opacity Animation"
     )
 
-
-
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -89,15 +91,22 @@ fun DocumentItem(
             .customContainer(
                 shape = MaterialTheme.shapes.large
             )
-            .clickable(onClick = onClick)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
     ) {
         Column(
             modifier = Modifier
-                .animateContentSize(
-                    animationSpec = tween(
-                        durationMillis = 300,
-                        easing = LinearOutSlowInEasing
-                    )
+                .then(
+                    if (ui is DocumentItemUI.Expanded) Modifier
+                        .animateContentSize(
+                            animationSpec = tween(
+                                durationMillis = 300,
+                                easing = LinearOutSlowInEasing
+                            )
+                        )
+                    else Modifier
                 )
         ) {
             Row(
@@ -124,21 +133,30 @@ fun DocumentItem(
                     modifier = Modifier
                         .weight(0.5f)
                 ) {
-                    IconButton(
-                        onClick = {
-                            isChildrenShown.value = !isChildrenShown.value
+                    when(ui){
+                        is DocumentItemUI.Compact -> {
+                            CircleButton(
+                                onClick = ui.onDetailClicked
+                            )
                         }
-                    ) {
-                        Icon(
-                            Icons.Rounded.ArrowBackIosNew,
-                            contentDescription = null,
-                            modifier = Modifier.rotate(degreeAnimation.value),
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
+                        is DocumentItemUI.Expanded -> {
+                            IconButton(
+                                onClick = {
+                                    isChildrenShown.value = !isChildrenShown.value
+                                }
+                            ) {
+                                Icon(
+                                    Icons.Rounded.ArrowBackIosNew,
+                                    contentDescription = null,
+                                    modifier = Modifier.rotate(degreeAnimation.value),
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
                     }
                 }
             }
-            if (isChildrenShown.value) {
+            if (isChildrenShown.value && (ui is DocumentItemUI.Expanded)) {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
                 )
@@ -163,13 +181,14 @@ fun DocumentItem(
                                     title = "Delete",
                                     icon = Icons.Rounded.Delete,
                                     onClick = {
-                                        onDeleteClicked()
+                                        ui.deleteClicked()
                                     }
                                 ),
                                 MenuItem(
                                     title = "Share",
                                     icon = Icons.Rounded.IosShare,
                                     onClick = {
+                                        ui.onShareClicked()
                                     }
                                 )
                             )
@@ -278,4 +297,15 @@ private fun DocumentInfo(document: Document) {
             )
         }
     }
+}
+
+sealed class DocumentItemUI {
+    data class Expanded(
+        val onShareClicked: () -> Unit = {},
+        val deleteClicked: () -> Unit = {},
+    ) : DocumentItemUI()
+
+    data class Compact(
+        val onDetailClicked: () -> Unit = {},
+    ) : DocumentItemUI()
 }

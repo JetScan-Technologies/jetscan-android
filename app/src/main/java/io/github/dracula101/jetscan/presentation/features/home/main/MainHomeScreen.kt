@@ -1,5 +1,6 @@
 package io.github.dracula101.jetscan.presentation.features.home.main
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -16,14 +18,13 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -41,11 +42,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -55,8 +61,8 @@ import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import io.github.dracula101.jetscan.presentation.features.home.files_view.HomeFilesScreen
 import io.github.dracula101.jetscan.presentation.features.home.files_view.HomeFilesViewModel
 import io.github.dracula101.jetscan.presentation.features.home.home_view.HomeScreen
-import io.github.dracula101.jetscan.presentation.features.home.main.components.MainHomeSubPage
 import io.github.dracula101.jetscan.presentation.features.home.main.components.MainHomeTopAppbar
+import io.github.dracula101.jetscan.presentation.features.home.main.components.PdfActionPage
 import io.github.dracula101.jetscan.presentation.features.home.settings_view.SettingsScreen
 import io.github.dracula101.jetscan.presentation.features.home.settings_view.SettingsViewModel
 import io.github.dracula101.jetscan.presentation.features.home.subscription_view.SubscriptionViewModel
@@ -70,6 +76,7 @@ import io.github.dracula101.jetscan.presentation.platform.component.snackbar.uti
 import io.github.dracula101.jetscan.presentation.platform.component.snackbar.util.showWarningSnackbar
 import io.github.dracula101.jetscan.presentation.platform.component.textfield.AppTextField
 import io.github.dracula101.jetscan.presentation.platform.feature.app.model.SnackbarState
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,13 +87,15 @@ fun MainHomeScreen(
     settingsViewModel: SettingsViewModel = hiltViewModel(),
     onNavigateDocument: (Document) -> Unit = {},
     onNavigateToScanner: () -> Unit = {},
-    navigateTo: (MainHomeSubPage) -> Unit,
+    navigateTo: (PdfActionPage) -> Unit,
     onNavigateToFolder: (DocumentFolder) -> Unit = {},
     onNavigateToAboutPage: () -> Unit = {},
     onNavigateToDocumentSettings: (DocumentSettingScreen) -> Unit = {},
 ) {
     val state = mainViewModel.stateFlow.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val bottomBarVisibleAnimation = remember { Animatable(1f) }
 
     state.value.snackbarState?.let { snackbarState ->
         MainHomeAlertSnackbar(
@@ -124,10 +133,31 @@ fun MainHomeScreen(
         )
     }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                val delta = available.y
+                val isScrolledDown = delta > 0
+                scope.launch {
+                    if(
+                        !bottomBarVisibleAnimation.isRunning &&
+                        (isScrolledDown && bottomBarVisibleAnimation.value == 0f) ||
+                        (!isScrolledDown && bottomBarVisibleAnimation.value == 1f)
+                    ){
+                        bottomBarVisibleAnimation.animateTo(if(isScrolledDown) 1f else 0f)
+                    }
+                }
+                return Offset.Zero
+            }
+        }
+    }
+
     JetScanScaffold(
         modifier = Modifier
             .fillMaxSize()
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+            .nestedScroll(nestedScrollConnection),
         snackbarHostState = snackbarHostState,
         topBar = {
             MainHomeTopAppbar(
@@ -142,7 +172,14 @@ fun MainHomeScreen(
             if(state.value.currentTab != MainHomeTabs.SETTINGS) {
                 MainHomeFloatingActionButton(
                     onClick = { onNavigateToScanner() },
-                    isExtended = state.value.currentTab == MainHomeTabs.HOME
+                    isExtended = state.value.currentTab == MainHomeTabs.HOME,
+                    modifier = Modifier
+                        .offset {
+                            IntOffset(
+                                x = 0,
+                                y = ((1 - bottomBarVisibleAnimation.value) * 250).toInt()
+                            )
+                        }
                 )
             }
         },
@@ -151,7 +188,14 @@ fun MainHomeScreen(
                 state = state.value,
                 onTabSelected = { tab ->
                     mainViewModel.trySendAction(MainHomeAction.Ui.ChangeTab(tab))
-                }
+                },
+                modifier = Modifier
+                    .offset {
+                        IntOffset(
+                            x = 0,
+                            y = ((1 - bottomBarVisibleAnimation.value) * 300).toInt()
+                        )
+                    }
             )
         }
     ) { padding, windowSize ->
@@ -163,7 +207,8 @@ fun MainHomeScreen(
                         mainViewModel.trySendAction(MainHomeAction.Ui.ChangeTab(tab))
                     },
                     isVertical = true,
-                    modifier = Modifier.padding(padding)
+                    modifier = Modifier
+                        .padding(padding)
                 )
             }
             when(state.value.currentTab) {
@@ -173,6 +218,14 @@ fun MainHomeScreen(
                         windowSize = windowSize,
                         padding = padding,
                         onDocumentClick = onNavigateDocument,
+                        onNavigateToPdfActions = { document, page ->
+                            mainViewModel.trySendAction(
+                                MainHomeAction.MainHomeNavigate(
+                                    document = document,
+                                    navigatePage = page,
+                                )
+                            )
+                        },
                     )
                 }
                 MainHomeTabs.FILES -> {
@@ -189,7 +242,15 @@ fun MainHomeScreen(
                         },
                         onNavigateToFolder = { folder->
                             onNavigateToFolder(folder)
-                        }
+                        },
+                        onNavigateToPdfActions = { document, page ->
+                            mainViewModel.trySendAction(
+                                MainHomeAction.MainHomeNavigate(
+                                    document = document,
+                                    navigatePage = page,
+                                )
+                            )
+                        },
                     )
                 }
 //            MainHomeTabs.SUBSCRIPTION -> {
@@ -218,8 +279,9 @@ fun MainHomeScreen(
 
 @Composable
 fun MainHomeFloatingActionButton(
+    modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
-    isExtended: Boolean = true
+    isExtended: Boolean = true,
 ) {
 
     ExtendedFloatingActionButton(
@@ -233,20 +295,21 @@ fun MainHomeFloatingActionButton(
         text = {
             Text(text = "Scan")
         },
-        expanded = isExtended
+        expanded = isExtended,
+        modifier = modifier,
     )
 }
 
 @Composable
 fun MainHomeBottomBar(
+    modifier: Modifier = Modifier,
     state: MainHomeState,
     isVertical: Boolean = false,
     onTabSelected: (MainHomeTabs) -> Unit = {},
-    modifier: Modifier = Modifier
 ) {
     if (isVertical) {
         Column(
-            modifier
+            Modifier
                 .fillMaxHeight()
                 .widthIn(min = 80.dp)
                 .selectableGroup(),
@@ -282,16 +345,18 @@ fun MainHomeBottomBar(
 //            )
             MainHomeNavRailItem(
                 icons = Pair(
-                    Icons.Rounded.Person,
-                    Icons.Outlined.Person
+                    Icons.Rounded.Settings,
+                    Icons.Outlined.Settings
                 ),
-                label = "Account",
+                label = "Settings",
                 selected = state.currentTab == MainHomeTabs.SETTINGS,
                 onClick = { onTabSelected(MainHomeTabs.SETTINGS) },
             )
         }
     } else {
-        BottomAppBar {
+        BottomAppBar(
+            modifier = modifier,
+        ) {
             MainHomeNavbarItem(
                 icons = Pair(
                     Icons.Rounded.Home,
@@ -321,10 +386,10 @@ fun MainHomeBottomBar(
 //            )
             MainHomeNavbarItem(
                 icons = Pair(
-                    Icons.Rounded.Person,
-                    Icons.Outlined.Person
+                    Icons.Rounded.Settings,
+                    Icons.Outlined.Settings
                 ),
-                label = "Account",
+                label = "Settings",
                 selected = state.currentTab == MainHomeTabs.SETTINGS,
                 onClick = { onTabSelected(MainHomeTabs.SETTINGS) },
             )

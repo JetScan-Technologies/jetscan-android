@@ -26,15 +26,6 @@ fun DocumentsListTitle(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.background,
-                        Color.Transparent
-                    ),
-                    startY = 120f
-                )
-            )
             .padding(
                 horizontal = 16.dp,
                 vertical = 8.dp

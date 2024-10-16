@@ -3,6 +3,7 @@ package io.github.dracula101.jetscan.data.document.manager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Parcelable
+import io.github.dracula101.jetscan.data.document.manager.models.DocManagerResult
 import io.github.dracula101.jetscan.data.document.models.Extension
 import io.github.dracula101.jetscan.data.document.models.MimeType
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
@@ -13,14 +14,12 @@ import java.io.File
 
 interface DocumentManager {
 
-    val localDocumentFlow: Flow<List<DocumentDirectory>>
-
     suspend fun addDocument(
         uri: Uri,
         fileName: String,
         imageQuality: ImageQuality,
         progressListener: (currentProgress: Float, totalProgress: Int) -> Unit
-    ): Task<DocumentDirectory>
+    ): DocManagerResult<DocumentDirectory>
 
     suspend fun addDocumentFromScanner(
         originalBitmaps: List<Bitmap>,
@@ -29,30 +28,22 @@ interface DocumentManager {
         imageQuality: Int,
         delayDuration: Long = 50L,
         progressListener: (currentProgress: Float, totalProgress: Int) -> Unit,
-    ): Task<DocumentDirectory>
+    ): DocManagerResult<DocumentDirectory>
 
     suspend fun addExtraDocument(
         file: File,
         fileName: String,
-    ) : File?
+    ) : DocManagerResult<File?>
 
-    suspend fun deleteExtraDocument(
-        uri: Uri,
-    ) : Boolean
+    suspend fun deleteExtraDocument(uri: Uri) : Boolean
 
-    fun deleteDocument(fileName: String): Boolean
+    fun deleteDocument(fileName: String): DocManagerResult<Boolean>
 
     fun getBitmapFromUri(uri: Uri): Bitmap?
 
     fun getFileName(uri: Uri, withoutExtension: Boolean = false): String?
 
     fun getFileLength(uri: Uri): Long
-
-    fun formatFileSize(file: File): String
-
-    fun getReadableFileSize(length: Long): String?
-
-    fun formatDate(time: Long): String
 
     fun getMimeType(uri: Uri): MimeType
 

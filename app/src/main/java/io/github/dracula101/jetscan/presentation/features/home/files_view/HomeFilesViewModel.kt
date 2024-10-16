@@ -9,6 +9,10 @@ import io.github.dracula101.jetscan.data.auth.repository.AuthRepository
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.models.doc.DocumentFolder
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
+import io.github.dracula101.jetscan.data.document.repository.models.DocumentResult
+import io.github.dracula101.jetscan.presentation.features.document.folder.FolderDocAction
+import io.github.dracula101.jetscan.presentation.features.home.main.components.MainHomeSubPage
+import io.github.dracula101.jetscan.presentation.features.home.main.components.PdfActionPage
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
 import io.github.dracula101.jetscan.presentation.platform.feature.app.model.SnackbarState
 import kotlinx.coroutines.flow.SharingStarted
@@ -68,19 +72,38 @@ class HomeFilesViewModel @Inject constructor(
 
             is HomeFilesAction.Alerts.ShowAddFolderAlert -> handleShowAddFolderAlert()
             is HomeFilesAction.Alerts.ShowDeleteFolderAlert -> handleShowDeleteFolderAlert(action.folder)
+
+            is HomeFilesAction.Navigate.PdfTool -> handleNavigateToPdfTool(action.page, action.document)
+        }
+    }
+
+    private fun handleNavigateToPdfTool(page: MainHomeSubPage, document: Document?) {
+        mutableStateFlow.update {
+            state.copy(
+                pdfActionPage = PdfActionPage(
+                    page = page,
+                    document = document
+                )
+            )
         }
     }
 
     private fun handleAddFolder(folderName: String) {
         viewModelScope.launch {
-            val isFolderAdded = documentRepository.addFolder(folderName, DocumentFolder.ROOT_FOLDER)
-            if (isFolderAdded) {
-                mutableStateFlow.update {
+            val folderAddedResult = documentRepository.addFolder(folderName, DocumentFolder.ROOT_FOLDER)
+            when(folderAddedResult){
+                is DocumentResult.Success -> mutableStateFlow.update {
                     state.copy(dialogState = null, snackbarState = SnackbarState.ShowSuccess("Folder added successfully"))
                 }
-            } else {
-                mutableStateFlow.update {
-                    state.copy(dialogState = null, snackbarState = SnackbarState.ShowError("Failed to add folder", "Error adding to DB"))
+                is DocumentResult.Error -> mutableStateFlow.update {
+                    state.copy(
+                        dialogState = null,
+                        snackbarState = SnackbarState.ShowError(
+                            title = "Failed to add folder",
+                            message = folderAddedResult.message,
+                            errorCode = folderAddedResult.type.toString().split(".").last()
+                        )
+                    )
                 }
             }
         }
@@ -109,14 +132,20 @@ class HomeFilesViewModel @Inject constructor(
 
     private fun handleDeleteFolder(folder: DocumentFolder) {
         viewModelScope.launch {
-            val isFolderDeleted = documentRepository.deleteFolder(folder)
-            if (isFolderDeleted) {
-                mutableStateFlow.update {
+            val folderDeleteResult = documentRepository.deleteFolder(folder)
+            when(folderDeleteResult){
+                is DocumentResult.Success -> mutableStateFlow.update {
                     state.copy(dialogState = null, snackbarState = SnackbarState.ShowSuccess("Folder deleted successfully"))
                 }
-            } else {
-                mutableStateFlow.update {
-                    state.copy(dialogState = null, snackbarState = SnackbarState.ShowError("Failed to delete folder", "Error deleting from DB"))
+                is DocumentResult.Error -> mutableStateFlow.update {
+                    state.copy(
+                        dialogState = null,
+                        snackbarState = SnackbarState.ShowError(
+                            title = "Failed to delete folder",
+                            message = folderDeleteResult.message,
+                            errorCode = folderDeleteResult.type.toString().split(".").last()
+                        )
+                    )
                 }
             }
         }
@@ -129,6 +158,7 @@ class HomeFilesViewModel @Inject constructor(
 data class HomeFilesState(
     val documents: List<Document> = emptyList(),
     val folders: List<DocumentFolder> = emptyList(),
+    val pdfActionPage: PdfActionPage? = null,
     val dialogState: HomeFilesDialogState? = null,
     val snackbarState: SnackbarState? = null,
 ) : Parcelable
@@ -151,6 +181,13 @@ sealed class HomeFilesAction {
         data object DismissSnackbar: Ui()
     }
 
+    @Parcelize
+    sealed class Navigate : HomeFilesAction(), Parcelable {
+        data class PdfTool(
+            val page: MainHomeSubPage,
+            val document: Document? = null
+        ) : Navigate()
+    }
 
     @Parcelize
     sealed class Alerts : HomeFilesAction(), Parcelable {

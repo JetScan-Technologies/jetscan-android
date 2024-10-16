@@ -8,6 +8,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.dracula101.jetscan.data.document.manager.DocumentManager
+import io.github.dracula101.jetscan.data.document.manager.models.DocManagerResult
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
@@ -108,19 +109,26 @@ class ProtectPdfViewModel @Inject constructor(
                 password = password,
                 masterPassword = password, // master password is same as password (change if needed)
             )
-            val savedProtectedFile = documentManager.addExtraDocument(
+            val savedProtectedFileResult = documentManager.addExtraDocument(
                 file = cachedFile,
                 fileName = fileName,
             )
-            Timber.i("Protected: $savedProtectedFile")
+            Timber.i("Protected: $savedProtectedFileResult")
             cachedFile.delete()
-            mutableStateFlow.update { state ->
-                if (savedProtectedFile!=null && protected) {
-                    state.copy(
-                        view = ProtectPdfView.COMPLETED_VIEW,
-                        protectedPdf = savedProtectedFile,
-                    )
-                } else { state }
+            when(savedProtectedFileResult){
+                is DocManagerResult.Success -> {
+                    if(protected) {
+                        mutableStateFlow.update {
+                            it.copy(
+                                view = ProtectPdfView.COMPLETED_VIEW,
+                                protectedPdf = savedProtectedFileResult.data,
+                            )
+                        }
+                    }
+                }
+                is DocManagerResult.Error -> {
+                    Timber.e("Error: ${savedProtectedFileResult.message}")
+                }
             }
         }
     }

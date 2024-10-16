@@ -27,6 +27,7 @@ import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.CropOriginal
+import androidx.compose.material.icons.rounded.DocumentScanner
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Filter
 import androidx.compose.material.icons.rounded.IosShare
@@ -71,8 +72,8 @@ fun EditDocumentScreen(
     onNavigateToPdf: (Document) -> Unit,
     documentId: String,
     documentPageIndex: Int,
+    onNavigateToOcr: (Document, Int) -> Unit,
     viewModel: EditDocViewModel = hiltViewModel(),
-    bottomBarHeight: Dp = 60.dp
 ) {
     LaunchedEffect(Unit) {
         viewModel.trySendAction(EditDocAction.LoadDocument(documentId))
@@ -267,6 +268,17 @@ fun EditDocumentScreen(
                                 title = "Share",
                                 icon = Icons.Rounded.IosShare,
                                 onClick = { },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            HorizontalDivider(
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                            )
+                            EditPdfActionTile(
+                                title = "OCR",
+                                icon = Icons.Rounded.DocumentScanner,
+                                onClick = {
+                                    onNavigateToOcr(state.value.scannedDocument!!, pagerState.currentPage)
+                                },
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Box(

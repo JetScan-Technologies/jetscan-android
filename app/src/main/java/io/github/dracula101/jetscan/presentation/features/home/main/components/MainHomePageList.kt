@@ -1,6 +1,7 @@
 package io.github.dracula101.jetscan.presentation.features.home.main.components
 
 
+import android.os.Parcelable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -11,8 +12,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import io.github.dracula101.jetscan.R
+import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeAction
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeViewModel
+import kotlinx.parcelize.Parcelize
 
 data class HomePageActionsItem(
     val icon: Int,
@@ -31,6 +34,12 @@ enum class MainHomeSubPage {
     COMPRESS_PDF,
     ALL_TOOLS
 }
+
+@Parcelize
+data class PdfActionPage(
+    val page: MainHomeSubPage,
+    val document: Document? = null,
+) : Parcelable
 
 val homePageActionsItems = listOf(
     HomePageActionsItem(

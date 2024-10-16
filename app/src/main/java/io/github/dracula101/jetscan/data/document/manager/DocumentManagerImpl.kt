@@ -15,6 +15,8 @@ import android.util.Size
 import io.github.dracula101.jetscan.data.document.manager.extension.ExtensionManager
 import io.github.dracula101.jetscan.data.document.manager.image.ImageManager
 import io.github.dracula101.jetscan.data.document.manager.mime.MimeTypeManager
+import io.github.dracula101.jetscan.data.document.manager.models.DocManagerErrorType
+import io.github.dracula101.jetscan.data.document.manager.models.DocManagerResult
 import io.github.dracula101.jetscan.data.document.models.Extension
 import io.github.dracula101.jetscan.data.document.models.MimeType
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
@@ -59,9 +61,6 @@ class DocumentManagerImpl(
     private val scannedDirectory = File(documentDirectory, SCANNED_DOCUMENTS_FOLDER)
     private val extraDocumentDirectory = File(documentDirectory, EXTRA_DOCUMENTS_FOLDER)
 
-    private val documentFlow = MutableStateFlow(emptyList<DocumentDirectory>())
-    override val localDocumentFlow: Flow<List<DocumentDirectory>> = documentFlow.asStateFlow()
-
     init { preCheck() }
 
     private fun preCheck() {
@@ -74,25 +73,6 @@ class DocumentManagerImpl(
         if (!scannedDirectory.exists()) {
             scannedDirectory.mkdirs()
         }
-        updateFlow()
-    }
-
-    private fun updateFlow() {
-        val documents = scannedDirectory.listFiles()?.map { mainDir ->
-            val imageDir = File(mainDir, SCANNED_DOCUMENTS_ORIGINAL_FOLDER)
-            val scannedImageDir = File(mainDir, SCANNED_DOCUMENTS_SCANNED_IMAGES_FOLDER)
-            val originalFile = mainDir.listFiles()?.find { file -> (file.isFile && file.path.contains(".pdf")) }
-            val previewFile = File(mainDir, SCANNED_DOCUMENTS_SCANNED_IMAGES_FOLDER).listFiles()?.firstOrNull() ?: File(mainDir, SCANNED_DOCUMENTS_ORIGINAL_FOLDER).listFiles()?.firstOrNull()
-            if (originalFile == null) { return@map null }
-            DocumentDirectory(
-                mainDir = mainDir,
-                imageDir = imageDir,
-                scannedImageDir = scannedImageDir,
-                originalFile = originalFile,
-                previewFile = previewFile,
-            )
-        } ?: emptyList()
-        documentFlow.value = documents.filterNotNull()
     }
 
     override suspend fun addDocument(
@@ -100,10 +80,15 @@ class DocumentManagerImpl(
         fileName: String,
         imageQuality: ImageQuality,
         progressListener: (current: Float, total: Int) -> Unit
-    ): Task<DocumentDirectory> = coroutineScope {
+    ): DocManagerResult<DocumentDirectory> = coroutineScope {
         try {
             val extension = extensionManager.getExtensionType(contentResolver, uri)
-            if (extension?.isDocument() == false || extension == null) throw IllegalArgumentException("Only Pdf/Image files are supported.")
+            if (extension?.isDocument() == false || extension == null) {
+                return@coroutineScope DocManagerResult.Error(
+                    message = "Invalid file type",
+                    type = DocManagerErrorType.INVALID_EXTENSION
+                )
+            }
             val isPdf = extension == Extension.PDF
             val numOfPdfPages = pdfManager.getPdfPages(contentResolver, uri) ?: 0
             val directoryName = hashEncoder(fileName)
@@ -136,12 +121,14 @@ class DocumentManagerImpl(
                     fileOutputStream.close()
                 }.runCatching {  }
                 if (originalFile.length() == 0L) {
-                    return@coroutineScope Task.Error(Exception("Error creating file"))
+                    return@coroutineScope DocManagerResult.Error(
+                        message = "Error creating file",
+                        type = DocManagerErrorType.FILE_NOT_CREATED
+                    )
                 }
                 // Saving the preview image
                 progressListener.invoke(numOfPdfPages + 1f, numOfPdfPages + 1)
-                updateFlow()
-                return@coroutineScope Task.Success(
+                return@coroutineScope DocManagerResult.Success(
                     DocumentDirectory(
                         mainDir = mainFileDirectory,
                         imageDir = originalImageDirectory,
@@ -164,7 +151,10 @@ class DocumentManagerImpl(
                 scannedImage.writeBytes(byteArray)
                 progressListener.invoke(0.5f, 1)
                 if (originalImageDirectory.parentFile == null) {
-                    return@coroutineScope Task.Error(Exception("Error creating file"))
+                    return@coroutineScope DocManagerResult.Error(
+                        message = "Error creating file",
+                        type = DocManagerErrorType.FILE_NOT_CREATED
+                    )
                 }
                 // saving the original file
                 val originalFile = withContext(Dispatchers.IO) {
@@ -178,8 +168,7 @@ class DocumentManagerImpl(
                     originalFile
                 }
                 progressListener.invoke(1f, 1)
-                updateFlow()
-                return@coroutineScope Task.Success(
+                return@coroutineScope DocManagerResult.Success(
                     DocumentDirectory(
                         mainDir = mainFileDirectory,
                         imageDir = originalImageDirectory,
@@ -189,9 +178,19 @@ class DocumentManagerImpl(
                     )
                 )
             }
-        } catch (e: Exception) {
-            Timber.e(e)
-            Task.Error(e)
+        } catch (error: Exception) {
+            Timber.e(error)
+            DocManagerResult.Error(
+                message = when(error){
+                    is IOException -> "Error creating file"
+                    else -> "Error adding document"
+                },
+                error = error,
+                type = when(error){
+                    is IOException -> DocManagerErrorType.IO_EXCEPTION
+                    else -> DocManagerErrorType.UNKNOWN
+                }
+            )
         }
     }
 
@@ -202,7 +201,7 @@ class DocumentManagerImpl(
         imageQuality: Int,
         delayDuration: Long,
         progressListener: (currentProgress: Float, totalProgress: Int) -> Unit,
-    ): Task<DocumentDirectory> = coroutineScope {
+    ): DocManagerResult<DocumentDirectory> = coroutineScope {
         return@coroutineScope try {
             showInfoForBitmap(originalBitmaps)
             val directoryName = hashEncoder(fileName)
@@ -243,11 +242,17 @@ class DocumentManagerImpl(
             if (files != null) {
                 val isSaved = pdfManager.savePdf(files.toList(), originalFile, imageQuality, Size(595,842), 0f)
                 if (!isSaved) {
-                    return@coroutineScope Task.Error(Exception("Error saving pdf file"))
+                    return@coroutineScope DocManagerResult.Error(
+                        message = "Error creating file",
+                        type = DocManagerErrorType.FILE_NOT_CREATED
+                    )
                 }
             }
             if (originalFile.length() == 0L) {
-                return@coroutineScope Task.Error(Exception("Error creating file"))
+                return@coroutineScope DocManagerResult.Error(
+                    message = "Error creating file",
+                    type = DocManagerErrorType.FILE_NOT_CREATED
+                )
             }
             val scannedDocument = DocumentDirectory(
                 mainDir = mainFileDirectory,
@@ -256,25 +261,35 @@ class DocumentManagerImpl(
                 originalFile = originalFile,
                 previewFile = File(scannedImageDirectory, files?.first()?.name ?: "")
             )
-            updateFlow()
-            Task.Success(scannedDocument)
-        } catch (e: Exception) {
-            Timber.e(e)
-            Task.Error(e)
+            DocManagerResult.Success(scannedDocument)
+        } catch (error: Exception) {
+            Timber.e(error)
+            DocManagerResult.Error(
+                message = when(error){
+                    is IOException -> "Error creating document"
+                    else -> "Error adding document"
+                },
+                error = error,
+                type = when(error){
+                    is IOException -> DocManagerErrorType.IO_EXCEPTION
+                    else -> DocManagerErrorType.UNKNOWN
+                }
+            )
         }
     }
 
-    override fun deleteDocument(fileName: String): Boolean {
+    override fun deleteDocument(fileName: String): DocManagerResult<Boolean> {
         val removedFileName = hashEncoder(fileName)
         val file = File(scannedDirectory, removedFileName)
         return if (file.exists()) {
             file.deleteRecursively()
+            DocManagerResult.Success(true)
         } else {
-            false
+            DocManagerResult.Success(false)
         }
     }
 
-    override suspend fun addExtraDocument(file: File, fileName: String): File? {
+    override suspend fun addExtraDocument(file: File, fileName: String): DocManagerResult<File?> {
         return withContext(Dispatchers.IO) {
             try {
                 val extraDocumentFile = File(extraDocumentDirectory, fileName)
@@ -282,11 +297,14 @@ class DocumentManagerImpl(
                     extraDocumentFile.delete()
                 }
                 file.copyTo(extraDocumentFile)
-                updateFlow()
-                extraDocumentFile
+                DocManagerResult.Success(extraDocumentFile)
             } catch (e: Exception) {
                 Timber.e(e)
-                null
+                DocManagerResult.Error(
+                    message = "Error adding extra document",
+                    error = e,
+                    type = DocManagerErrorType.FILE_NOT_CREATED
+                )
             }
         }
     }
@@ -297,7 +315,6 @@ class DocumentManagerImpl(
                 val file = File(uri.path ?: throw IllegalArgumentException("Invalid file path"))
                 if (file.exists()) {
                     file.deleteRecursively()
-                    updateFlow()
                     true
                 } else {
                     false
@@ -359,17 +376,6 @@ class DocumentManagerImpl(
         }
     }
 
-    override fun formatFileSize(file: File): String {
-        val size = file.length()
-        val sizeUnit = 1024
-        if (size <= 0) {
-            return "0"
-        }
-        val digitGroups = (Math.log10(size.toDouble()) / Math.log10(sizeUnit.toDouble())).toInt()
-        return DecimalFormat("#,##0.#").format(
-            size / sizeUnit.toDouble().pow(digitGroups.toDouble())
-        ) + " " + getReadableSizeUnit(digitGroups)
-    }
 
     private fun getReadableSizeUnit(digitGroups: Int): String {
         return when (digitGroups) {
@@ -383,40 +389,6 @@ class DocumentManagerImpl(
             7 -> "ZB"
             8 -> "YB"
             else -> "B"
-        }
-    }
-
-    override fun getReadableFileSize(length: Long): String? {
-        val size = length.toDouble()
-        val sizeUnit = 1000
-        if (size <= 0) {
-            return "0"
-        }
-        val digitGroups =
-            (kotlin.math.log10(size) / kotlin.math.log10(sizeUnit.toDouble())).toInt()
-        return DecimalFormat("#,##0.##").format(
-            size / sizeUnit.toDouble().pow(digitGroups.toDouble())
-        ) + " " + getReadableSizeUnit(digitGroups)
-    }
-
-    override fun formatDate(time: Long): String {
-        val calendar = Calendar.getInstance()
-        val date = Date(time)
-        val year = calendar.get(Calendar.YEAR)
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val instant = Instant.ofEpochMilli(time)
-            val formatter =
-                DateTimeFormatter.ofPattern("dd MMM ${if (date.year == year) "" else "yyyy"}")
-                    .withLocale(Locale.getDefault())
-                    .withZone(ZoneId.systemDefault())
-            formatter.format(instant)
-        } else {
-            val formatter = SimpleDateFormat(
-                "dd MMM ${if (date.year == year) "" else "yyyy"}",
-                Locale.getDefault()
-            )
-            val formattedDate = formatter.format(date)
-            formattedDate
         }
     }
 

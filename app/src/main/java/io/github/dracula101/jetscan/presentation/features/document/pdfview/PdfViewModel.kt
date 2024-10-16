@@ -24,16 +24,16 @@ class PdfViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val contentResolver: ContentResolver,
     private val documentDao: DocumentDao,
-) : BaseViewModel<PdfState, Unit, PdfAction>(
+) : BaseViewModel<PdfState, Unit, PdfViewAction>(
     initialState = savedStateHandle[PDF_VIEW_STATE] ?: PdfState(),
 ) {
-    override fun handleAction(action: PdfAction) {
+    override fun handleAction(action: PdfViewAction) {
         when (action) {
-            is PdfAction.Internal.LoadPdf -> handleLoadPdf(action)
+            is PdfViewAction.Internal.LoadPdfView -> handleLoadPdf(action)
         }
     }
 
-    private fun handleLoadPdf(action: PdfAction.Internal.LoadPdf) {
+    private fun handleLoadPdf(action: PdfViewAction.Internal.LoadPdfView) {
         viewModelScope.launch(Dispatchers.IO) {
             val document = documentDao
                 .getDocumentByUid(action.documentId)
@@ -60,16 +60,16 @@ data class PdfState(
 
 }
 
-sealed class PdfAction {
+sealed class PdfViewAction {
 
     @Parcelize
-    sealed class Ui : PdfAction(), Parcelable {}
+    sealed class Ui : PdfViewAction(), Parcelable {}
 
     @Parcelize
-    sealed class Internal : PdfAction(), Parcelable {
-        data class LoadPdf(val documentId: String) : Internal()
+    sealed class Internal : PdfViewAction(), Parcelable {
+        data class LoadPdfView(val documentId: String) : Internal()
     }
 
     @Parcelize
-    sealed class Alerts : PdfAction(), Parcelable {}
+    sealed class Alerts : PdfViewAction(), Parcelable {}
 }
