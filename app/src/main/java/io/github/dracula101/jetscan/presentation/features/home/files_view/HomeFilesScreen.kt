@@ -178,7 +178,6 @@ fun HomeFilesScreen(
     }
     LazyVerticalGrid(
         modifier = Modifier
-            .padding(padding)
             .padding(horizontal = 16.dp),
         state = gridState,
         columns = GridCells.Fixed(

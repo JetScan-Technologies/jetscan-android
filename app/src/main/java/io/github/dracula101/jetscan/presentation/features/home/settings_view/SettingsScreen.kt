@@ -81,7 +81,6 @@ fun SettingsScreen(
     }
     LazyColumn(
         modifier = Modifier
-            .padding(padding)
     ) {
         if (state.value.user?.displayName != "") {
             item {
