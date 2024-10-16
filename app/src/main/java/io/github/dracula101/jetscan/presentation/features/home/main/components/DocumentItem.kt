@@ -42,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -65,7 +66,6 @@ fun DocumentItem(
     onLongClick: () -> Unit = {},
     ui: DocumentItemUI = DocumentItemUI.Compact(),
 ) {
-    val coroutineScope = rememberCoroutineScope()
     val isChildrenShown = remember { mutableStateOf(false) }
     val isMenuOpen = remember { mutableStateOf(false) }
     val animationSpec = TweenSpec<Float>(
@@ -83,7 +83,6 @@ fun DocumentItem(
         animationSpec = animationSpec,
         label = "Opacity Animation"
     )
-
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -96,113 +95,155 @@ fun DocumentItem(
                 onLongClick = onLongClick
             )
     ) {
-        Column(
-            modifier = Modifier
-                .then(
-                    if (ui is DocumentItemUI.Expanded) Modifier
-                        .animateContentSize(
-                            animationSpec = tween(
-                                durationMillis = 300,
-                                easing = LinearOutSlowInEasing
-                            )
+        when(ui){
+            is DocumentItemUI.Vertical -> {
+                Column(
+                    modifier = Modifier
+                        .padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ){
+                    document.previewImageUri?.let { uri->
+                        PreviewIcon(
+                            modifier = Modifier
+                                .padding(top = 4.dp)
+                                .padding(horizontal = 12.dp)
+                                .aspectRatio(3 / 4f)
+                                .clip(MaterialTheme.shapes.medium),
+                            uri = uri,
                         )
-                    else Modifier
-                )
-        ) {
-            Row(
-                modifier = Modifier.padding(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                document.previewImageUri?.let { uri->
-                    PreviewIcon(
-                        modifier = Modifier
-                            .aspectRatio(3 / 4f)
-                            .clip(MaterialTheme.shapes.medium)
-                            .weight(0.55f),
-                        uri = uri,
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .weight(2.35f)
-                ) {
-                    DocumentInfo(document)
-                }
-                Box(
-                    modifier = Modifier
-                        .weight(0.5f)
-                ) {
-                    when(ui){
-                        is DocumentItemUI.Compact -> {
-                            CircleButton(
-                                onClick = ui.onDetailClicked
-                            )
-                        }
-                        is DocumentItemUI.Expanded -> {
-                            IconButton(
-                                onClick = {
-                                    isChildrenShown.value = !isChildrenShown.value
-                                }
-                            ) {
-                                Icon(
-                                    Icons.Rounded.ArrowBackIosNew,
-                                    contentDescription = null,
-                                    modifier = Modifier.rotate(degreeAnimation.value),
-                                    tint = MaterialTheme.colorScheme.onSurface
+                        Box(
+                            modifier = Modifier
+                                .height(
+                                    MaterialTheme.typography.titleSmall.fontSize.value.dp * 2
                                 )
-                            }
+                        ){
+                            Text(
+                                text = document.name,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 2,
+                                overflow = TextOverflow.Clip,
+                                textAlign = TextAlign.Center,
+                                softWrap = true
+                            )
                         }
                     }
                 }
             }
-            if (isChildrenShown.value && (ui is DocumentItemUI.Expanded)) {
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-                )
-                Row {
-                    PreviewImageSlider(opacityAnimation.value, document)
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(65.dp),
-                        contentAlignment = Alignment.Center
+            else -> {
+                Column(
+                    modifier = Modifier
+                        .then(
+                            if (ui is DocumentItemUI.Expanded) Modifier
+                                .animateContentSize(
+                                    animationSpec = tween(
+                                        durationMillis = 300,
+                                        easing = LinearOutSlowInEasing
+                                    )
+                                )
+                            else Modifier
+                        )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        AppDropDown(
-                            expanded = isMenuOpen.value,
-                            offset = DpOffset(-(120).dp, -(50).dp),
-                            onDismissRequest = {
-                                isMenuOpen.value = false
-                            },
+                        document.previewImageUri?.let { uri->
+                            PreviewIcon(
+                                modifier = Modifier
+                                    .aspectRatio(3 / 4f)
+                                    .clip(MaterialTheme.shapes.medium)
+                                    .weight(0.55f),
+                                uri = uri,
+                            )
+                        }
+                        Box(
                             modifier = Modifier
-                                .width(120.dp),
-                            items = listOf(
-                                MenuItem(
-                                    title = "Delete",
-                                    icon = Icons.Rounded.Delete,
-                                    onClick = {
-                                        ui.deleteClicked()
+                                .weight(2.35f)
+                        ) {
+                            DocumentInfo(document)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .weight(0.5f)
+                        ) {
+                            when(ui){
+                                is DocumentItemUI.Compact -> {
+                                    CircleButton(
+                                        onClick = ui.onDetailClicked
+                                    )
+                                }
+                                is DocumentItemUI.Expanded -> {
+                                    IconButton(
+                                        onClick = {
+                                            isChildrenShown.value = !isChildrenShown.value
+                                        }
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.ArrowBackIosNew,
+                                            contentDescription = null,
+                                            modifier = Modifier.rotate(degreeAnimation.value),
+                                            tint = MaterialTheme.colorScheme.onSurface
+                                        )
                                     }
-                                ),
-                                MenuItem(
-                                    title = "Share",
-                                    icon = Icons.Rounded.IosShare,
+                                }
+                                else -> {}
+                            }
+                        }
+                    }
+                    if (isChildrenShown.value && (ui is DocumentItemUI.Expanded)) {
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+                        )
+                        Row {
+                            PreviewImageSlider(opacityAnimation.value, document)
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(65.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                AppDropDown(
+                                    expanded = isMenuOpen.value,
+                                    offset = DpOffset(-(120).dp, -(50).dp),
+                                    onDismissRequest = {
+                                        isMenuOpen.value = false
+                                    },
+                                    modifier = Modifier
+                                        .width(120.dp),
+                                    items = listOf(
+                                        MenuItem(
+                                            title = "Delete",
+                                            icon = Icons.Rounded.Delete,
+                                            onClick = {
+                                                ui.deleteClicked()
+                                            }
+                                        ),
+                                        MenuItem(
+                                            title = "Share",
+                                            icon = Icons.Rounded.IosShare,
+                                            onClick = {
+                                                ui.onShareClicked()
+                                            }
+                                        )
+                                    )
+                                )
+                                CircleButton(
                                     onClick = {
-                                        ui.onShareClicked()
+                                        isMenuOpen.value = true
                                     }
                                 )
-                            )
-                        )
-                        CircleButton(
-                            onClick = {
-                                isMenuOpen.value = true
                             }
-                        )
+                        }
                     }
                 }
             }
         }
     }
+
+
 }
 
 @Composable
@@ -308,4 +349,6 @@ sealed class DocumentItemUI {
     data class Compact(
         val onDetailClicked: () -> Unit = {},
     ) : DocumentItemUI()
+
+    data object Vertical : DocumentItemUI()
 }

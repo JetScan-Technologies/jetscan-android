@@ -325,8 +325,13 @@ class PdfManagerImpl : PdfManager {
                 val pdfRenderer = PdfRenderer(ParcelFileDescriptor.open(inputTempFile, ParcelFileDescriptor.MODE_READ_ONLY))
                 pdfRenderer.close()
                 false
-            } catch (e: SecurityException) {
-                true
+            } catch (e: Exception) {
+                if (e is SecurityException) {
+                    true
+                } else {
+                    e.printStackTrace()
+                    false
+                }
             } finally {
                 inputTempFile.delete()
             }

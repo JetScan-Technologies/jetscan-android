@@ -245,7 +245,7 @@ dependencies {
 
     // ==================== TESTING ====================
     testImplementation(libs.junit)
-    debugImplementation(libs.androidx.ui.tooling)
+    implementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.tooling.preview)
     debugImplementation(libs.androidx.ui.test.manifest)
     androidTestImplementation(libs.androidx.junit)

@@ -62,7 +62,7 @@ val Typography = Typography(
     ),
     labelLarge = TextStyle(
         fontWeight = FontWeight.Normal,
-        fontFamily = nunito_semi_bold,
+        fontFamily = nunito_regular,
         fontSize = 16.sp
     ),
     labelMedium = TextStyle(
@@ -77,17 +77,17 @@ val Typography = Typography(
     ),
     displayLarge = TextStyle(
         fontWeight = FontWeight.Normal,
-        fontFamily = nunito_regular,
-        fontSize = 16.sp
+        fontFamily = nunito_bold,
+        fontSize = 22.sp
     ),
     displayMedium = TextStyle(
         fontWeight = FontWeight.Normal,
-        fontFamily = nunito_regular,
-        fontSize = 14.sp
+        fontFamily = nunito_semi_bold,
+        fontSize = 20.sp
     ),
     displaySmall = TextStyle(
         fontWeight = FontWeight.Normal,
         fontFamily = nunito_regular,
-        fontSize = 12.sp
+        fontSize = 18.sp
     ),
 )

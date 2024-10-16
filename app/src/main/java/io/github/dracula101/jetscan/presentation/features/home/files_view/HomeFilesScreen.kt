@@ -41,6 +41,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -63,6 +64,7 @@ import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.models.doc.DocumentFolder
 import io.github.dracula101.jetscan.presentation.features.home.files_view.components.FileTopbar
 import io.github.dracula101.jetscan.presentation.features.home.files_view.components.FolderItem
+import io.github.dracula101.jetscan.presentation.features.home.files_view.components.FolderItemUI
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeState
 import io.github.dracula101.jetscan.presentation.features.home.main.components.DocumentItem
 import io.github.dracula101.jetscan.presentation.features.home.main.components.DocumentItemUI
@@ -90,6 +92,7 @@ fun HomeFilesScreen(
     onNavigateToFolder: (DocumentFolder) -> Unit,
     onNavigateToPdfActions: (Document?, MainHomeSubPage) -> Unit,
 ) {
+    val columns = remember { mutableIntStateOf(3) }
     val scope = rememberCoroutineScope()
     val state = viewModel.stateFlow.collectAsStateWithLifecycle()
     val gridState = rememberLazyGridState()
@@ -195,9 +198,9 @@ fun HomeFilesScreen(
         state = gridState,
         columns = GridCells.Fixed(
             when(windowSize){
-                ScaffoldSize.COMPACT -> 3
-                ScaffoldSize.MEDIUM -> 6
-                ScaffoldSize.EXPANDED -> 9
+                ScaffoldSize.COMPACT -> columns.intValue
+                ScaffoldSize.MEDIUM -> columns.intValue * 2
+                ScaffoldSize.EXPANDED -> columns.intValue * 3
             }
         ),
         contentPadding = PaddingValues(top = 12.dp, bottom = 120.dp),
@@ -208,9 +211,9 @@ fun HomeFilesScreen(
             span = {
                 GridItemSpan(
                     when(windowSize){
-                        ScaffoldSize.COMPACT -> 3
-                        ScaffoldSize.MEDIUM -> 6
-                        ScaffoldSize.EXPANDED -> 9
+                        ScaffoldSize.COMPACT -> columns.intValue
+                        ScaffoldSize.MEDIUM -> columns.intValue * 2
+                        ScaffoldSize.EXPANDED -> columns.intValue * 3
                     }
                 )
             }
@@ -221,6 +224,14 @@ fun HomeFilesScreen(
                 onFolderShowAlert = {
                     viewModel.trySendAction(HomeFilesAction.Alerts.ShowAddFolderAlert)
                 },
+                onChangeView = {
+                    columns.intValue = when(columns.intValue){
+                        1 -> 3
+                        3 -> 1
+                        else -> 1
+                    }
+                },
+                isGridView = columns.intValue != 1
             )
         }
         if(state.value.folders.isEmpty() && state.value.documents.isEmpty()){
@@ -228,9 +239,9 @@ fun HomeFilesScreen(
                 span = {
                     GridItemSpan(
                         when(windowSize){
-                            ScaffoldSize.COMPACT -> 3
-                            ScaffoldSize.MEDIUM -> 6
-                            ScaffoldSize.EXPANDED -> 9
+                            ScaffoldSize.COMPACT -> columns.intValue
+                            ScaffoldSize.MEDIUM -> columns.intValue * 2
+                            ScaffoldSize.EXPANDED -> columns.intValue * 3
                         }
                     )
                 }
@@ -257,6 +268,10 @@ fun HomeFilesScreen(
                         onClickFolder = {
                             onNavigateToFolder(folder)
                         },
+                        ui = when(columns.intValue){
+                            1 -> FolderItemUI.Horizontal
+                            else -> FolderItemUI.Vertical
+                        }
                     )
                 }
             )
@@ -265,9 +280,9 @@ fun HomeFilesScreen(
                     span = {
                         GridItemSpan(
                             when(windowSize){
-                                ScaffoldSize.COMPACT -> 3
-                                ScaffoldSize.MEDIUM -> 6
-                                ScaffoldSize.EXPANDED -> 9
+                                ScaffoldSize.COMPACT -> columns.intValue
+                                ScaffoldSize.MEDIUM -> columns.intValue * 2
+                                ScaffoldSize.EXPANDED -> columns.intValue * 3
                             }
                         )
                     }
@@ -282,9 +297,6 @@ fun HomeFilesScreen(
             }
             itemsIndexed(
                 items = state.value.documents,
-                span = { _, folder ->
-                    GridItemSpan(3)
-                },
                 key = { _, document -> document.id },
                 itemContent = { _, document ->
                     DocumentItem(
@@ -294,14 +306,13 @@ fun HomeFilesScreen(
                         },
                         modifier = Modifier
                             .animateItemPlacement(),
-                        ui = DocumentItemUI.Compact(
-                            onDetailClicked = {
+                        ui = when(columns.intValue){
+                            1 -> DocumentItemUI.Compact {
                                 documentDetailItem.value = document
-                                scope.launch {
-                                    bottomSheetState.show()
-                                }
+                                scope.launch { bottomSheetState.show() }
                             }
-                        )
+                            else -> DocumentItemUI.Vertical
+                        }
                     )
                 }
             )
@@ -328,7 +339,6 @@ fun HomeFilesDialog(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddFolderDialog(
     onFolderAdd: (String) -> Unit,

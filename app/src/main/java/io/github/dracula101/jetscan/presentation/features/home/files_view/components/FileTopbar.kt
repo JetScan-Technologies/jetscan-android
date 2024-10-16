@@ -6,9 +6,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.automirrored.rounded.Sort
 import androidx.compose.material.icons.rounded.CreateNewFolder
 import androidx.compose.material.icons.rounded.DateRange
+import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.List
 import androidx.compose.material.icons.rounded.PhotoSizeSelectLarge
 import androidx.compose.material.icons.rounded.SortByAlpha
 import androidx.compose.material3.Icon
@@ -35,7 +38,9 @@ import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.debu
 fun FileTopbar(
     state: HomeFilesState,
     mainHomeState: MainHomeState,
-    onFolderShowAlert: ()->Unit
+    onFolderShowAlert: ()->Unit,
+    onChangeView: () -> Unit,
+    isGridView: Boolean = true,
 ) {
     val isMenuExpanded = remember { mutableStateOf(false) }
     Row (
@@ -44,12 +49,22 @@ fun FileTopbar(
     ){
         Text(
             if(state.folders.isNotEmpty()) "Folders" else if(state.documents.isNotEmpty()) "Files" else "Add Folder",
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Normal
         )
         Spacer(
             modifier = Modifier.weight(1f)
         )
+        IconButton(
+            onClick = { onChangeView() }
+        ) {
+            Icon(
+                imageVector = if(isGridView) Icons.AutoMirrored.Rounded.List else Icons.Rounded.GridView,
+                contentDescription = "Change View",
+                modifier = Modifier.size(28.dp)
+            )
+        }
+        Spacer(modifier = Modifier.size(2.dp))
         IconButton(
             onClick = { isMenuExpanded.value = true },
         ) {
@@ -81,7 +96,7 @@ fun FileTopbar(
                 onDismissRequest = { isMenuExpanded.value = false }
             )
         }
-        Spacer(modifier = Modifier.size(4.dp))
+        Spacer(modifier = Modifier.size(2.dp))
         IconButton(
             onClick = { onFolderShowAlert() }
         ) {
