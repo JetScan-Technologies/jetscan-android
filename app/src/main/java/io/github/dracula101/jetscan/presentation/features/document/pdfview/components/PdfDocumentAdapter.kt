@@ -1,5 +1,7 @@
 package io.github.dracula101.jetscan.presentation.features.document.pdfview.components
 
+import android.content.ContentResolver
+import android.net.Uri
 import android.os.Bundle
 import android.os.CancellationSignal
 import android.os.ParcelFileDescriptor
@@ -12,7 +14,10 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 
 
-class PdfDocumentAdapter(private val file: File) : PrintDocumentAdapter() {
+class PdfDocumentAdapter(
+    private val uri: Uri,
+    private val contentResolver: ContentResolver
+) : PrintDocumentAdapter() {
 
     override fun onLayout(
         oldAttributes: PrintAttributes?,
@@ -42,7 +47,7 @@ class PdfDocumentAdapter(private val file: File) : PrintDocumentAdapter() {
     ) {
         try {
             // copy file from the input stream to the output stream
-            FileInputStream(file).use { inStream ->
+            contentResolver.openInputStream(uri)?.use { inStream ->
                 FileOutputStream(destination.fileDescriptor).use { outStream ->
                     inStream.copyTo(outStream)
                 }

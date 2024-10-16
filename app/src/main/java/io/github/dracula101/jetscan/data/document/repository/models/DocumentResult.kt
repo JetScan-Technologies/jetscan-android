@@ -21,4 +21,5 @@ enum class DocumentErrorType {
     SECURITY_EXCEPTION,
     FOLDER_NOT_FOUND,
     DOCUMENT_NOT_FOUND,
+    TIMEOUT_EXCEEDED,
 }

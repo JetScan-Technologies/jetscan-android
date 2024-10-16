@@ -268,7 +268,7 @@ fun PdfViewScreen(
                                 icon = Icons.Rounded.Print,
                                 onClick = {
                                     fileActionManager.shareToPrinter(
-                                        file = state.value.document!!.uri.toFile(),
+                                        uri = state.value.document!!.uri,
                                         subject = "Printing ${state.value.document?.name ?: ""} Document",
                                         activityNotFound = {}
                                     )

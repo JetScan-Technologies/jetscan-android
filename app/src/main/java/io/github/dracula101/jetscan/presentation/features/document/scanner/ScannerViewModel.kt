@@ -20,6 +20,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.dracula101.jetscan.data.document.manager.DocumentManager
 import io.github.dracula101.jetscan.data.document.models.IllegalFilenameChar
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
+import io.github.dracula101.jetscan.data.document.repository.models.DocumentErrorType
 import io.github.dracula101.jetscan.data.document.repository.models.DocumentResult
 import io.github.dracula101.jetscan.data.platform.manager.opencv.OpenCvManager
 import io.github.dracula101.jetscan.data.platform.utils.readableSize
@@ -44,6 +45,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 import timber.log.Timber
@@ -121,8 +123,10 @@ class ScannerViewModel @Inject constructor(
             is ScannerAction.Ui.ChangeEditDocumentIndex -> handleEditDocumentIndex(action.index)
             is ScannerAction.Ui.OnBackPress -> handleBackPress(action.navigateBack)
             is ScannerAction.Ui.OnDismissBarCode -> handleDismissBarcode()
-            is ScannerAction.Ui.OnSaveDocument -> handleStartSavingDocument()
             is ScannerAction.Ui.PreviewCropDocument -> handlePreviewCropDocument(action.cropCoords, action.onCompleteCallback)
+
+            /*  Saving the document */
+            is ScannerAction.Ui.OnSaveDocument -> handleStartSavingDocument()
 
             is ScannerAction.OnCameraInitialized -> _cameraController.value = action.cameraController
             is ScannerAction.EditAction.DocumentChangeName -> handleDocumentNameChange(action.name)
@@ -669,13 +673,17 @@ class ScannerViewModel @Inject constructor(
             in 20000..50000 -> 35
             else -> 25
         }
-        viewModelScope.launch(Dispatchers.IO + SupervisorJob()) {
-            val result = documentRepository.addDocumentFromScanner(
-                originalBitmaps,
-                filteredCroppedBitmaps,
-                fileName = IllegalFilenameChar.removeIllegalChar(state.documentName),
-                imageQuality = imageQuality,
-            )
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = withTimeoutOrNull(
+                timeMillis = originalBitmaps.size * 2_000L
+            ) {
+                documentRepository.addDocumentFromScanner(
+                    originalBitmaps,
+                    filteredCroppedBitmaps,
+                    fileName = IllegalFilenameChar.removeIllegalChar(state.documentName),
+                    imageQuality = imageQuality,
+                )
+            } ?: DocumentResult.Error("Timeout", Exception("Time Limit Exceeded"), DocumentErrorType.TIMEOUT_EXCEEDED)
             when (result) {
                 is DocumentResult.Success -> {
                     mutableStateFlow.update {

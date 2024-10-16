@@ -161,12 +161,15 @@ class FileActionManagerImpl(
     }
 
     override fun shareToPrinter(
-        file: File,
+        uri: Uri,
         subject: String,
         activityNotFound: () -> Unit
     ) {
         val printIntent = activity.getSystemService(Context.PRINT_SERVICE) as android.print.PrintManager
-        val printAdapter = PdfDocumentAdapter(file)
+        val printAdapter = PdfDocumentAdapter(
+            uri,
+            activity.contentResolver
+        )
         printIntent.print(subject, printAdapter, PrintAttributes.Builder().build())
     }
 

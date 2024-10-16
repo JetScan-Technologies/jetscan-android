@@ -111,7 +111,7 @@ fun HomeScreen(
                             }
                             DocumentAction.PRINT -> {
                                 fileActionManager.shareToPrinter(
-                                    file = fileUri.toFile(),
+                                    uri = fileUri,
                                     subject = "Print ${documentDetailItem.value!!.name}",
                                     activityNotFound = {}
                                 )

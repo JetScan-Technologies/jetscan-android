@@ -217,7 +217,7 @@ class DocumentRepositoryImpl @Inject constructor(
                     val document = Document(
                         name = fileName,
                         dateCreated = timeCreated,
-                        dateModified = System.currentTimeMillis(),
+                        dateModified = timeCreated,
                         size = result.data.originalFile.length(),
                         uri = result.data.originalFile.toUri(),
                         previewImageUri = result.data.previewFile?.toUri()

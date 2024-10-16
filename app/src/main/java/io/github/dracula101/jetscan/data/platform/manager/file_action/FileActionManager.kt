@@ -55,7 +55,7 @@ interface FileActionManager {
     )
 
     fun shareToPrinter(
-        file: File,
+        uri: Uri,
         subject: String,
         activityNotFound: () -> Unit
     )
