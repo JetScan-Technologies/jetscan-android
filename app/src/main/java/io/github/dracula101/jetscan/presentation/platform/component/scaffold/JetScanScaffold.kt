@@ -64,6 +64,7 @@ fun JetScanScaffold(
         .exclude(WindowInsets.statusBars)
         .exclude(WindowInsets.navigationBars),
     alwaysShowBottomBar: Boolean = false,
+    useImePadding: Boolean = true,
     content: @Composable (PaddingValues, ScaffoldSize) -> Unit,
 ) {
     val windowWidthSize : WindowWidthSizeClass = currentWindowAdaptiveInfo().windowSizeClass.windowWidthSizeClass
@@ -93,7 +94,12 @@ fun JetScanScaffold(
             if (windowWidthSize == WindowWidthSizeClass.COMPACT || alwaysShowBottomBar) {
                 Box(
                     modifier = Modifier
-                        .imePadding()
+                        .then(
+                            if (useImePadding) Modifier
+                                .imePadding()
+                            else
+                                Modifier
+                        )
 
                 ){
                     bottomBar()
@@ -127,15 +133,21 @@ fun JetScanScaffold(
                         else
                             Modifier
                     )
-                    .padding(WindowInsets.ime.asPaddingValues())
+                    .then(
+                        if (useImePadding) Modifier
+                            .padding(WindowInsets.ime.asPaddingValues())
+                        else
+                            Modifier
+                    )
             ){
                 content(
+                    if(useImePadding)
                     PaddingValues(
                         top = paddingValues.calculateTopPadding() - WindowInsets.ime.asPaddingValues().calculateTopPadding(),
                         bottom = paddingValues.calculateBottomPadding() - WindowInsets.ime.asPaddingValues().calculateBottomPadding(),
                         start = paddingValues.calculateStartPadding(layoutDirection) - WindowInsets.ime.asPaddingValues().calculateStartPadding(layoutDirection),
                         end = paddingValues.calculateEndPadding(layoutDirection) - WindowInsets.ime.asPaddingValues().calculateEndPadding(layoutDirection),
-                    ),
+                    ) else paddingValues,
                     when(windowWidthSize) {
                         WindowWidthSizeClass.COMPACT -> ScaffoldSize.COMPACT
                         WindowWidthSizeClass.MEDIUM -> ScaffoldSize.MEDIUM

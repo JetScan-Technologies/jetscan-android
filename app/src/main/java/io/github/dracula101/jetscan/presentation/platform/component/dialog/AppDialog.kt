@@ -4,11 +4,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -28,33 +34,38 @@ fun AppBasicDialog(
     onDismiss: () -> Unit = {},
     padding: PaddingValues = PaddingValues(16.dp),
     titlePadding: PaddingValues = PaddingValues(start = 8.dp),
-    properties : DialogProperties = DialogProperties(),
     actions: @Composable (RowScope.() -> Unit) = {},
-    content: @Composable () -> Unit,
+    content: @Composable (ColumnScope.() -> Unit) = {},
  ) {
     BasicAlertDialog(
         modifier = Modifier
+            .imePadding()
             .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.surface)
             .padding(padding)
             .then(modifier),
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+        ),
         onDismissRequest = onDismiss,
-        properties = properties,
     ) {
         Surface {
-            Column {
+            Column(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+            ) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.padding(titlePadding)
                 )
-                Box(
-                    modifier = Modifier
-                        .padding(top = 8.dp)
-                ){ content() }
+                Spacer(modifier = Modifier.size(8.dp))
+                content()
+                Spacer(modifier = Modifier.size(8.dp))
                 Row(
                     horizontalArrangement = Arrangement.End,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    modifier = Modifier.fillMaxWidth()
                 ) { actions() }
             }
         }

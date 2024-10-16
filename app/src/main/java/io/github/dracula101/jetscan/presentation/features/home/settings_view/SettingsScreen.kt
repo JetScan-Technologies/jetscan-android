@@ -90,7 +90,8 @@ fun SettingsScreen(
                 top = padding.calculateTopPadding(),
                 start = padding.calculateStartPadding(layoutDirection),
                 end = padding.calculateEndPadding(layoutDirection),
-            )
+            ),
+        contentPadding = PaddingValues(bottom = 120.dp),
     ) {
         if (state.value.user?.displayName != "") {
             item {

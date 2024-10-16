@@ -159,6 +159,7 @@ fun MainHomeScreen(
             .nestedScroll(scrollBehavior.nestedScrollConnection)
             .nestedScroll(nestedScrollConnection),
         snackbarHostState = snackbarHostState,
+        useImePadding = false,
         topBar = {
             MainHomeTopAppbar(
                 scrollBehavior = scrollBehavior,
@@ -189,7 +190,7 @@ fun MainHomeScreen(
                 onTabSelected = { tab ->
                     mainViewModel.trySendAction(MainHomeAction.Ui.ChangeTab(tab))
                 },
-                modifier = Modifier
+                horizontalModifier = Modifier
                     .offset {
                         IntOffset(
                             x = 0,
@@ -207,8 +208,9 @@ fun MainHomeScreen(
                         mainViewModel.trySendAction(MainHomeAction.Ui.ChangeTab(tab))
                     },
                     isVertical = true,
-                    modifier = Modifier
+                    verticalModifier  = Modifier
                         .padding(padding)
+                        .padding(top = 16.dp)
                 )
             }
             when(state.value.currentTab) {
@@ -302,14 +304,15 @@ fun MainHomeFloatingActionButton(
 
 @Composable
 fun MainHomeBottomBar(
-    modifier: Modifier = Modifier,
+    horizontalModifier: Modifier = Modifier,
+    verticalModifier: Modifier = Modifier,
     state: MainHomeState,
     isVertical: Boolean = false,
     onTabSelected: (MainHomeTabs) -> Unit = {},
 ) {
     if (isVertical) {
         Column(
-            Modifier
+            verticalModifier
                 .fillMaxHeight()
                 .widthIn(min = 80.dp)
                 .selectableGroup(),
@@ -355,7 +358,7 @@ fun MainHomeBottomBar(
         }
     } else {
         BottomAppBar(
-            modifier = modifier,
+            modifier = horizontalModifier,
         ) {
             MainHomeNavbarItem(
                 icons = Pair(

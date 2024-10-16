@@ -2,19 +2,21 @@ package io.github.dracula101.jetscan.presentation.features.home.home_view.compon
 
 import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeAction
-import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeBottomBar
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeState
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeViewModel
 import io.github.dracula101.jetscan.presentation.features.home.main.components.DocumentItem
@@ -34,7 +36,7 @@ fun ExpandedHomeScreen(
     onDocumentClick: (Document) -> Unit,
     onDocumentDetailClick: (Document) -> Unit,
 ) {
-    val lazyListState = rememberLazyListState()
+    val lazyGridState = rememberLazyGridState()
     Row(
         modifier = Modifier
             .padding(padding)
@@ -47,12 +49,21 @@ fun ExpandedHomeScreen(
             isExpanded = true,
             viewModel = viewModel,
         )
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f),
-            state = lazyListState,
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(
+                if (isExpanded) 2 else 1
+            ),
+            state = lazyGridState,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(12.dp),
         ) {
-            item(key = "header") {
+            item(
+                key = "header",
+                span = {
+                    GridItemSpan(if (isExpanded) 2 else 1)
+                }
+            ) {
                 DocumentsListTitle {
                     if (state.importDocumentState == null) {
                         permissionLauncher.launch(android.Manifest.permission.READ_EXTERNAL_STORAGE)
@@ -73,7 +84,6 @@ fun ExpandedHomeScreen(
                 ) { document ->
                     DocumentItem(
                         modifier = Modifier
-                            .padding(horizontal = 16.dp, vertical = 4.dp)
                             .animateItemPlacement(),
                         document = document,
                         onClick = { onDocumentClick(document) },

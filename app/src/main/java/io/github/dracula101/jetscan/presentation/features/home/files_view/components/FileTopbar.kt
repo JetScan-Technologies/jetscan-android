@@ -43,7 +43,7 @@ fun FileTopbar(
         verticalAlignment = Alignment.CenterVertically
     ){
         Text(
-            "Total: ${state.documents.size + state.folders.size} Files",
+            if(state.folders.isNotEmpty()) "Folders" else if(state.documents.isNotEmpty()) "Files" else "Add Folder",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Normal
         )

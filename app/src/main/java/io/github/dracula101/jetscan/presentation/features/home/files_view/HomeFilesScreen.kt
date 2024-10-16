@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.FolderDelete
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
@@ -72,6 +74,7 @@ import io.github.dracula101.jetscan.presentation.platform.component.dialog.IconA
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.ScaffoldSize
 import io.github.dracula101.jetscan.presentation.platform.composition.LocalFileActionManager
 import io.github.dracula101.jetscan.presentation.platform.feature.app.model.SnackbarState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -192,22 +195,22 @@ fun HomeFilesScreen(
         state = gridState,
         columns = GridCells.Fixed(
             when(windowSize){
-                ScaffoldSize.COMPACT -> 1
-                ScaffoldSize.MEDIUM -> 2
-                ScaffoldSize.EXPANDED -> 3
+                ScaffoldSize.COMPACT -> 3
+                ScaffoldSize.MEDIUM -> 6
+                ScaffoldSize.EXPANDED -> 9
             }
         ),
-        contentPadding = PaddingValues(vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        contentPadding = PaddingValues(top = 12.dp, bottom = 120.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item(
             span = {
                 GridItemSpan(
                     when(windowSize){
-                        ScaffoldSize.COMPACT -> 1
-                        ScaffoldSize.MEDIUM -> 2
-                        ScaffoldSize.EXPANDED -> 3
+                        ScaffoldSize.COMPACT -> 3
+                        ScaffoldSize.MEDIUM -> 6
+                        ScaffoldSize.EXPANDED -> 9
                     }
                 )
             }
@@ -221,7 +224,17 @@ fun HomeFilesScreen(
             )
         }
         if(state.value.folders.isEmpty() && state.value.documents.isEmpty()){
-            item {
+            item (
+                span = {
+                    GridItemSpan(
+                        when(windowSize){
+                            ScaffoldSize.COMPACT -> 3
+                            ScaffoldSize.MEDIUM -> 6
+                            ScaffoldSize.EXPANDED -> 9
+                        }
+                    )
+                }
+            ){
                 NoFolderView(
                     modifier = Modifier
                         .padding(top = 32.dp)
@@ -247,16 +260,31 @@ fun HomeFilesScreen(
                     )
                 }
             )
-            if(state.value.folders.isNotEmpty() && state.value.documents.isNotEmpty() && windowSize == ScaffoldSize.COMPACT){
-                item {
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 4.dp, horizontal = 12.dp),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+            if(state.value.folders.isNotEmpty() && state.value.documents.isNotEmpty()){
+                item (
+                    span = {
+                        GridItemSpan(
+                            when(windowSize){
+                                ScaffoldSize.COMPACT -> 3
+                                ScaffoldSize.MEDIUM -> 6
+                                ScaffoldSize.EXPANDED -> 9
+                            }
+                        )
+                    }
+                ){
+                    Text(
+                        text = "Files",
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier
+                            .padding(vertical = 8.dp)
                     )
                 }
             }
             itemsIndexed(
                 items = state.value.documents,
+                span = { _, folder ->
+                    GridItemSpan(3)
+                },
                 key = { _, document -> document.id },
                 itemContent = { _, document ->
                     DocumentItem(
@@ -278,7 +306,6 @@ fun HomeFilesScreen(
                 }
             )
         }
-
     }
 }
 
@@ -301,6 +328,7 @@ fun HomeFilesDialog(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddFolderDialog(
     onFolderAdd: (String) -> Unit,
@@ -309,49 +337,50 @@ fun AddFolderDialog(
     val folderName = remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit){
+        delay(500)
         focusRequester.requestFocus()
     }
     AppBasicDialog(
         title = "Add Folder",
         content = {
-            Column {
-                Spacer(modifier = Modifier.size(8.dp))
-                OutlinedTextField(
-                    modifier = Modifier.focusRequester(focusRequester = focusRequester),
-                    value = folderName.value,
-                    shape = MaterialTheme.shapes.medium,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = if (folderName.value.contains("/"))
-                                Icons.Rounded.Cancel else Icons.Rounded.Folder,
-                            contentDescription = "Prefix Icons",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    },
-                    onValueChange = { name ->
-                        folderName.value = name
-                    },
-                    isError = folderName.value.contains("/"),
-                    label = {
-                        Text(
-                            text = if(folderName.value.contains("/")) "Folder name cannot contain '/'" else "Folder Name",
-                            color = if(folderName.value.contains("/")) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-                        )
-                    },
-                    placeholder = {
-                        Text(
-                            text = "Enter Folder Name",
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                        )
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.Sentences,
-                        imeAction = ImeAction.Done,
-                        autoCorrect = false
-                    ),
-                )
-                Spacer(modifier = Modifier.size(16.dp))
-            }
+            Spacer(modifier = Modifier.size(8.dp))
+            OutlinedTextField(
+                modifier = Modifier
+                    .focusRequester(focusRequester = focusRequester)
+                    .padding(vertical = 8.dp),
+                value = folderName.value,
+                shape = MaterialTheme.shapes.medium,
+                leadingIcon = {
+                    Icon(
+                        imageVector = if (folderName.value.contains("/"))
+                            Icons.Rounded.Cancel else Icons.Rounded.Folder,
+                        contentDescription = "Prefix Icons",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                },
+                onValueChange = { name ->
+                    folderName.value = name
+                },
+                isError = folderName.value.contains("/"),
+                label = {
+                    Text(
+                        text = if(folderName.value.contains("/")) "Folder name cannot contain '/'" else "Folder Name",
+                        color = if(folderName.value.contains("/")) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                    )
+                },
+                placeholder = {
+                    Text(
+                        text = "Enter Folder Name",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences,
+                    imeAction = ImeAction.Done,
+                    autoCorrect = false
+                ),
+            )
+            Spacer(modifier = Modifier.size(8.dp))
         },
         actions = {
             OutlinedButton(onClick = {onDismiss()}) {
