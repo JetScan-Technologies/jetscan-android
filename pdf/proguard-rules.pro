@@ -1,21 +1,20 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+################################################################################
+# IText Pdf Library
+################################################################################
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Keep classes for iText PDF core and layout libraries.
+-keep class com.itextpdf.kernel.** { *; }
+-dontwarn com.itextpdf.kernel.**
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+-keep class com.itextpdf.layout.** { *; }
+-dontwarn com.itextpdf.layout.**
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+-keep class com.itextpdf.io.** { *; }
+-dontwarn com.itextpdf.io.**
+
+# Keep classes for iText BouncyCastle cryptography adapters.
+-keep class com.itextpdf.bouncycastle.** { *; }
+-dontwarn com.itextpdf.bouncycastle.**
+
+# General rule for iText to avoid warnings for any unknown classes.
+-dontwarn com.itextpdf.**
