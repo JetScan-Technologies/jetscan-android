@@ -41,7 +41,7 @@ interface DocumentManager {
 
     fun getBitmapFromUri(uri: Uri): Bitmap?
 
-    fun getFileName(uri: Uri, withoutExtension: Boolean = false): String?
+    fun getFileName(uri: Uri, withoutExtension: Boolean = true): String?
 
     fun getFileLength(uri: Uri): Long
 

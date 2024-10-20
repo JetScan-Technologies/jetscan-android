@@ -13,6 +13,7 @@ import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.data.document.repository.models.DocumentResult
+import io.github.dracula101.jetscan.data.platform.manager.opencv.OpenCvManager
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeState.MainHomeDialogState
 import io.github.dracula101.jetscan.presentation.features.home.main.components.MainHomeSubPage
 import io.github.dracula101.jetscan.presentation.features.home.main.components.PdfActionPage
@@ -42,6 +43,7 @@ class MainHomeViewModel @Inject constructor(
     private val documentRepository: DocumentRepository,
     private val documentManager: DocumentManager,
     private val pdfManager: PdfManager,
+    private val opencvManager: OpenCvManager,
     private val savedStateHandle: SavedStateHandle,
     private val contentResolver: ContentResolver,
 ) : ImportBaseViewModel<MainHomeState, Unit, MainHomeAction>(
@@ -56,6 +58,7 @@ class MainHomeViewModel @Inject constructor(
     private val _fileUri = MutableStateFlow<Uri?>(null)
 
     init {
+        opencvManager.initialize()
         documentRepository
             .getDocuments(excludeFolders = false)
             .onEach { documents ->
@@ -206,11 +209,7 @@ class MainHomeViewModel @Inject constructor(
                     state.copy(
                         dialogState = MainHomeDialogState.ShowPasswordDialog(
                             onPasswordEntered = { pass ->
-                                importDocument(
-                                    uri,
-                                    fileQuality,
-                                    password = pass,
-                                )
+                                importDocument(uri, fileQuality, password = pass)
                             }
                         )
                     )

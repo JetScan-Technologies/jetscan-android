@@ -22,6 +22,9 @@ import io.github.dracula101.jetscan.presentation.features.auth.register.REGISTER
 import io.github.dracula101.jetscan.presentation.features.home.HOME_GRAPH_ROUTE
 import io.github.dracula101.jetscan.presentation.features.home.homeGraph
 import io.github.dracula101.jetscan.presentation.features.home.navigateToHomeGraph
+import io.github.dracula101.jetscan.presentation.features.import_pdf.IMPORT_PDF_GRAPH_ROUTE
+import io.github.dracula101.jetscan.presentation.features.import_pdf.importPdfDestination
+import io.github.dracula101.jetscan.presentation.features.import_pdf.navigateToImportPdf
 import io.github.dracula101.jetscan.presentation.features.onboarding.ONBOARDING_ROUTE
 import io.github.dracula101.jetscan.presentation.features.onboarding.navigateToOnboarding
 import io.github.dracula101.jetscan.presentation.features.onboarding.onboardingGraph
@@ -72,12 +75,14 @@ fun RootAppScreen(
         onboardingGraph(navController)
         authGraph(navController)
         homeGraph(navController)
+        importPdfDestination(navController)
     }
     val targetRoute = when (state) {
         RootAppState.Splash -> SPLASH_ROUTE
         RootAppState.Onboarding -> ONBOARDING_ROUTE
         RootAppState.Auth -> AUTH_GRAPH_ROUTE
         RootAppState.Home -> HOME_GRAPH_ROUTE
+        is RootAppState.ImportPdf -> IMPORT_PDF_GRAPH_ROUTE
     }
     val currentRoute = navController.currentDestination?.rootLevelRoute()
 
@@ -110,11 +115,18 @@ fun RootAppScreen(
     // avoids a bug that first appeared in Compose Material3 1.2.0-rc01 that causes the initial
     // transition to appear corrupted.
     LaunchedEffect(state) {
-        when (state) {
+        when (val currentState = state) {
             RootAppState.Auth -> navController.navigateToAuthGraph(rootNavOptions)
             RootAppState.Onboarding -> navController.navigateToOnboarding()
             RootAppState.Splash -> navController.navigateToSplashRoute(rootNavOptions)
             RootAppState.Home -> navController.navigateToHomeGraph(rootNavOptions)
+            is RootAppState.ImportPdf -> {
+                navController.navigateToImportPdf(
+                    tempPdfFile = currentState.importPdfEvent.tempPdfFile,
+                    pdfName = currentState.importPdfEvent.pdfName,
+                    navOptions = rootNavOptions
+                )
+            }
         }
     }
 }
@@ -136,9 +148,11 @@ private fun NavDestination?.rootLevelRoute(): String? {
 private fun AnimatedContentTransitionScope<NavBackStackEntry>.toEnterTransition(): NonNullEnterTransitionProvider =
     when (targetState.destination.rootLevelRoute()) {
         REGISTER_ROUTE -> RootTransitionProviders.Enter.slideUp
+        IMPORT_PDF_GRAPH_ROUTE -> RootTransitionProviders.Enter.pushLeft
         else -> when (initialState.destination.rootLevelRoute()) {
             // Disable transitions when coming from the splash screen
             SPLASH_ROUTE -> RootTransitionProviders.Enter.none
+            IMPORT_PDF_GRAPH_ROUTE -> RootTransitionProviders.Enter.stay
             else -> RootTransitionProviders.Enter.fadeIn
         }
     }
@@ -152,8 +166,10 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.toExitTransition()
         // Disable transitions when coming from the splash screen
         SPLASH_ROUTE -> RootTransitionProviders.Exit.none
         REGISTER_ROUTE -> RootTransitionProviders.Exit.slideDown
+        IMPORT_PDF_GRAPH_ROUTE -> RootTransitionProviders.Exit.pushRight
         else -> when (targetState.destination.rootLevelRoute()) {
             REGISTER_ROUTE -> RootTransitionProviders.Exit.stay
+            IMPORT_PDF_GRAPH_ROUTE -> RootTransitionProviders.Exit.stay
             else -> RootTransitionProviders.Exit.fadeOut
         }
     }

@@ -1,5 +1,7 @@
 package io.github.dracula101.jetscan
 
+import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.os.Bundle
@@ -27,6 +29,11 @@ class MainActivity : AppCompatActivity() {
         installSplashScreen().setKeepOnScreenCondition { shouldShowSplashScreen }
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        if (savedInstanceState == null) {
+            mainViewModel.trySendAction(MainAction.ReceiveFirstIntent(intent = intent))
+        }
+
         setContent {
             val state by mainViewModel.stateFlow.collectAsStateWithLifecycle()
             LocalManagerProvider {
@@ -52,5 +59,22 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    @SuppressLint("MissingSuperCall")
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        mainViewModel.trySendAction(
+            action = MainAction.ReceiveNewIntent(
+                intent = intent,
+            ),
+        )
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // In some scenarios on an emulator the Activity can leak when recreated
+        // if we don't first clear focus anytime we exit and return to the app.
+        currentFocus?.clearFocus()
     }
 }

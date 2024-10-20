@@ -41,7 +41,7 @@ enum class Extension : Parcelable {
         }
     }
 
-    fun value(): String {
+    override fun toString(): String {
         return when (this) {
             PDF -> ".pdf"
             DOC -> ".doc"
@@ -69,28 +69,28 @@ enum class Extension : Parcelable {
 
     companion object {
 
-        fun getExtensionType(uppercase: String): Extension {
-            return when (uppercase) {
-                "PDF" -> PDF
-                "DOC" -> DOC
-                "DOCX" -> DOCX
-                "XLS" -> XLS
-                "XLSX" -> XLSX
-                "PPT" -> PPT
-                "PPTX" -> PPTX
-                "TXT" -> TXT
-                "JPG" -> JPG
-                "JPEG" -> JPEG
-                "PNG" -> PNG
-                "GIF" -> GIF
-                "HEIC" -> HEIC
-                "MP3" -> MP3
-                "MP4" -> MP4
-                "AVI" -> AVI
-                "MKV" -> MKV
-                "ZIP" -> ZIP
-                "RAR" -> RAR
-                "APK" -> APK
+        fun getExtensionType(value: String): Extension {
+            return when (value) {
+                "pdf" -> PDF
+                "doc" -> DOC
+                "docx" -> DOCX
+                "xls" -> XLS
+                "xlsx" -> XLSX
+                "ppt" -> PPT
+                "pptx" -> PPTX
+                "txt" -> TXT
+                "jpg" -> JPG
+                "jpeg" -> JPEG
+                "png" -> PNG
+                "gif" -> GIF
+                "heic" -> HEIC
+                "mp3" -> MP3
+                "mp4" -> MP4
+                "avi" -> AVI
+                "mkv" -> MKV
+                "zip" -> ZIP
+                "rar" -> RAR
+                "apk" -> APK
                 else -> OTHER
             }
         }

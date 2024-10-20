@@ -6,4 +6,11 @@
     <files-path
         name="extra_documents"
         path="Extra Documents/" />
+
+    <cache-path
+        name="cache_files"
+        path="./../cache" />
+    <external-cache-path
+        name="external_cache_files"
+        path= "./../external_cache" />
 </paths>

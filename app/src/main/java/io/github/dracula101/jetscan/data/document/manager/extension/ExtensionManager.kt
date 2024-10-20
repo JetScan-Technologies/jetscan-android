@@ -7,7 +7,7 @@ import java.io.File
 
 interface ExtensionManager {
 
-    fun getExtensionType(contextResolver: ContentResolver, uri: Uri): Extension?
+    fun getExtensionType(contextResolver: ContentResolver, uri: Uri): Extension
 
     fun getExtensionType(file: File?): Extension
 

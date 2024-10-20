@@ -25,10 +25,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
+import androidx.compose.material.icons.automirrored.rounded.CallSplit
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
+import androidx.compose.material.icons.rounded.CallSplit
 import androidx.compose.material.icons.rounded.Compress
 import androidx.compose.material.icons.rounded.IosShare
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Merge
 import androidx.compose.material.icons.rounded.Print
 import androidx.compose.material.icons.rounded.SaveAlt
@@ -311,6 +314,28 @@ fun PdfViewScreen(
                                 onClick = {
                                     if (state.value.document != null){
                                         mergeDocument(state.value.document!!)
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            HorizontalDivider()
+                            PdfActionTitle(
+                                title = "Protect",
+                                icon = Icons.Rounded.Lock,
+                                onClick = {
+                                    if (state.value.document != null){
+                                        protectDocument(state.value.document!!)
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            HorizontalDivider()
+                            PdfActionTitle(
+                                title = "Split",
+                                icon = Icons.AutoMirrored.Rounded.CallSplit,
+                                onClick = {
+                                    if (state.value.document != null){
+                                        splitDocument(state.value.document!!)
                                     }
                                 },
                                 modifier = Modifier.fillMaxWidth()

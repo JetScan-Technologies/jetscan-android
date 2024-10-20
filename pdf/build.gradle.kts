@@ -56,8 +56,10 @@ dependencies {
 
     // implementation(libs.itext.kernel)
     // implementation(libs.itext.layout)
-    implementation(libs.itext.kernel)
-    implementation(libs.itext.layout)
-    implementation(libs.itext.io)
-    implementation(libs.itext.bouncycastle.adpaters)
+    // implementation(libs.itext.kernel)
+    // implementation(libs.itext.layout)
+    // implementation(libs.itext.io)
+    // implementation(libs.itext.bouncycastle.adpaters)
+    implementation(libs.itextg)
+    implementation(libs.spongycastle)
 }

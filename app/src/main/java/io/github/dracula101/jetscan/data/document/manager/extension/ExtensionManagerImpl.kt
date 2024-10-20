@@ -8,15 +8,15 @@ import java.io.File
 
 class ExtensionManagerImpl : ExtensionManager {
 
-    override fun getExtensionType(contextResolver: ContentResolver, uri: Uri): Extension? {
-        val mimeType = contextResolver.getType(uri)
-        if (mimeType != null) {
-            val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
-            if (extension != null) {
-                return Extension.getExtensionType(extension.uppercase())
-            }
+    override fun getExtensionType(contextResolver: ContentResolver, uri: Uri): Extension {
+        val extension: String?
+        if (uri.scheme.equals(ContentResolver.SCHEME_CONTENT)) {
+            val mime = MimeTypeMap.getSingleton()
+            extension = mime.getExtensionFromMimeType(contextResolver.getType(uri))
+        } else {
+            extension = MimeTypeMap.getFileExtensionFromUrl(Uri.fromFile(uri.path?.let { File(it) }).toString())
         }
-        return null
+        return extension ?.let { Extension.getExtensionType(it) } ?: Extension.OTHER
     }
 
     override fun getExtensionType(file: File?): Extension {

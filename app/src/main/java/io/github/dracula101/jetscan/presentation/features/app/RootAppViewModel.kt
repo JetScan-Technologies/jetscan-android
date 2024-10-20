@@ -9,9 +9,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.dracula101.jetscan.data.auth.model.UserState
 import io.github.dracula101.jetscan.data.auth.repository.AuthRepository
+import io.github.dracula101.jetscan.data.platform.manager.models.SpecialCircumstance
+import io.github.dracula101.jetscan.data.platform.manager.special_circumstance.SpecialCircumstanceManager
 import io.github.dracula101.jetscan.data.platform.repository.config.ConfigRepository
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -26,23 +29,19 @@ class RootAppViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val authRepository: AuthRepository,
     private val configRepository: ConfigRepository,
+    private val specialCircumstanceManager: SpecialCircumstanceManager,
 ) : BaseViewModel<RootAppState, Unit, RootAppAction>(
     initialState = RootAppState.Splash,
 ) {
 
     init {
-        authRepository
-            .authStateFlow
+        combine(
+            authRepository.authStateFlow,
+            specialCircumstanceManager.specialCircumstanceStateFlow,
+        ){ authState, specialCircumstance -> RootAppAction.Internal.UserStateUpdateReceive(authState, specialCircumstance) }
             .onEach {
-                Timber.i("Auth Change: $it")
-                handleAction(RootAppAction.Internal.UserStateUpdateReceive(it))
+                handleAction(it)
             }
-            .distinctUntilChanged()
-            .shareIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000L),
-                replay = 1,
-            )
             .launchIn(viewModelScope)
     }
 
@@ -66,7 +65,16 @@ class RootAppViewModel @Inject constructor(
                 null -> configRepository.isOnboardingCompleted.let { isOnboardingCompleted ->
                     if (isOnboardingCompleted) RootAppState.Auth else RootAppState.Onboarding
                 }
-                else -> RootAppState.Home
+                else -> {
+                    when {
+                        action.specialCircumstance != null -> {
+                            when(action.specialCircumstance) {
+                                is SpecialCircumstance.ImportPdfEvent -> RootAppState.ImportPdf(action.specialCircumstance)
+                            }
+                        }
+                        else -> RootAppState.Home
+                    }
+                }
             }
         }
     }
@@ -100,6 +108,14 @@ sealed class RootAppState : Parcelable {
     data object Home : RootAppState()
 
     /**
+     * App should show import pdf.
+     */
+    @Parcelize
+    data class ImportPdf(
+        val importPdfEvent: SpecialCircumstance.ImportPdfEvent
+    ) : RootAppState()
+
+    /**
      * App should show onboarding
      */
     @Parcelize
@@ -126,6 +142,7 @@ sealed class RootAppAction {
          */
         data class UserStateUpdateReceive(
             val userState: UserState?,
+            val specialCircumstance: SpecialCircumstance?,
         ) : RootAppAction()
 
         /**

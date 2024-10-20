@@ -41,8 +41,9 @@ abstract class ImportBaseViewModel<S, E, A>(
         viewModelScope.launch(Dispatchers.IO) {
             var tempFile: File? = null
             if (password != null) {
-                tempFile = File.createTempFile("temp", ".pdf")
+                tempFile = File.createTempFile("temp_unlocked", ".pdf")
                 if (tempFile.exists()) { tempFile.delete() }
+                tempFile.createNewFile()
                 val isDecrypted = pdfManager.decryptPdf(
                     uri = uri,
                     outputFile = tempFile,

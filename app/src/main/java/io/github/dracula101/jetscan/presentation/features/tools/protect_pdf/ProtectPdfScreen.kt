@@ -314,9 +314,10 @@ private fun ProtectPdfCompletedView(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    "${state.value.selectedDocument?.name ?: ""}.pdf",
+                    state.value.selectedDocument?.name.toString(),
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.surface
+                    color = MaterialTheme.colorScheme.surface,
+                    textAlign = TextAlign.Center
                 )
                 Text(
                     "is Protected",

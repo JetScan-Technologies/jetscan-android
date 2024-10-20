@@ -10,6 +10,11 @@ import java.io.File
 
 interface FileActionManager {
 
+    fun openFileInOtherApp(
+        uri: Uri,
+        onActivityNotFound: () -> Unit
+    )
+
     fun saveFileIntent(
         uri: Uri,
         title: String

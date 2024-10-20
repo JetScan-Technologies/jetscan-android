@@ -151,12 +151,7 @@ class DocumentRepositoryImpl @Inject constructor(
                 }
                 is DocManagerResult.Error -> {
                     DocumentResult.Error(
-                        message = when(result.type) {
-                            DocManagerErrorType.UNKNOWN -> "Failed to import document"
-                            DocManagerErrorType.IO_EXCEPTION -> "Failed to read file"
-                            DocManagerErrorType.FILE_NOT_CREATED -> "Failed to create file"
-                            DocManagerErrorType.INVALID_EXTENSION -> "Invalid file extension"
-                        },
+                        message = result.message,
                         error = result.error,
                         type = when(result.type) {
                             DocManagerErrorType.UNKNOWN -> DocumentErrorType.UNKNOWN

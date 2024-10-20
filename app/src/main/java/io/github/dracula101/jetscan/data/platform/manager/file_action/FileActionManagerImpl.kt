@@ -37,6 +37,22 @@ class FileActionManagerImpl(
         return mimeType
     }
 
+    override fun openFileInOtherApp(
+        uri: Uri,
+        onActivityNotFound: () -> Unit
+    ) {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, getMimeType(uri))
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        try {
+            activity.startActivity(intent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            onActivityNotFound()
+        }
+    }
+
     override fun saveFileIntent(
         uri: Uri,
         title: String,
@@ -92,6 +108,7 @@ class FileActionManagerImpl(
         try {
             activity.startActivity(Intent.createChooser(intent, title))
         } catch (e: Exception) {
+            e.printStackTrace()
             onActivityNotFound()
         }
     }
@@ -114,6 +131,7 @@ class FileActionManagerImpl(
         try {
             activity.startActivity(Intent.createChooser(intent, title))
         } catch (e: Exception) {
+            e.printStackTrace()
             onActivityNotFound()
         }
     }
@@ -170,7 +188,12 @@ class FileActionManagerImpl(
             uri,
             activity.contentResolver
         )
-        printIntent.print(subject, printAdapter, PrintAttributes.Builder().build())
+        try {
+            printIntent.print(subject, printAdapter, PrintAttributes.Builder().build())
+        } catch (e: Exception) {
+            e.printStackTrace()
+            activityNotFound()
+        }
     }
 
 }

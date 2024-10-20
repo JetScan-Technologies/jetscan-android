@@ -101,7 +101,8 @@ class ProtectPdfViewModel @Inject constructor(
         val password = state.password
 
         viewModelScope.launch(Dispatchers.IO) {
-            val fileName = "${selectedDocument.name}_locked.pdf"
+            val fileExtension = documentManager.getExtension(selectedDocument.uri).toString()
+            val fileName = documentManager.getFileName(selectedDocument.uri) + "_protected$fileExtension"
             val cachedFile = File(cacheDirectory, fileName).apply { createNewFile() }
             val protected = pdfManager.encryptPdf(
                 inputFile = selectedDocument.uri.toFile(),
@@ -120,6 +121,7 @@ class ProtectPdfViewModel @Inject constructor(
                     if(protected) {
                         mutableStateFlow.update {
                             it.copy(
+                                fileName = fileName,
                                 view = ProtectPdfView.COMPLETED_VIEW,
                                 protectedPdf = savedProtectedFileResult.data,
                             )
@@ -139,6 +141,7 @@ class ProtectPdfViewModel @Inject constructor(
 data class ProtectPdfState(
     val selectedDocument: Document? = null,
     val documents: List<Document> = emptyList(),
+    val fileName: String = "",
     val password: String = "",
     val view: ProtectPdfView = ProtectPdfView.OPERATION_VIEW,
     val protectedPdf: File? = null,

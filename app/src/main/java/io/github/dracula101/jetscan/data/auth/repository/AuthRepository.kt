@@ -18,9 +18,14 @@ interface AuthRepository {
     val currentUser: UserState?
 
     /*
-    *
+    * Returns the current User State Flow
     * */
     val authStateFlow: Flow<UserState?>
+
+    /*
+    * Check if the user is logged in
+     */
+    fun isLoggedIn(): Boolean
 
     /*
     * Login with email and password

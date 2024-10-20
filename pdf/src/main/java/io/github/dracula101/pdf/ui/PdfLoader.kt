@@ -5,6 +5,7 @@ import android.graphics.pdf.PdfRenderer
 import android.graphics.pdf.PdfRenderer.Page
 import android.os.ParcelFileDescriptor
 import android.os.ParcelFileDescriptor.MODE_READ_ONLY
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.getValue
@@ -25,6 +26,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
+import java.io.IOException
 import kotlin.math.roundToInt
 
 @Composable
@@ -37,11 +39,29 @@ class PdfLoader(private val file: File?) : RememberObserver {
         data object Init : State
         data object Loading : State
         data object Success : State
-        data class Error(val throwable: Throwable) : State
+        data class Error(
+            val throwable: Throwable,
+            val pdfErrorCode: PdfErrorCode
+        ) : State
+    }
+
+    enum class PdfErrorCode {
+        CORRUPTED_FILE,
+        PASSWORD_PROTECTED,
+        INVALID_FILE,
+        UNKNOWN
     }
 
     private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
-        state = State.Error(throwable)
+        state = State.Error(
+            throwable = throwable,
+            pdfErrorCode = when(throwable) {
+                is IOException -> PdfErrorCode.CORRUPTED_FILE
+                is SecurityException -> PdfErrorCode.PASSWORD_PROTECTED
+                is IllegalArgumentException -> PdfErrorCode.INVALID_FILE
+                else -> PdfErrorCode.UNKNOWN
+            }
+        )
     }
 
     private var rememberScope: CoroutineScope? = null

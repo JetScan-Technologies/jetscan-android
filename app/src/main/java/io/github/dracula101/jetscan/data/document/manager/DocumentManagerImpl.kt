@@ -83,9 +83,9 @@ class DocumentManagerImpl(
     ): DocManagerResult<DocumentDirectory> = coroutineScope {
         try {
             val extension = extensionManager.getExtensionType(contentResolver, uri)
-            if (extension?.isDocument() == false || extension == null) {
+            if (!extension.isDocument()) {
                 return@coroutineScope DocManagerResult.Error(
-                    message = "Invalid file type",
+                    message = "Invalid file type - ${extension.name}",
                     type = DocManagerErrorType.INVALID_EXTENSION
                 )
             }
@@ -397,7 +397,7 @@ class DocumentManagerImpl(
     }
 
     override fun getExtension(uri: Uri): Extension {
-        return extensionManager.getExtensionType(contentResolver, uri) ?: Extension.OTHER
+        return extensionManager.getExtensionType(contentResolver, uri)
     }
 
     private fun hashEncoder(s: String): String {
