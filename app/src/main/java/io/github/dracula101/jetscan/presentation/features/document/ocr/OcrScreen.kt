@@ -78,7 +78,7 @@ import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.debu
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OcrScreen(
     onNavigate: () -> Unit,

@@ -37,7 +37,7 @@ fun NavGraphBuilder.createOcrDestination(
             onNavigate = onNavigateBack,
             documentId = documentId,
             documentName = documentName,
-            pageIndex = pageIndex
+            pageIndex = pageIndex,
         )
     }
 

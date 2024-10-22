@@ -11,11 +11,11 @@ class PemUtils {
     // Function to parse a PEM-encoded private key and convert it into a PrivateKey object
     fun getPrivateKeyFromPem(privateKeyPem: String): PrivateKey {
         // Remove the PEM header and footer
-        val pem = privateKeyPem.replace("-----BEGIN PRIVATE KEY-----\\n", "")
+        val pem = privateKeyPem.replace("-----BEGIN PRIVATE KEY-----", "")
             .replace("-----END PRIVATE KEY-----", "")
             .replace("\\n", "") // Remove any whitespace, including newlines
         // Decode the Base64 PEM string into a byte array
-        val keyBytes = Base64.decode(pem, Base64.DEFAULT)
+        val keyBytes = Base64.decode(pem, Base64.NO_WRAP)
 
         // Generate a PrivateKey object from the PKCS#8 encoded key
         val keySpec = PKCS8EncodedKeySpec(keyBytes)

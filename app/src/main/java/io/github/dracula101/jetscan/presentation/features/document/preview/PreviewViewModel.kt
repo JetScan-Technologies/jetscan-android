@@ -25,7 +25,6 @@ const val PREVIEW_STATE = "preview_state"
 class PreviewViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val documentDao: DocumentDao,
-    private val ocrRepository: OcrRepository,
 ) : BaseViewModel<PreviewState, Unit, PreviewAction>(
     initialState = savedStateHandle[PREVIEW_STATE] ?: PreviewState()
 ) {
