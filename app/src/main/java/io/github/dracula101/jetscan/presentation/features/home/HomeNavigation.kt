@@ -11,8 +11,6 @@ import io.github.dracula101.jetscan.presentation.features.document.edit.navigate
 import io.github.dracula101.jetscan.presentation.features.document.folder.createFolderDocumentDestinationRoute
 import io.github.dracula101.jetscan.presentation.features.document.folder.navigateToFolder
 import io.github.dracula101.jetscan.presentation.features.document.folder.navigateToFolderDest
-import io.github.dracula101.jetscan.presentation.features.document.ocr.createOcrDestination
-import io.github.dracula101.jetscan.presentation.features.document.ocr.navigateToOcr
 import io.github.dracula101.jetscan.presentation.features.document.pdfview.createPdfViewDestination
 import io.github.dracula101.jetscan.presentation.features.document.pdfview.navigateToPdfViewScreen
 import io.github.dracula101.jetscan.presentation.features.document.preview.createPreviewDocumentDestination
@@ -104,18 +102,6 @@ fun NavGraphBuilder.homeGraph(navController: NavHostController) {
                     documentId = document.id,
                     documentName = document.name
                 )
-            },
-            onNavigateToOcr = { document, pageIndex ->
-                navController.navigateToOcr(
-                    documentId = document.id,
-                    documentName = document.name,
-                    pageIndex = pageIndex,
-                )
-            }
-        )
-        createOcrDestination(
-            onNavigateBack = {
-                navController.navigateUp()
             },
         )
         createScannerDestination(

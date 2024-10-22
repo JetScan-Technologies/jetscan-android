@@ -72,7 +72,6 @@ fun EditDocumentScreen(
     onNavigateToPdf: (Document) -> Unit,
     documentId: String,
     documentPageIndex: Int,
-    onNavigateToOcr: (Document, Int) -> Unit,
     viewModel: EditDocViewModel = hiltViewModel(),
 ) {
     LaunchedEffect(Unit) {
@@ -272,14 +271,6 @@ fun EditDocumentScreen(
                             )
                             HorizontalDivider(
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                            )
-                            EditPdfActionTile(
-                                title = "OCR",
-                                icon = Icons.Rounded.DocumentScanner,
-                                onClick = {
-                                    onNavigateToOcr(state.value.scannedDocument!!, pagerState.currentPage)
-                                },
-                                modifier = Modifier.fillMaxWidth()
                             )
                             Box(
                                 modifier = Modifier

@@ -46,7 +46,8 @@ android {
             arg("room.schemaLocation", "$projectDir/schemas")
         }
 
-        buildConfigSecrets(this)
+        buildConfigField("String", "GOOGLE_CLIENT_ID", properties["GOOGLE_CLIENT_ID"].toString())
+
     }
 
 
@@ -250,20 +251,4 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     androidTestImplementation(libs.androidx.junit)
 
-}
-
-fun buildConfigSecrets(config: ApplicationDefaultConfig) {
-    config.buildConfigField("String", "GOOGLE_CLIENT_ID", properties["GOOGLE_CLIENT_ID"].toString())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_TYPE", properties["SERVICE_ACCOUNT_TYPE"].toString())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_PROJECT_ID", properties["SERVICE_ACCOUNT_PROJECT_ID"].toString())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_PRIVATE_KEY_ID_BASE64_ENCODED", properties["SERVICE_ACCOUNT_PRIVATE_KEY_BASE64_ENCODED"].toString())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_PRIVATE_KEY", properties["SERVICE_ACCOUNT_PRIVATE_KEY"].toString())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_CLIENT_EMAIL", properties["SERVICE_ACCOUNT_CLIENT_EMAIL"].toString())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_CLIENT_ID", properties["SERVICE_ACCOUNT_CLIENT_ID"].toString())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_AUTH_URI", properties["SERVICE_ACCOUNT_AUTH_URI"].toString())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_TOKEN_URI", properties["SERVICE_ACCOUNT_TOKEN_URI"].toString())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_CLIENT_X509_CERT_URL", properties["SERVICE_ACCOUNT_CLIENT_X509_CERT_URL"].toString())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_UNIVERSE_DOMAIN", properties["SERVICE_ACCOUNT_UNIVERSE_DOMAIN"].toString())
-    config.buildConfigField("String","GCP_DOCUMENT_AI_BASE_URL",properties["GCP_DOCUMENT_AI_BASE_URL"].toString())
-    config.buildConfigField("String","GCP_DOCUMENT_AI_ENDPOINT",properties["GCP_DOCUMENT_AI_ENDPOINT"].toString())
 }
