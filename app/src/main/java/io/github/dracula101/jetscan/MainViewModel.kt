@@ -7,6 +7,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.dracula101.jetscan.data.document.manager.DocumentManager
+import io.github.dracula101.jetscan.data.document.models.MimeType
 import io.github.dracula101.jetscan.data.platform.manager.models.SpecialCircumstance
 import io.github.dracula101.jetscan.data.platform.manager.special_circumstance.SpecialCircumstanceManager
 import io.github.dracula101.jetscan.data.platform.repository.config.ConfigRepository
@@ -99,18 +100,12 @@ class MainViewModel @Inject constructor(
         val intentData = intent.data
         Timber.i("Intent received: \nType: $intentType\nAction: $intentAction\nData: $intentData, \nType: ${intentData?.javaClass?.simpleName}")
         when {
-            intentAction == Intent.ACTION_VIEW && intentType == "application/pdf" -> {
+            intentAction == Intent.ACTION_VIEW && intentType == MimeType.APPLICATION_PDF.value -> {
                 val pdfUri = intentData ?: return
                 val uriName = documentManager.getFileName(pdfUri)
-                val tempPdfFile = File.createTempFile("import_temp_pdf", ".pdf")
-                contentResolver.openInputStream(pdfUri)?.use { inputStream ->
-                    tempPdfFile.outputStream().use { outputStream ->
-                        inputStream.copyTo(outputStream)
-                    }
-                }
                 specialCircumstanceManager.specialCircumstance = SpecialCircumstance.ImportPdfEvent(
-                    tempPdfFile = tempPdfFile,
                     pdfName = uriName ?: "",
+                    uri = pdfUri
                 )
             }
             else -> {}

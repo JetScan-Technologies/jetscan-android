@@ -1,6 +1,5 @@
 package io.github.dracula101.jetscan.presentation.features.import_pdf
 
-import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -38,7 +37,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -77,25 +75,16 @@ import java.io.File
 @Composable
 fun ImportPdfScreen(
     onNavigateBack: () -> Unit,
-    tempPdfFile: File?,
+    pdfUri: Uri?,
     pdfName: String?,
     viewModel: ImportPdfViewModel = hiltViewModel()
 ) {
     val pdfLazyListState = rememberLazyListState()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
-    val context = LocalContext.current
-
     val state = viewModel.stateFlow.collectAsStateWithLifecycle()
-
-    DisposableEffect(tempPdfFile){
-        Timber.i("Pdf File: $tempPdfFile")
-        if(tempPdfFile != null){
-            viewModel.trySendAction(ImportAction.Internal.SetPdfError(false))
-            viewModel.trySendAction(ImportAction.Internal.SetTempFile(tempPdfFile))
-            viewModel.trySendAction(ImportAction.Internal.SetTempFileBytes(tempPdfFile.length()))
-        }
-        onDispose {
-            tempPdfFile?.delete()
+    LaunchedEffect(pdfUri){
+        if(pdfUri != null){
+            viewModel.trySendAction(ImportAction.Internal.LoadPdfUri(pdfUri))
         }
     }
 
@@ -122,11 +111,12 @@ fun ImportPdfScreen(
             )
         },
         bottomBar = {
-            if(state.value.tempFile != null && tempPdfFile != null){
+            if(state.value.tempFile != null && pdfUri != null){
                 ImportPdfBottomBar(
                     state = state.value,
                     onAction = { action -> viewModel.trySendAction(action) },
                     tempFileBytes = state.value.tempFileBytes,
+                    pdfUri = pdfUri,
                     pdfName = pdfName,
                     pdfHasError = state.value.hasPdfError
                 )
@@ -148,7 +138,7 @@ fun ImportPdfScreen(
                 pdfTransformState = pdfTransformState,
                 showMarker = false,
                 errorContent = { state ->
-                    viewModel.trySendAction(ImportAction.Internal.SetPdfError(true))
+                    viewModel.trySendAction(ImportAction.Internal.SetPdfError)
                     when(state.pdfErrorCode){
                         PdfLoader.PdfErrorCode.PASSWORD_PROTECTED -> PasswordProtectFileView {
                             viewModel.trySendAction(ImportAction.Alert.PdfPasswordRequest)
@@ -188,19 +178,13 @@ private fun ImportPdfBottomBar(
     state: ImportState,
     onAction: (ImportAction) -> Unit,
     tempFileBytes: Long?,
+    pdfUri: Uri,
     pdfName: String?,
     pdfHasError: Boolean,
 ) {
     val bottomBarScrollState = rememberScrollState()
     val fileActionManager = LocalFileActionManager.current
     val context = LocalContext.current
-    val pdfUri = remember {
-        FileProvider.getUriForFile(
-            context,
-            context.applicationContext.packageName + ".provider",
-            state.tempFile!!
-        )
-    }
     val saveFileLauncher = fileActionManager.saveFileWithLauncher { pdfUri }
     Box(
         modifier = Modifier

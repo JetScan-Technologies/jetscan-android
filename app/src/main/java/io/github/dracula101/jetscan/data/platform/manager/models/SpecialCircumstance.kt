@@ -1,5 +1,6 @@
 package io.github.dracula101.jetscan.data.platform.manager.models
 
+import android.net.Uri
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 import java.io.File
@@ -14,7 +15,7 @@ sealed class SpecialCircumstance : Parcelable {
 
     @Parcelize
     data class ImportPdfEvent(
-        val tempPdfFile: File,
+        val uri: Uri,
         val pdfName: String,
     ) : SpecialCircumstance(), Parcelable
 

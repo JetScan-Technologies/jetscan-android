@@ -122,7 +122,7 @@ fun RootAppScreen(
             RootAppState.Home -> navController.navigateToHomeGraph(rootNavOptions)
             is RootAppState.ImportPdf -> {
                 navController.navigateToImportPdf(
-                    tempPdfFile = currentState.importPdfEvent.tempPdfFile,
+                    originalUri = currentState.importPdfEvent.uri,
                     pdfName = currentState.importPdfEvent.pdfName,
                     navOptions = rootNavOptions
                 )

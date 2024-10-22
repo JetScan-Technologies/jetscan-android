@@ -209,9 +209,7 @@ private fun MarkerComposable(
                     tint = Color.Black
                 )
             }
-
         }
-
     }
 }
 

@@ -1,5 +1,11 @@
 import com.android.build.api.dsl.ApplicationDefaultConfig
+import groovy.json.JsonSlurper
+import org.apache.groovy.json.internal.LazyMap
+import org.gradle.internal.impldep.com.google.api.client.json.Json
+import org.gradle.internal.impldep.com.google.api.client.json.JsonObjectParser
+import org.jetbrains.kotlin.com.google.gson.JsonObject
 import java.io.FileInputStream
+import java.util.Base64
 import java.util.Properties
 
 plugins {
@@ -23,6 +29,16 @@ if (keystorePropertiesFile.exists()) {
 val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
     properties.load(FileInputStream(localPropertiesFile))
+}
+
+val serviceAccountFile = File(rootProject.projectDir, "/app/service-account.json")
+val serviceAccountJsonObject = if (serviceAccountFile.exists()) {
+    val jsonSlurper = JsonSlurper()
+    val json = jsonSlurper.parse(serviceAccountFile)
+    json as LazyMap
+} else {
+    println("Service account file not found - skipping")
+    null
 }
 
 
@@ -240,9 +256,6 @@ dependencies {
     implementation(libs.about.libraries.core)
     implementation(libs.about.libraries.ui)
 
-    // ==================== JETBRAINS ====================
-    // implementation(libs.document.ai)
-
     // ==================== TESTING ====================
     testImplementation(libs.junit)
     implementation(libs.androidx.ui.tooling)
@@ -254,16 +267,24 @@ dependencies {
 
 fun buildConfigSecrets(config: ApplicationDefaultConfig) {
     config.buildConfigField("String", "GOOGLE_CLIENT_ID", properties["GOOGLE_CLIENT_ID"].toString())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_TYPE", properties["SERVICE_ACCOUNT_TYPE"].toString())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_PROJECT_ID", properties["SERVICE_ACCOUNT_PROJECT_ID"].toString())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_PRIVATE_KEY_ID_BASE64_ENCODED", properties["SERVICE_ACCOUNT_PRIVATE_KEY_BASE64_ENCODED"].toString())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_PRIVATE_KEY", properties["SERVICE_ACCOUNT_PRIVATE_KEY"].toString())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_CLIENT_EMAIL", properties["SERVICE_ACCOUNT_CLIENT_EMAIL"].toString())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_CLIENT_ID", properties["SERVICE_ACCOUNT_CLIENT_ID"].toString())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_AUTH_URI", properties["SERVICE_ACCOUNT_AUTH_URI"].toString())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_TOKEN_URI", properties["SERVICE_ACCOUNT_TOKEN_URI"].toString())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_CLIENT_X509_CERT_URL", properties["SERVICE_ACCOUNT_CLIENT_X509_CERT_URL"].toString())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_UNIVERSE_DOMAIN", properties["SERVICE_ACCOUNT_UNIVERSE_DOMAIN"].toString())
     config.buildConfigField("String","GCP_DOCUMENT_AI_BASE_URL",properties["GCP_DOCUMENT_AI_BASE_URL"].toString())
     config.buildConfigField("String","GCP_DOCUMENT_AI_ENDPOINT",properties["GCP_DOCUMENT_AI_ENDPOINT"].toString())
+
+    serviceAccountJsonObject.let { json ->
+        config.buildConfigField("String", "SERVICE_ACCOUNT_TYPE", "\"${json?.get("type")}\"")
+        config.buildConfigField("String", "SERVICE_ACCOUNT_PROJECT_ID", "\"${json?.get("project_id")}\"")
+        config.buildConfigField("String", "SERVICE_ACCOUNT_PRIVATE_KEY_ID", "\"${json?.get("private_key_id")}\"")
+        config.buildConfigField("String", "SERVICE_ACCOUNT_CLIENT_EMAIL", "\"${json?.get("client_email")}\"")
+        config.buildConfigField("String", "SERVICE_ACCOUNT_CLIENT_ID", "\"${json?.get("client_id")}\"")
+        config.buildConfigField("String", "SERVICE_ACCOUNT_AUTH_URI", "\"${json?.get("auth_uri")}\"")
+        config.buildConfigField("String", "SERVICE_ACCOUNT_TOKEN_URI", "\"${json?.get("token_uri")}\"")
+        config.buildConfigField("String", "SERVICE_ACCOUNT_AUTH_PROVIDER_X509_CERT_URL", "\"${json?.get("auth_provider_x509_cert_url")}\"")
+        config.buildConfigField("String", "SERVICE_ACCOUNT_CLIENT_X509_CERT_URL", "\"${json?.get("client_x509_cert_url")}\"")
+
+
+        val privateKey = json?.get("private_key").toString()
+        val base64Encoder = Base64.getEncoder()
+        val privateKeyBase64Encoded = base64Encoder.encodeToString(privateKey.toByteArray())
+        config.buildConfigField("String", "SERVICE_ACCOUNT_PRIVATE_KEY_ID_BASE64_ENCODED", "\"$privateKeyBase64Encoded\"")
+    }
 }

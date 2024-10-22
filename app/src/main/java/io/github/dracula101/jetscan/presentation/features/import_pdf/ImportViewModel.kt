@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Parcelable
+import androidx.core.content.FileProvider
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,6 +18,7 @@ import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.presentation.platform.base.ImportBaseViewModel
 import io.github.dracula101.jetscan.presentation.platform.base.ImportDocumentState
 import io.github.dracula101.pdf.manager.PdfManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -70,10 +72,37 @@ class ImportPdfViewModel @Inject constructor(
             is ImportAction.Ui.ImportDocument -> handleImportDocument()
             is ImportAction.Ui.UnlockPdf -> handleUnlockingPdf(action.password)
 
-            is ImportAction.Internal.SetPdfUri -> mutableStateFlow.update { it.copy( pdfUri = action.uri ) }
-            is ImportAction.Internal.SetTempFile -> mutableStateFlow.update { it.copy( tempFile = action.tempFile ) }
-            is ImportAction.Internal.SetTempFileBytes -> mutableStateFlow.update { it.copy( tempFileBytes = action.bytes ) }
-            is ImportAction.Internal.SetPdfError -> mutableStateFlow.update { it.copy( hasPdfError = action.hasError ) }
+            is ImportAction.Internal.LoadPdfUri -> handleLoadPdfUri(action.pdfUri)
+            is ImportAction.Internal.SetPdfError -> mutableStateFlow.update { it.copy( hasPdfError = true ) }
+        }
+    }
+
+    private fun handleLoadPdfUri(pdfUri: Uri) {
+        mutableStateFlow.update {
+            it.copy(
+                pdfUri = pdfUri,
+                hasPdfError = false,
+            )
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            val tempFile = File.createTempFile("import_temp_file", ".pdf")
+            contentResolver.openInputStream(pdfUri)?.use { inputStream ->
+                tempFile.outputStream().use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+            val tempFileLength = tempFile.length()
+            mutableStateFlow.update {
+                it.copy(
+                    tempFile = tempFile,
+                    tempFileBytes = tempFileLength,
+                    hasPdfError = tempFileLength == 0L
+                )
+            }
+        }.invokeOnCompletion { throwable ->
+            mutableStateFlow.update {
+                it.copy( hasPdfError = throwable != null )
+            }
         }
     }
 
@@ -122,7 +151,10 @@ class ImportPdfViewModel @Inject constructor(
         )
     }
 
-
+    override fun onCleared() {
+        state.tempFile?.delete()
+        super.onCleared()
+    }
 
 }
 
@@ -157,10 +189,8 @@ sealed class ImportAction {
 
     @Parcelize
     sealed class Internal : ImportAction(), Parcelable {
-        data class SetPdfUri(val uri: Uri): Internal()
-        data class SetTempFile(val tempFile: File): Internal()
-        data class SetTempFileBytes(val bytes: Long): Internal()
-        data class SetPdfError(val hasError: Boolean): Internal()
+        data class LoadPdfUri(val pdfUri: Uri): Internal()
+        data object SetPdfError: Internal()
     }
 
 

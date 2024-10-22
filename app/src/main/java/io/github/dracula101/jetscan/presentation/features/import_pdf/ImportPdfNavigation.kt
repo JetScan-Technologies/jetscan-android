@@ -11,7 +11,7 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import io.github.dracula101.jetscan.presentation.platform.base.util.composableWithStayTransitions
 import io.github.dracula101.jetscan.presentation.platform.composition.LockOrientation
-import java.io.File
+import timber.log.Timber
 
 const val IMPORT_PDF_GRAPH_ROUTE = "import_pdf_graph"
 const val IMPORT_PDF_ROUTE = "import_pdf"
@@ -32,27 +32,27 @@ fun NavGraphBuilder.importPdfDestination(navController: NavHostController) {
             }
         )
     ) {
-        val tempPdfFile = File(it.arguments?.getString(IMPORT_PDF_URI_ARGUMENT) ?: "")
         val pdfNameArgument = it.arguments?.getString(IMPORT_PDF_NAME_ARGUMENT) ?: ""
+        val pdfUri = Uri.parse(it.arguments?.getString(IMPORT_PDF_URI_ARGUMENT))
+        Timber.d("pdfUri: $pdfUri, ${pdfUri.isHierarchical}")
 
-        LockOrientation(
-            isPortraitOnly = true
-        ) {
+        LockOrientation(isPortraitOnly = true) {
             ImportPdfScreen(
-                onNavigateBack = {
-                    navController.navigateUp()
-                },
-                tempPdfFile = tempPdfFile,
+                onNavigateBack = { navController.navigateUp() },
+                pdfUri = pdfUri,
                 pdfName = pdfNameArgument
             )
         }
-
     }
 }
 
-fun NavController.navigateToImportPdf(tempPdfFile: File, pdfName: String?, navOptions: NavOptions? = null) {
+fun NavController.navigateToImportPdf(
+    originalUri: Uri,
+    pdfName: String?,
+    navOptions: NavOptions? = null
+) {
     navigate(
-        "$IMPORT_PDF_ROUTE?$IMPORT_PDF_URI_ARGUMENT=$tempPdfFile&$IMPORT_PDF_NAME_ARGUMENT=$pdfName",
+        "$IMPORT_PDF_ROUTE?$IMPORT_PDF_URI_ARGUMENT=${originalUri.path}&$IMPORT_PDF_NAME_ARGUMENT=$pdfName",
         navOptions
     )
 }
