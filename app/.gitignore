@@ -1,4 +1,3 @@
 /build
 google-services.json
-# Needed for Document AI
 service-account.json
