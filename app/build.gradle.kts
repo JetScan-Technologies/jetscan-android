@@ -1,9 +1,6 @@
 import com.android.build.api.dsl.ApplicationDefaultConfig
 import groovy.json.JsonSlurper
 import org.apache.groovy.json.internal.LazyMap
-import org.gradle.internal.impldep.com.google.api.client.json.Json
-import org.gradle.internal.impldep.com.google.api.client.json.JsonObjectParser
-import org.jetbrains.kotlin.com.google.gson.JsonObject
 import java.io.FileInputStream
 import java.util.Base64
 import java.util.Properties
@@ -34,7 +31,7 @@ if (localPropertiesFile.exists()) {
 val serviceAccountFile = File(rootProject.projectDir, "/app/service-account.json")
 val serviceAccountJsonObject = if (serviceAccountFile.exists()) {
     val jsonSlurper = JsonSlurper()
-    val json = jsonSlurper.parse(serviceAccountFile)
+    val json = jsonSlurper.parseText(serviceAccountFile.readText())
     json as LazyMap
 } else {
     println("Service account file not found - skipping")
