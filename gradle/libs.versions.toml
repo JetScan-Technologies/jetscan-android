@@ -5,7 +5,7 @@ compileSdk = "34"
 minSdk = "23"
 targetSdk = "31"
 versionCode = "1"
-versionName = "1.0"
+versionName = "1.0.0"
 kotlinCompilerVersion = "1.5.1"
 
 # DEPENDENCIES VERSIONS
@@ -49,6 +49,7 @@ mlKitBarcode = "17.2.0"
 mlKitCommon = "17.3.0"
 googleServices = "4.4.0"
 googleAuth = "20.7.0"
+appDistribution = "5.0.0"
 retrofit = "2.9.0"
 interpretor = "4.9.1"
 paging = "3.2.1"
@@ -232,6 +233,7 @@ jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = 
 kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
 dagger-hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "daggerHilt" }
 kotlin-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+app-distribution = { id = "com.google.firebase.appdistribution", version.ref = "appDistribution" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsPlugin" }
 android-library = { id = "com.android.library", version.ref = "agp" }

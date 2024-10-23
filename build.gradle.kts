@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.jetbrains.kotlin.android) apply false
     alias(libs.plugins.crashlytics) apply false
+    alias(libs.plugins.app.distribution) apply false
     alias(libs.plugins.kotlin.parcelize) apply false
     alias(libs.plugins.dagger.hilt.android) apply false
     alias(libs.plugins.kotlin.ksp) apply false

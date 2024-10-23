@@ -1,4 +1,5 @@
 import com.android.build.api.dsl.ApplicationDefaultConfig
+import com.google.firebase.appdistribution.gradle.firebaseAppDistribution
 import groovy.json.JsonSlurper
 import org.apache.groovy.json.internal.LazyMap
 import java.io.FileInputStream
@@ -9,6 +10,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.crashlytics)
+    alias(libs.plugins.app.distribution)
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.dagger.hilt.android)
     alias(libs.plugins.kotlin.ksp)
@@ -18,7 +20,8 @@ plugins {
 
 val properties = Properties()
 
-val keystorePropertiesFile = rootProject.file("key.properties")
+// app level properties
+val keystorePropertiesFile = File(projectDir, "key.properties")
 if (keystorePropertiesFile.exists()) {
     properties.load(FileInputStream(keystorePropertiesFile))
 }
@@ -28,7 +31,7 @@ if (localPropertiesFile.exists()) {
     properties.load(FileInputStream(localPropertiesFile))
 }
 
-val serviceAccountFile = File(rootProject.projectDir, "/app/service-account.json")
+val serviceAccountFile = File(projectDir, "service-account.json")
 val serviceAccountJsonObject = if (serviceAccountFile.exists()) {
     val jsonSlurper = JsonSlurper()
     val json = jsonSlurper.parseText(serviceAccountFile.readText())
@@ -85,6 +88,14 @@ android {
             manifestPlaceholders["appRoundIcon"] = "@mipmap/ic_launcher_release_round"
             manifestPlaceholders["crashlyticsCollectionEnabled"] = true
             signingConfig = signingConfigs.getByName("release")
+
+            firebaseAppDistribution {
+                serviceCredentialsFile = "service-account.json"
+                releaseNotes = "Alpha Release"
+                groups = "alpha-testing"
+                artifactPath = "app/build/outputs/apk/release/app-universal-release.apk"
+                artifactType = "APK"
+            }
         }
         debug {
             isShrinkResources = false
@@ -259,6 +270,8 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling.preview)
     debugImplementation(libs.androidx.ui.test.manifest)
     androidTestImplementation(libs.androidx.junit)
+
+
 
 }
 
