@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
@@ -65,6 +66,7 @@ fun JetScanScaffold(
         .exclude(WindowInsets.navigationBars),
     alwaysShowBottomBar: Boolean = false,
     useImePadding: Boolean = true,
+    useNavigationBarPadding: Boolean = true,
     content: @Composable (PaddingValues, ScaffoldSize) -> Unit,
 ) {
     val windowWidthSize : WindowWidthSizeClass = currentWindowAdaptiveInfo().windowSizeClass.windowWidthSizeClass
@@ -97,6 +99,12 @@ fun JetScanScaffold(
                         .then(
                             if (useImePadding) Modifier
                                 .imePadding()
+                                .then(
+                                    if (useNavigationBarPadding) Modifier
+                                        .navigationBarsPadding()
+                                    else
+                                        Modifier
+                                )
                             else
                                 Modifier
                         )

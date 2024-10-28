@@ -3,19 +3,28 @@ package io.github.dracula101.jetscan.presentation.features.tools.merge_pdf
 
 import android.content.ContentResolver
 import android.os.Parcelable
+import androidx.core.net.toFile
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.dracula101.jetscan.data.document.manager.DocumentManager
+import io.github.dracula101.jetscan.data.document.manager.models.DocManagerResult
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
+import io.github.dracula101.jetscan.data.platform.repository.config.ConfigRepository
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
 import io.github.dracula101.jetscan.presentation.platform.feature.app.model.SnackbarState
+import io.github.dracula101.pdf.manager.PdfManager
+import io.github.dracula101.pdf.models.PdfOptions
+import io.github.dracula101.pdf.models.PdfPageSize
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -28,6 +37,9 @@ class MergePdfViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val contentResolver: ContentResolver,
     private val documentRepository: DocumentRepository,
+    private val documentManager: DocumentManager,
+    private val pdfManager: PdfManager,
+    private val configRepository: ConfigRepository,
 ) : BaseViewModel<MergePdfState, Unit, MergePdfAction>(
     initialState = savedStateHandle[MERGE_PDF_STATE] ?: MergePdfState(),
 ) {
@@ -35,8 +47,8 @@ class MergePdfViewModel @Inject constructor(
     init {
         documentRepository
             .getDocuments(excludeFolders = false)
-            .onEach {
-                val documents = it?.filter { document ->
+            .onEach { docs ->
+                val documents = docs?.filter { document ->
                     !state.selectedDocuments.contains(document)
                 }
                 mutableStateFlow.update {
@@ -53,6 +65,7 @@ class MergePdfViewModel @Inject constructor(
             is MergePdfAction.Ui.OnFileNameChanged -> handleFileNameChange(action.fileName)
             is MergePdfAction.Ui.OnDocumentSelected -> handleDocumentSelected(action.document)
             is MergePdfAction.Ui.OnDocumentDeleted -> handleDocumentDeleted(action.document)
+            is MergePdfAction.Ui.OnMergeDocument -> handleMergeDocument()
         }
     }
 
@@ -95,14 +108,24 @@ class MergePdfViewModel @Inject constructor(
             )
         }
     }
+
+    private fun handleMergeDocument() {
+        val selectedDocuments = state.selectedDocuments
+        val cachedFile = File.createTempFile("merged_file", ".pdf")
+        viewModelScope.launch (Dispatchers.IO) {
+            
+        }.invokeOnCompletion { cachedFile.delete() }
+    }
 }
 
 
 @Parcelize
 data class MergePdfState(
-    val fileName: String = "JetScan Merged - ${SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())}",
+    val fileName: String = "JetScan Merged - ${SimpleDateFormat("yyyy-MM-dd HH:mm a", Locale.getDefault()).format(Date())}",
     val documents : List<Document> = emptyList(),
     val selectedDocuments : List<Document> = emptyList(),
+    val mergedDocument: File? = null,
+    val view: MergePdfView = MergePdfView.DOCUMENT,
     val dialogState : MergePdfDialogState? = null,
     val snackbarState : SnackbarState? = null,
 ) : Parcelable {
@@ -118,6 +141,7 @@ sealed class MergePdfAction {
         data class OnFileNameChanged(val fileName: String) : Ui()
         data class OnDocumentSelected(val document: Document) : Ui()
         data class OnDocumentDeleted(val document: Document) : Ui()
+        data object OnMergeDocument: Ui()
     }
 
     @Parcelize
@@ -127,4 +151,9 @@ sealed class MergePdfAction {
 
     @Parcelize
     sealed class Alerts : MergePdfAction(), Parcelable {}
+}
+
+enum class MergePdfView {
+    DOCUMENT,
+    MERGED,
 }

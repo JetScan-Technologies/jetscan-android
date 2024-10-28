@@ -11,6 +11,8 @@ import io.github.dracula101.jetscan.data.document.manager.DocumentManager
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.data.document.repository.models.DocumentResult
+import io.github.dracula101.jetscan.data.platform.repository.config.ConfigRepository
+import io.github.dracula101.jetscan.data.platform.utils.bytesToReadableSize
 import io.github.dracula101.pdf.manager.PdfManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +26,7 @@ import java.io.File
 abstract class ImportBaseViewModel<S, E, A>(
     initialState: S,
     private val documentRepository: DocumentRepository,
+    private val configRepository: ConfigRepository,
     private val documentManager: DocumentManager,
     private val pdfManager: PdfManager,
     private val contentResolver: ContentResolver,
@@ -60,7 +63,15 @@ abstract class ImportBaseViewModel<S, E, A>(
             }
             else {
                 val hasPassword = pdfManager.pdfHasPassword(uri, contentResolver)
+                val avoidPasswordPdf = configRepository.avoidPasswordProtectionFiles
                 if (hasPassword) {
+                    if(avoidPasswordPdf){
+                        importDocumentStateFlow.value = ImportDocumentState.Error(
+                            message = "Password protected PDF",
+                            error = Exception("PDF is password protected. (Can be changed in settings)")
+                        )
+                        return@launch
+                    }
                     if (passwordRequest == null) {
                         importDocumentStateFlow.value = ImportDocumentState.Error(
                             message = "Document is password protected",
@@ -75,10 +86,18 @@ abstract class ImportBaseViewModel<S, E, A>(
             importDocumentStateFlow.value = ImportDocumentState.Started(fileUri, imageQuality)
             val fileName = documentManager.getFileName(uri) ?: ""
             val fileLength = documentManager.getFileLength(fileUri)
+            if(fileLength.toInt() >= configRepository.maxDocumentSize.toLong()) {
+                importDocumentStateFlow.value = ImportDocumentState.Error(
+                    message = "Document is too large",
+                    error = Exception("Document size - (${fileLength.bytesToReadableSize()}) exceeds the limit - (${configRepository.maxDocumentSize.toLong().bytesToReadableSize()})"),
+                )
+                return@launch
+            }
+            val useOriginalFileName = !configRepository.useAppNamingConvention
             val importResult = documentRepository
                 .addImportDocument(
                     uri = fileUri,
-                    fileName = fileName,
+                    fileName = if(useOriginalFileName) fileName else configRepository.getDocumentName(),
                     imageQuality = imageQuality,
                     progressListener = { currentProgress, totalProgress ->
                         importDocumentStateFlow.value = ImportDocumentState.InProgress(

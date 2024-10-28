@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import java.util.Calendar
+import java.util.Date
 
 class ConfigRepositoryImpl(
     private val configDiskSource: ConfigDiskSource,
@@ -76,6 +78,27 @@ class ConfigRepositoryImpl(
     override fun changeImportExportQuality(quality: ImageQuality) {
         configDiskSource.importExportQuality = quality
     }
+
+    override var showImportQualityDialog: Boolean
+        get() = configDiskSource.showImportQualityDialog ?: true
+        set(value) {
+            configDiskSource.showImportQualityDialog = value
+        }
+
+    override val showImportQualityDialogStateFlow: StateFlow<Boolean>
+        get() = configDiskSource
+            .showImportQualityDialogStateFlow
+            .map { it ?: true }
+            .stateIn(
+                scope = CoroutineScope(Dispatchers.Unconfined),
+                started = SharingStarted.Eagerly,
+                initialValue = configDiskSource.showImportQualityDialog ?: true,
+            )
+
+    override fun changeShowImportQualityDialog(showImportQualityDialog: Boolean) {
+        configDiskSource.showImportQualityDialog = showImportQualityDialog
+    }
+
 
     override var allowImageForImport: Boolean
         get() = configDiskSource.allowImageForImport ?: ALLOW_IMAGE_FOR_IMPORT
@@ -358,6 +381,33 @@ class ConfigRepositoryImpl(
 
     override fun changeDocumentTimePattern(timePattern: DocumentTimePattern) {
         configDiskSource.documentTimePattern = timePattern
+    }
+
+    override fun getDocumentName(): String {
+        val prefix = configDiskSource.documentPrefix ?: DEFAULT_DOCUMENT_PREFIX
+        val suffix = configDiskSource.documentSuffix ?: ""
+        val hasDate = configDiskSource.documentHasDate ?: DEFAULT_DOCUMENT_HAS_DATE
+        val hasTime = configDiskSource.documentHasTime ?: DEFAULT_DOCUMENT_HAS_TIME
+        val datePattern = configDiskSource.documentDatePattern ?: DEFAULT_DOCUMENT_DATE_PATTERN
+        val timePattern = configDiskSource.documentTimePattern ?: DEFAULT_DOCUMENT_TIME_PATTERN
+
+        val date = Calendar.getInstance().time
+        val dateStr = datePattern.format(date)
+        val timeStr = timePattern.format(date)
+        return "$prefix ${if (hasDate) dateStr else ""} ${if (hasTime) timeStr else ""}$suffix"
+    }
+
+    override fun getDocumentName(date: Date): String {
+        val prefix = configDiskSource.documentPrefix ?: DEFAULT_DOCUMENT_PREFIX
+        val suffix = configDiskSource.documentSuffix ?: ""
+        val hasDate = configDiskSource.documentHasDate ?: DEFAULT_DOCUMENT_HAS_DATE
+        val hasTime = configDiskSource.documentHasTime ?: DEFAULT_DOCUMENT_HAS_TIME
+        val datePattern = configDiskSource.documentDatePattern ?: DEFAULT_DOCUMENT_DATE_PATTERN
+        val timePattern = configDiskSource.documentTimePattern ?: DEFAULT_DOCUMENT_TIME_PATTERN
+
+        val dateStr = datePattern.format(date)
+        val timeStr = timePattern.format(date)
+        return "$prefix ${if (hasDate) dateStr else ""} ${if (hasTime) timeStr else ""}${if (suffix.isNotEmpty()) " $suffix" else ""}"
     }
 
     companion object {

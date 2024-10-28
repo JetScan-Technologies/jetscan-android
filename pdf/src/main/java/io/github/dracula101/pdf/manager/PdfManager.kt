@@ -3,8 +3,9 @@ package io.github.dracula101.pdf.manager
 import android.content.ContentResolver
 import android.graphics.Bitmap
 import android.net.Uri
-import android.util.Size
 import androidx.compose.ui.unit.Dp
+import io.github.dracula101.pdf.models.PdfCompressionLevel
+import io.github.dracula101.pdf.models.PdfOptions
 import java.io.File
 
 interface PdfManager {
@@ -38,18 +39,8 @@ interface PdfManager {
 
     suspend fun savePdf(
         files: List<File>,
-        file: File,
-        imageQuality: Int,
-        pdfSize: Size,
-        margins: Float,
-    ): Boolean
-
-    suspend fun mergePdf(
-        files: List<File>,
-        file: File,
-        imageQuality: Int,
-        pdfSize: Size,
-        margins: Float,
+        output: File,
+        options: PdfOptions,
     ): Boolean
 
     suspend fun encryptPdf(
@@ -70,4 +61,5 @@ interface PdfManager {
         uri: Uri,
         contentResolver: ContentResolver,
     ): Boolean
+
 }

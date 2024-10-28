@@ -24,6 +24,15 @@ enum class MaxDocumentSize {
         }
     }
 
+    fun toLong(): Int {
+        return when(this){
+            SIZE_5MB -> 5 * 1024 * 1024
+            SIZE_10MB -> 10 * 1024 * 1024
+            SIZE_20MB -> 20 * 1024 * 1024
+            SIZE_50MB -> 50 * 1024 * 1024
+        }
+    }
+
     companion object {
         fun fromSize(size: Int): MaxDocumentSize {
             return when(size){

@@ -35,8 +35,8 @@ fun Modifier.gradientContainer(
 
 val GradientColors : @Composable () -> List<Color> = {
     listOf(
-        MaterialTheme.colorScheme.surface,
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+        MaterialTheme.colorScheme.primary,
+        MaterialTheme.colorScheme.primaryContainer
     )
 }
 

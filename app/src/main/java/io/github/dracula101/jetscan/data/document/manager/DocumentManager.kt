@@ -8,6 +8,7 @@ import io.github.dracula101.jetscan.data.document.models.Extension
 import io.github.dracula101.jetscan.data.document.models.MimeType
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import io.github.dracula101.jetscan.data.document.utils.Task
+import io.github.dracula101.pdf.models.PdfOptions
 import kotlinx.coroutines.flow.Flow
 import kotlinx.parcelize.Parcelize
 import java.io.File
@@ -25,8 +26,8 @@ interface DocumentManager {
         originalBitmaps: List<Bitmap>,
         scannedBitmaps: List<Bitmap>,
         fileName: String,
-        imageQuality: Int,
         delayDuration: Long = 50L,
+        pdfOptions: PdfOptions,
         progressListener: (currentProgress: Float, totalProgress: Int) -> Unit,
     ): DocManagerResult<DocumentDirectory>
 

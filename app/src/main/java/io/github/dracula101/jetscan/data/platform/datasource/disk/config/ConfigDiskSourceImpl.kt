@@ -20,6 +20,7 @@ class ConfigDiskSourceImpl(
     private val isFirstLaunchFlow = bufferedMutableSharedFlow<Boolean>(replay = 1)
 
     private val importExportQualityFlow = bufferedMutableSharedFlow<ImageQuality?>(replay = 1)
+    private val importExportQualityDialogFlow = bufferedMutableSharedFlow<Boolean?>(replay = 1)
     private val allowImageForImportFlow = bufferedMutableSharedFlow<Boolean?>(replay = 1)
     private val maxDocumentSizeFlow = bufferedMutableSharedFlow<Int?>(replay = 1)
     private val useAppNamingConventionFlow = bufferedMutableSharedFlow<Boolean?>(replay = 1)
@@ -74,6 +75,16 @@ class ConfigDiskSourceImpl(
         set(value) {
             putBoolean(key = ALLOW_IMAGE_FOR_IMPORT_KEY, value = value)
             allowImageForImportFlow.tryEmit(value)
+        }
+
+    override val showImportQualityDialogStateFlow: Flow<Boolean?>
+        get() = importExportQualityDialogFlow.onSubscription { emit(showImportQualityDialog) }
+
+    override var showImportQualityDialog: Boolean?
+        get() = getBoolean(key = SHOW_IMPORT_QUALITY_DIALOG_KEY)
+        set(value) {
+            putBoolean(key = SHOW_IMPORT_QUALITY_DIALOG_KEY, value)
+            importExportQualityDialogFlow.tryEmit(value)
         }
 
     override val allowImageForImportStateFlow: Flow<Boolean?>
@@ -244,6 +255,7 @@ class ConfigDiskSourceImpl(
 
         private const val IMPORT_EXPORT_QUALITY_KEY = "import_export_quality"
         private const val ALLOW_IMAGE_FOR_IMPORT_KEY = "allow_image_for_import"
+        private const val SHOW_IMPORT_QUALITY_DIALOG_KEY = "show_import_quality_dialog"
         private const val MAX_DOCUMENT_SIZE_KEY = "max_document_size"
         private const val USE_APP_NAMING_CONVENTION_KEY = "use_app_naming_convention"
         private const val AVOID_PASSWORD_PROTECTION_FILES_KEY = "avoid_password_protection_files"

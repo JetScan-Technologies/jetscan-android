@@ -20,6 +20,8 @@ import io.github.dracula101.jetscan.data.document.models.image.ScannedImage
 import io.github.dracula101.jetscan.data.document.repository.models.DocumentErrorType
 import io.github.dracula101.jetscan.data.document.repository.models.DocumentResult
 import io.github.dracula101.jetscan.data.document.utils.Task
+import io.github.dracula101.jetscan.data.platform.repository.config.ConfigRepository
+import io.github.dracula101.pdf.models.PdfOptions
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
@@ -32,7 +34,7 @@ import javax.inject.Inject
 class DocumentRepositoryImpl @Inject constructor(
     private val documentDao: DocumentDao,
     private val folderDocumentDao: DocumentFolderDao,
-    private val documentManager: DocumentManager
+    private val documentManager: DocumentManager,
 ) : DocumentRepository {
     override fun getDocuments(excludeFolders: Boolean): Flow<List<Document>?> {
         return if (excludeFolders) {
@@ -188,7 +190,7 @@ class DocumentRepositoryImpl @Inject constructor(
         originalBitmaps: List<Bitmap>,
         scannedBitmaps: List<Bitmap>,
         fileName: String,
-        imageQuality: Int,
+        pdfOptions: PdfOptions,
         progressListener: (currentProgress: Float, totalProgress: Int) -> Unit
     ): DocumentResult<Document> {
         return try {
@@ -201,9 +203,9 @@ class DocumentRepositoryImpl @Inject constructor(
             val result = documentManager.addDocumentFromScanner(
                 originalBitmaps = originalBitmaps,
                 scannedBitmaps = scannedBitmaps,
-                imageQuality = imageQuality,
                 fileName = fileName,
-                progressListener = progressListener
+                progressListener = progressListener,
+                pdfOptions = pdfOptions
             )
             delay(500)
             return when(result){

@@ -18,6 +18,9 @@ interface ConfigDiskSource {
     var importExportQuality: ImageQuality?
     val importExportQualityStateFlow: Flow<ImageQuality?>
 
+    var showImportQualityDialog: Boolean?
+    val showImportQualityDialogStateFlow: Flow<Boolean?>
+
     var allowImageForImport: Boolean?
     val allowImageForImportStateFlow: Flow<Boolean?>
 

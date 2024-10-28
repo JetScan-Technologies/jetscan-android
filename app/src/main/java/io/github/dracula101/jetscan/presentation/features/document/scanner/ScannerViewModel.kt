@@ -23,6 +23,7 @@ import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.data.document.repository.models.DocumentErrorType
 import io.github.dracula101.jetscan.data.document.repository.models.DocumentResult
 import io.github.dracula101.jetscan.data.platform.manager.opencv.OpenCvManager
+import io.github.dracula101.jetscan.data.platform.repository.config.ConfigRepository
 import io.github.dracula101.jetscan.data.platform.utils.readableSize
 import io.github.dracula101.jetscan.data.platform.utils.rotate
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
@@ -38,6 +39,8 @@ import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.camera.FlashMode
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.camera.GridMode
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.document.DocumentType
+import io.github.dracula101.pdf.models.PdfOptions
+import io.github.dracula101.pdf.models.PdfQuality
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
@@ -64,6 +67,7 @@ class ScannerViewModel @Inject constructor(
     private val openCvManager: OpenCvManager,
     private val documentManager: DocumentManager,
     private val documentRepository: DocumentRepository,
+    private val configRepository: ConfigRepository,
     @ApplicationContext private val context: Context
 ) : BaseViewModel<ScannerState, Unit, ScannerAction>(
     initialState = savedStateHandle[SCANNER_STATE] ?: ScannerState()
@@ -661,17 +665,12 @@ class ScannerViewModel @Inject constructor(
         }
         val originalBitmaps = state.scannedDocuments.map { it.originalImage }
         val filteredCroppedBitmaps = state.scannedDocuments.map { (it.filteredImage ?: it.croppedImage!!) }
-        val averageImageKb = originalBitmaps.map { it.byteCount / 1024 }.average().toInt()
-        val imageQuality : Int = when(averageImageKb){
-            in 0..200 -> 95
-            in 200..500 -> 90
-            in 500..1000 -> 80
-            in 1000..2000 -> 70
-            in 2000..5000 -> 60
-            in 5000..10000 -> 50
-            in 10000..20000 -> 45
-            in 20000..50000 -> 35
-            else -> 25
+        val pdfQuality = configRepository.pdfQuality
+        val imageQuality = when(pdfQuality){
+            PdfQuality.VERY_LOW -> 60
+            PdfQuality.LOW -> 75
+            PdfQuality.MEDIUM -> 85
+            PdfQuality.HIGH -> 95
         }
         viewModelScope.launch(Dispatchers.IO) {
             val result = withTimeoutOrNull(
@@ -681,7 +680,12 @@ class ScannerViewModel @Inject constructor(
                     originalBitmaps,
                     filteredCroppedBitmaps,
                     fileName = IllegalFilenameChar.removeIllegalChar(state.documentName),
-                    imageQuality = imageQuality,
+                    pdfOptions = PdfOptions(
+                        quality = configRepository.pdfQuality,
+                        hasMargin = configRepository.hasPdfMargin,
+                        pageSize = configRepository.pdfPageSize,
+                        imageQuality = imageQuality
+                    ),
                 )
             } ?: DocumentResult.Error("Timeout", Exception("Time Limit Exceeded"), DocumentErrorType.TIMEOUT_EXCEEDED)
             when (result) {

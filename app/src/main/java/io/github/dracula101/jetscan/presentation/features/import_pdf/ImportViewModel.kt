@@ -15,6 +15,7 @@ import io.github.dracula101.jetscan.MainActivity
 import io.github.dracula101.jetscan.data.document.manager.DocumentManager
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
+import io.github.dracula101.jetscan.data.platform.repository.config.ConfigRepository
 import io.github.dracula101.jetscan.presentation.platform.base.ImportBaseViewModel
 import io.github.dracula101.jetscan.presentation.platform.base.ImportDocumentState
 import io.github.dracula101.pdf.manager.PdfManager
@@ -33,6 +34,7 @@ const val IMPORT_PDF_STATE = ""
 class ImportPdfViewModel @Inject constructor(
     private val contentResolver: ContentResolver,
     private val pdfManager: PdfManager,
+    private val configRepository: ConfigRepository,
     documentRepository: DocumentRepository,
     @ApplicationContext context: Context,
     documentManager: DocumentManager,
@@ -41,6 +43,7 @@ class ImportPdfViewModel @Inject constructor(
     initialState = savedStateHandle[IMPORT_PDF_STATE] ?: ImportState(),
     contentResolver = contentResolver,
     documentRepository = documentRepository,
+    configRepository = configRepository,
     pdfManager = pdfManager,
     documentManager = documentManager,
 ) {

@@ -9,15 +9,19 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.dracula101.jetscan.data.document.manager.DocumentManager
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
+import io.github.dracula101.jetscan.data.platform.repository.config.ConfigRepository
 import io.github.dracula101.jetscan.presentation.platform.base.ImportBaseViewModel
 import io.github.dracula101.jetscan.presentation.platform.base.ImportDocumentState
+import io.github.dracula101.jetscan.presentation.platform.feature.tools.models.CompressionLevel
 import io.github.dracula101.pdf.manager.PdfManager
+import io.github.dracula101.pdf.models.PdfCompressionLevel
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
+import timber.log.Timber
 import javax.inject.Inject
 
 const val COMPRESS_PDF_STATE = ""
@@ -28,10 +32,12 @@ class CompressPdfViewModel @Inject constructor(
     private val contentResolver: ContentResolver,
     private val documentManager: DocumentManager,
     private val documentRepository: DocumentRepository,
+    private val configRepository: ConfigRepository,
     private val pdfManager: PdfManager,
 ) : ImportBaseViewModel<CompressPdfState, Unit, CompressPdfAction>(
     initialState = savedStateHandle[COMPRESS_PDF_STATE] ?: CompressPdfState(),
     documentRepository = documentRepository,
+    configRepository = configRepository,
     documentManager = documentManager,
     pdfManager = pdfManager,
     contentResolver = contentResolver
@@ -81,7 +87,7 @@ class CompressPdfViewModel @Inject constructor(
         mutableStateFlow.update { state ->
             state.copy(
                 selectedDocument = action.document,
-                compressionLevel = CompressionLevel.MEDIUM
+                compressionLevel = PdfCompressionLevel.MEDIUM
             )
         }
     }
@@ -110,7 +116,8 @@ data class CompressPdfState(
     val selectedDocument: Document? = null,
     val importDocumentState: ImportDocumentState = ImportDocumentState.Idle,
     val documents: List<Document> = emptyList(),
-    val compressionLevel: CompressionLevel? = null
+    val compressionLevel: PdfCompressionLevel? = null,
+    val compressionSizes: Map<PdfCompressionLevel, Long> = emptyMap(),
 ) : Parcelable {
 
     sealed class CompressPdfDialogState : Parcelable {}
@@ -123,7 +130,7 @@ sealed class CompressPdfAction {
     sealed class Ui : CompressPdfAction(), Parcelable {
         data class SelectDocument(val document: Document) : Ui()
         data object RemoveDocument : Ui()
-        data class SelectCompressionLevel(val compressionLevel: CompressionLevel) : Ui()
+        data class SelectCompressionLevel(val compressionLevel: PdfCompressionLevel) : Ui()
     }
 
     @Parcelize
@@ -135,24 +142,3 @@ sealed class CompressPdfAction {
     sealed class Alerts : CompressPdfAction(), Parcelable {}
 }
 
-enum class CompressionLevel{
-    LOW,
-    MEDIUM,
-    HIGH;
-
-    fun toFormattedString(): String {
-        return when(this){
-            LOW -> "Low Compression"
-            MEDIUM -> "Medium Compression"
-            HIGH -> "High Compression"
-        }
-    }
-
-    fun toSubText(): String {
-        return when(this){
-            LOW -> "Smallest size, lower quality"
-            MEDIUM -> "Medium size, good quality"
-            HIGH -> "Largest size, better quality"
-        }
-    }
-}

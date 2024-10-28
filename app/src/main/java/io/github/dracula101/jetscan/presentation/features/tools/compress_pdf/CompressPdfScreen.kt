@@ -43,6 +43,7 @@ import io.github.dracula101.jetscan.presentation.features.tools.merge_pdf.compon
 import io.github.dracula101.jetscan.presentation.platform.component.bottomsheet.DocumentFilesBottomSheet
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.JetScanScaffoldWithFlexAppBar
 import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.customContainer
+import io.github.dracula101.pdf.models.PdfCompressionLevel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -162,12 +163,36 @@ fun CompressPdfScreen(
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 16.dp)
                 )
+                state.value.compressionSizes.let { sizes ->
+                    Text(
+                        "Estimated File Size after Compression:",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    PdfCompressionLevel.entries.map { entry ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                entry.toFormattedString(),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                sizes[entry]?.bytesToReadableSize() ?: "Calculating...",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
                 Text(
                     "Select Compression level:",
                     style = MaterialTheme.typography.titleLarge
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                CompressionLevel.entries.map { entry ->
+                PdfCompressionLevel.entries.map { entry ->
                     Row(
                         modifier = Modifier
                             .clickable(

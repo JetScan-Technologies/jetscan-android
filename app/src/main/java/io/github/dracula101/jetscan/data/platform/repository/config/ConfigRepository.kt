@@ -7,6 +7,7 @@ import io.github.dracula101.jetscan.presentation.platform.feature.document.MaxDo
 import io.github.dracula101.pdf.models.PdfPageSize
 import io.github.dracula101.pdf.models.PdfQuality
 import kotlinx.coroutines.flow.StateFlow
+import java.util.Date
 
 interface ConfigRepository {
 
@@ -30,6 +31,10 @@ interface ConfigRepository {
     var importExportQuality: ImageQuality
     val importExportQualityStateFlow: StateFlow<ImageQuality>
     fun changeImportExportQuality(quality: ImageQuality)
+
+    var showImportQualityDialog: Boolean
+    val showImportQualityDialogStateFlow: StateFlow<Boolean>
+    fun changeShowImportQualityDialog(showImportQualityDialog: Boolean)
 
     /*
     * Allow Image For Import
@@ -104,5 +109,8 @@ interface ConfigRepository {
     var documentTimePattern: DocumentTimePattern
     val documentTimePatternStateFlow: StateFlow<DocumentTimePattern>
     fun changeDocumentTimePattern(timePattern: DocumentTimePattern)
+
+    fun getDocumentName(): String
+    fun getDocumentName(date: Date): String
 
 }

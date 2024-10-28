@@ -7,11 +7,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -63,7 +65,13 @@ import io.github.dracula101.jetscan.presentation.features.document.edit.componen
 import io.github.dracula101.jetscan.presentation.platform.component.appbar.JetScanTopAppbar
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.JetScanScaffold
 import io.github.dracula101.jetscan.presentation.platform.component.text.FittedText
+import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.carouselTransition
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.util.lerp
+import kotlin.math.absoluteValue
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -86,6 +94,7 @@ fun EditDocumentScreen(
     val lazyListState = rememberLazyListState()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     val density = LocalDensity.current
+    val screenHeight = LocalConfiguration.current.screenHeightDp
     val widthAnimation = remember { Animatable(1f) }
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
@@ -110,61 +119,26 @@ fun EditDocumentScreen(
                     VerticalPager(
                         state = pagerState,
                         horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        val image = state.value.scannedDocument!!.scannedImages[it]
+                    ) { index ->
+                        val image = state.value.scannedDocument!!.scannedImages[index]
                         DocumentImage(
                             uri = image.scannedUri,
                             modifier = Modifier
-                                .fillMaxSize(),
+                                .fillMaxSize()
                         )
                     }
-                    if (pagerState.currentPage > 0){
-                        IconButton(
-                            onClick = {
-                                val currentPage = pagerState.currentPage
-                                coroutineScope.launch {
-                                    pagerState.animateScrollToPage(
-                                        currentPage - 1,
-                                        animationSpec = tween(500)
-                                    )
-                                }
-                            },
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(8.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.ArrowUpward,
-                                contentDescription = "Go previous",
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-                    if (pagerState.currentPage < state.value.scannedDocument!!.scannedImages.size - 1){
-                        IconButton(
-                            onClick = {
-                                val currentPage = pagerState.currentPage
-                                coroutineScope.launch {
-                                    pagerState.animateScrollToPage(
-                                        currentPage + 1,
-                                        animationSpec = tween(500)
-                                    )
-                                }
-                            },
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(8.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.ArrowDownward,
-                                contentDescription = "Go next",
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
+                    Row(
+                        modifier = Modifier
+                            .navigationBarsPadding()
+                            .clip(MaterialTheme.shapes.large)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                            .align(Alignment.BottomCenter)
+                    ){
+                       Text(
+                           text = "Page ${pagerState.currentPage + 1} of ${state.value.scannedDocument!!.scannedImages.size}",
+                           style = MaterialTheme.typography.labelMedium,
+                       )
                     }
                     if (widthAnimation.value == 0f){
                         IconButton(
@@ -186,7 +160,6 @@ fun EditDocumentScreen(
                             )
                         }
                     }
-
                 }
                 if (widthAnimation.value == 1f){
                     Box(
@@ -335,3 +308,30 @@ fun EditDocumentScreen(
     }
 }
 
+
+@OptIn(ExperimentalFoundationApi::class)
+fun Modifier.pagerAnimation(
+    pagerState: PagerState,
+    thisPageIndex: Int,
+): Modifier {
+    val pageOffset =
+        (pagerState.currentPage - thisPageIndex) + pagerState.currentPageOffsetFraction
+
+    return this then Modifier.graphicsLayer {
+        alpha =
+            lerp(
+                start = 0.3f,
+                stop = 1f,
+                fraction = 1f - pageOffset.absoluteValue.coerceIn(0f, 1f),
+            )
+
+        lerp(
+            start = 0.9f,
+            stop = 1f,
+            fraction = 1f - pageOffset.absoluteValue.coerceIn(0f, 1f),
+        ).also { scale ->
+            scaleX = scale
+            scaleY = scale
+        }
+    }
+}

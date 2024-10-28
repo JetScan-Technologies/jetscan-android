@@ -6,6 +6,7 @@ import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -26,12 +27,17 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.IosShare
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -281,73 +287,76 @@ private fun ProtectPdfCompletedView(
         Text(
             "Your document has been protected successfully. You can now share the document with others.",
             style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Box(
+        Column(
             modifier = Modifier
                 .clip(MaterialTheme.shapes.medium)
                 .customContainer()
                 .fillMaxWidth()
                 .aspectRatio(3 / 4f)
         ) {
+            Row(
+                modifier = Modifier
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ){
+                Icon(
+                    Icons.Outlined.Info,
+                    contentDescription = null,
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    "${state.value.selectedDocument?.name} is now protected",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+            )
             AsyncImage(
                 state.value.selectedDocument?.previewImageUri,
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
-                    .blur(20.dp)
-                    .padding(16.dp)
+                    .blur(8.dp)
+                    .padding(vertical = 32.dp)
                     .fillMaxSize()
             )
-            Column(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .align(Alignment.Center),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(
-                    Icons.Rounded.Lock,
-                    contentDescription = "Lock",
-                    modifier = Modifier.size(65.dp),
-                    tint = MaterialTheme.colorScheme.surface
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    state.value.selectedDocument?.name.toString(),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.surface,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    "is Protected",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.surface
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                ElevatedButton(
-                    onClick = {
-                        if (state.value.protectedPdf == null) return@ElevatedButton
-                        val uri = FileProvider.getUriForFile(
-                            context,
-                            context.packageName + ".provider",
-                            state.value.protectedPdf!!
-                        )
-                        val intent = Intent(Intent.ACTION_SEND).also{
-                            it.setDataAndType(uri, "application/pdf")
-                            it.putExtra(Intent.EXTRA_STREAM, uri)
-                            it.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            it.putExtra(Intent.EXTRA_SUBJECT, "Sharing from JetScan Document")
-                        }
-                        val activity = (context as ComponentActivity)
-                        activity.startActivity(Intent.createChooser(intent, "Share"))
-                    }
-                ) {
-                    Text(
-                        "Share",
-                        color = MaterialTheme.colorScheme.onSurface
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        FilledTonalButton(
+            onClick = {
+                if (state.value.protectedPdf != null){
+
+                    val uri = FileProvider.getUriForFile(
+                        context,
+                        context.packageName + ".provider",
+                        state.value.protectedPdf!!
                     )
+                    val intent = Intent(Intent.ACTION_SEND).also {
+                        it.setDataAndType(uri, "application/pdf")
+                        it.putExtra(Intent.EXTRA_STREAM, uri)
+                        it.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        it.putExtra(Intent.EXTRA_SUBJECT, "Sharing from JetScan Document")
+                    }
+                    val activity = (context as ComponentActivity)
+                    activity.startActivity(Intent.createChooser(intent, "Share"))
                 }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium,
+        ) {
+            Row (
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ){
+                Icon(
+                    Icons.Outlined.IosShare,
+                    contentDescription = "Share",
+                    modifier = Modifier.size(20.dp)
+                )
+                Text("Share Pdf")
             }
         }
     }

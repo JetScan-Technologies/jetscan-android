@@ -47,12 +47,12 @@ fun HomeScreen(
     padding: PaddingValues,
     onDocumentClick: (Document) -> Unit,
     onNavigateToPdfActions: (Document, MainHomeSubPage) -> Unit,
+    allowImageForImport: Boolean,
 ) {
     val state = viewModel.stateFlow.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
     ) { uri ->
@@ -69,7 +69,10 @@ fun HomeScreen(
         onResult = { isGranted ->
             Timber.d("Permission granted: $isGranted")
             if (isGranted || Build.VERSION.SDK_INT >= Build.VERSION_CODES.S_V2)
-                filePickerLauncher.launch(arrayOf("application/pdf", "image/*"))
+                filePickerLauncher.launch(
+                    if (allowImageForImport) arrayOf("application/pdf", "image/*")
+                    else arrayOf("application/pdf")
+                )
         }
     )
     val documentDetailItem = remember { mutableStateOf<Document?>(null) }

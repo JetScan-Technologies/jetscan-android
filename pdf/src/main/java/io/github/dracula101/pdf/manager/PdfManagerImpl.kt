@@ -2,25 +2,33 @@ package io.github.dracula101.pdf.manager
 
 import android.content.ContentResolver
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.pdf.PdfDocument
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.util.Log
-import android.util.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
+import androidx.core.net.toFile
 import androidx.core.net.toUri
 import com.itextpdf.text.Document
 import com.itextpdf.text.Image
-import com.itextpdf.text.pdf.PdfDocument
+import com.itextpdf.text.Rectangle
 import com.itextpdf.text.pdf.PdfReader
 import com.itextpdf.text.pdf.PdfStamper
+import com.itextpdf.text.pdf.PdfStream
 import com.itextpdf.text.pdf.PdfWriter
+import io.github.dracula101.pdf.models.PdfCompressionLevel
+import io.github.dracula101.pdf.models.PdfOptions
+import io.github.dracula101.pdf.models.PdfQuality
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 
@@ -140,8 +148,8 @@ class PdfManagerImpl : PdfManager {
         onPdfPageAdded: (Int) -> Unit
     ): List<Bitmap> = coroutineScope {
         val images = mutableListOf<Bitmap>()
-        val parcelFileDescriptor = contentResolver.openFileDescriptor(uri, "r")
-        val pdfRenderer = PdfRenderer(parcelFileDescriptor!!)
+        val parcelFileDescriptor = contentResolver.openFileDescriptor(uri, "r") ?: return@coroutineScope images
+        val pdfRenderer = PdfRenderer(parcelFileDescriptor)
         for (i in 0 until pdfRenderer.pageCount) {
             val page = pdfRenderer.openPage(i)
             val canvas = Canvas()
@@ -167,34 +175,44 @@ class PdfManagerImpl : PdfManager {
 
     override suspend fun savePdf(
         files: List<File>,
-        file: File,
-        imageQuality: Int,
-        pdfSize: Size,
-        margins: Float
+        output: File,
+        options: PdfOptions,
     ): Boolean {
         return withContext(Dispatchers.IO) {
             val pdfDocument = Document()
+            val pdfWriter = PdfWriter.getInstance(pdfDocument, FileOutputStream(output))
             try {
-                val pdfWriter = PdfWriter.getInstance(pdfDocument, file.outputStream())
+                pdfWriter.compressionLevel = when(options.quality) {
+                    PdfQuality.VERY_LOW -> PdfStream.BEST_COMPRESSION
+                    PdfQuality.LOW -> PdfStream.BEST_COMPRESSION
+                    PdfQuality.MEDIUM -> PdfStream.DEFAULT_COMPRESSION
+                    PdfQuality.HIGH -> PdfStream.NO_COMPRESSION
+                }
+                if(options.imageQuality < 50){
+                    pdfWriter.setFullCompression()
+                }
+                val margin = if (options.hasMargin) 20f else 0f
+                pdfDocument.setMargins(margin, margin, margin, margin)
                 pdfDocument.open()
-                files.forEach {
-                    val image = Image.getInstance(it.absolutePath)
-                    if (image.width > pdfSize.width) {
-                        val width = pdfSize.width.toFloat()
-                        val height = image.height * pdfSize.width / image.width
-                        image.scaleToFit(width, height)
-                        val left = 0f
-                        val bottom = (pdfSize.height - height) / 2
-                        image.setAbsolutePosition(left, bottom)
-                    } else {
-                        val width = image.width
-                        val height = image.height
-                        image.scaleToFit(width, height)
-                        val left = (pdfSize.width - width) / 2
-                        val bottom = (pdfSize.height - height) / 2
-                        image.setAbsolutePosition(left, bottom)
-                    }
+                pdfDocument.setPageCount(files.size)
+                pdfDocument.setPageSize(Rectangle(options.pageSize.width, options.pageSize.height))
+                pdfDocument.setMarginMirroring(false)
+                pdfDocument.setMarginMirroringTopBottom(false)
+                files.forEachIndexed { index, file ->
+                    val fileOutputStream = ByteArrayOutputStream()
+                    val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, options.imageQuality, fileOutputStream)
+                    val image = Image.getInstance(fileOutputStream.toByteArray())
+                    image.scaleToFit(options.pageSize.width, options.pageSize.height)
+                    image.alignment = Image.ALIGN_CENTER
+                    image.setAbsolutePosition(
+                        (options.pageSize.width - image.scaledWidth) / 2,
+                        (options.pageSize.height - image.scaledHeight) / 2
+                    )
                     pdfDocument.add(image)
+                    if (index < files.size - 1) {
+                        pdfDocument.newPage()
+                    }
                 }
                 true
             } catch (e: Exception) {
@@ -202,48 +220,9 @@ class PdfManagerImpl : PdfManager {
                 false
             } finally {
                 pdfDocument.close()
+                pdfWriter.close()
             }
-        }
-    }
 
-    override suspend fun mergePdf(
-        files: List<File>,
-        file: File,
-        imageQuality: Int,
-        pdfSize: Size,
-        margins: Float
-    ): Boolean {
-        return withContext(Dispatchers.IO) {
-            val pdfDocument = Document()
-            try {
-                val pdfWriter = PdfWriter.getInstance(pdfDocument, file.outputStream())
-                pdfDocument.open()
-                files.forEach {
-                    val image = Image.getInstance(it.absolutePath)
-                    if (image.width > pdfSize.width) {
-                        val width = pdfSize.width.toFloat()
-                        val height = image.height * pdfSize.width / image.width
-                        image.scaleToFit(width, height)
-                        val left = 0f
-                        val bottom = (pdfSize.height - height) / 2
-                        image.setAbsolutePosition(left, bottom)
-                    } else {
-                        val width = image.width
-                        val height = image.height
-                        image.scaleToFit(width, height)
-                        val left = (pdfSize.width - width) / 2
-                        val bottom = (pdfSize.height - height) / 2
-                        image.setAbsolutePosition(left, bottom)
-                    }
-                    pdfDocument.add(image)
-                }
-                true
-            } catch (e: Exception) {
-                e.printStackTrace()
-                false
-            } finally {
-                pdfDocument.close()
-            }
         }
     }
 
@@ -316,4 +295,5 @@ class PdfManagerImpl : PdfManager {
             }
         }
     }
+
 }

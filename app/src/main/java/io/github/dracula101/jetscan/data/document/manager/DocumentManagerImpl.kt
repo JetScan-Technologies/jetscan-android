@@ -7,7 +7,6 @@ import android.graphics.Bitmap
 import android.graphics.Bitmap.CompressFormat
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.os.Build
 import android.provider.OpenableColumns
 import android.util.Base64
 import android.util.Base64.encodeToString
@@ -20,33 +19,21 @@ import io.github.dracula101.jetscan.data.document.manager.models.DocManagerResul
 import io.github.dracula101.jetscan.data.document.models.Extension
 import io.github.dracula101.jetscan.data.document.models.MimeType
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
-import io.github.dracula101.jetscan.data.document.utils.Task
 import io.github.dracula101.jetscan.data.document.utils.getImageHeight
 import io.github.dracula101.jetscan.data.document.utils.toBitmapQuality
 import io.github.dracula101.jetscan.data.platform.utils.bytesToReadableSize
 import io.github.dracula101.pdf.manager.PdfManager
+import io.github.dracula101.pdf.models.PdfOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import okio.use
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
-import java.text.DecimalFormat
-import java.text.SimpleDateFormat
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
-import kotlin.math.pow
 
 class DocumentManagerImpl(
     private val context: Context,
@@ -198,8 +185,8 @@ class DocumentManagerImpl(
         originalBitmaps: List<Bitmap>,
         scannedBitmaps: List<Bitmap>,
         fileName: String,
-        imageQuality: Int,
         delayDuration: Long,
+        pdfOptions: PdfOptions,
         progressListener: (currentProgress: Float, totalProgress: Int) -> Unit,
     ): DocManagerResult<DocumentDirectory> = coroutineScope {
         return@coroutineScope try {
@@ -225,7 +212,7 @@ class DocumentManagerImpl(
                         "${SCANNED_DOCUMENT_IMAGE_PREFIX}_${index + 1}.$SCANNED_DOCUMENT_IMAGE_EXTENSION"
                     )
                     originalImage.outputStream().use {
-                        originalBitmaps[index].compress(CompressFormat.JPEG,imageQuality,it)
+                        originalBitmaps[index].compress(CompressFormat.JPEG,pdfOptions.imageQuality,it)
                     }
                     progressListener.invoke(currentProgress++, originalBitmaps.size * 2)
                     val scannedImage = File(
@@ -233,14 +220,18 @@ class DocumentManagerImpl(
                         "${SCANNED_DOCUMENT_SCANNED_IMAGE_PREFIX}_${index + 1}.$SCANNED_DOCUMENT_IMAGE_EXTENSION"
                     )
                     scannedImage.outputStream().use {
-                        scannedBitmaps[index].compress(CompressFormat.JPEG,imageQuality,it)
+                        scannedBitmaps[index].compress(CompressFormat.JPEG,pdfOptions.imageQuality,it)
                     }
                     progressListener.invoke(currentProgress++, originalBitmaps.size * 2)
                 }
             }.awaitAll()
             val files = scannedImageDirectory.listFiles()
             if (files != null) {
-                val isSaved = pdfManager.savePdf(files.toList(), originalFile, imageQuality, Size(595,842), 0f)
+                val isSaved = pdfManager.savePdf(
+                    files = files.toList(),
+                    output = originalFile,
+                    options = pdfOptions
+                )
                 if (!isSaved) {
                     return@coroutineScope DocManagerResult.Error(
                         message = "Error creating file",

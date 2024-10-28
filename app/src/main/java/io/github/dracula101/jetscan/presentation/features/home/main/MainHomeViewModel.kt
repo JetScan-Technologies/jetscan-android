@@ -14,6 +14,7 @@ import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.data.document.repository.models.DocumentResult
 import io.github.dracula101.jetscan.data.platform.manager.opencv.OpenCvManager
+import io.github.dracula101.jetscan.data.platform.repository.config.ConfigRepository
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeState.MainHomeDialogState
 import io.github.dracula101.jetscan.presentation.features.home.main.components.MainHomeSubPage
 import io.github.dracula101.jetscan.presentation.features.home.main.components.PdfActionPage
@@ -41,6 +42,7 @@ const val MAIN_HOME_STATE = "main_home_state"
 class MainHomeViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val documentRepository: DocumentRepository,
+    private val configRepository: ConfigRepository,
     private val documentManager: DocumentManager,
     private val pdfManager: PdfManager,
     private val opencvManager: OpenCvManager,
@@ -49,6 +51,7 @@ class MainHomeViewModel @Inject constructor(
 ) : ImportBaseViewModel<MainHomeState, Unit, MainHomeAction>(
     initialState = savedStateHandle[MAIN_HOME_STATE] ?: MainHomeState(),
     documentRepository = documentRepository,
+    configRepository = configRepository,
     documentManager = documentManager,
     pdfManager = pdfManager,
     contentResolver = contentResolver,
@@ -80,6 +83,19 @@ class MainHomeViewModel @Inject constructor(
                 }
             }
             .launchIn(viewModelScope)
+        //setting to config
+        configRepository
+            .importExportQualityStateFlow
+            .onEach { quality ->
+                mutableStateFlow.update { state.copy(importQuality = quality) }
+            }
+            .launchIn(viewModelScope)
+        configRepository
+            .allowImageForImportStateFlow
+            .onEach { allowImage ->
+                mutableStateFlow.update { state.copy(allowImage = allowImage) }
+            }
+            .launchIn(viewModelScope)
     }
 
 
@@ -93,6 +109,7 @@ class MainHomeViewModel @Inject constructor(
             is MainHomeAction.Ui.DismissSnackbar -> handleDismissSnackbar()
             is MainHomeAction.Ui.Logout -> handleLogout()
             is MainHomeAction.Ui.ChangeTab -> handleTabChange(action.tab)
+            is MainHomeAction.Ui.ChangeImportConfig -> handleImportConfig(action.shouldShow)
 
             is MainHomeAction.MainHomeNavigate -> handleNavigateTo(action.navigatePage, action.document)
             is MainHomeAction.MainHomeClearNavigate -> handleClearNavigate()
@@ -107,10 +124,15 @@ class MainHomeViewModel @Inject constructor(
 
     private fun handleImportQualityAlert(uri: Uri) {
         _fileUri.value = uri
-        mutableStateFlow.update {
-            state.copy(
-                dialogState = MainHomeDialogState.ShowImportQuality
-            )
+        val showImportQualityDialog = configRepository.showImportQualityDialog
+        if(showImportQualityDialog) {
+            mutableStateFlow.update {
+                state.copy(
+                    dialogState = MainHomeDialogState.ShowImportQuality
+                )
+            }
+        }else {
+            handleAddDocument(uri)
         }
     }
 
@@ -120,6 +142,7 @@ class MainHomeViewModel @Inject constructor(
                 importQuality = quality
             )
         }
+        configRepository.changeImportExportQuality(quality)
     }
 
     private fun handleImportDocumentInProgress(
@@ -220,8 +243,7 @@ class MainHomeViewModel @Inject constructor(
 
     private fun handleDeleteDocument(document: Document) {
         viewModelScope.launch(Dispatchers.IO) {
-            val deleteResult = documentRepository.deleteDocument(document)
-            when(deleteResult){
+            when(val deleteResult = documentRepository.deleteDocument(document)){
                 is DocumentResult.Success -> {
                     mutableStateFlow.update {
                         state.copy(
@@ -295,6 +317,10 @@ class MainHomeViewModel @Inject constructor(
             )
         }
     }
+
+    private fun handleImportConfig(shouldShow: Boolean) {
+        configRepository.changeShowImportQualityDialog(shouldShow)
+    }
 }
 
 enum class MainHomeTabs {
@@ -330,6 +356,7 @@ data class MainHomeState(
     val documents: List<Document> = emptyList(),
     val importDocumentState: ImportDocumentState? = null,
     val importQuality: ImageQuality = ImageQuality.MEDIUM,
+    val allowImage: Boolean = false,
     val dialogState: MainHomeDialogState? = null,
     val snackbarState: SnackbarState? = null,
     val navigateTo: PdfActionPage? = null,
@@ -364,6 +391,7 @@ sealed class MainHomeAction {
         data object DismissSnackbar : Ui()
         data object DismissDialog : Ui()
         data class ChangeTab(val tab: MainHomeTabs) : Ui()
+        data class ChangeImportConfig(val shouldShow: Boolean) : Ui()
     }
 
     @Parcelize

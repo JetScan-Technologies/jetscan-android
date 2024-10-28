@@ -6,6 +6,7 @@ import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.models.doc.DocumentFolder
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import io.github.dracula101.jetscan.data.document.repository.models.DocumentResult
+import io.github.dracula101.pdf.models.PdfOptions
 import kotlinx.coroutines.flow.Flow
 import java.io.File
 
@@ -37,7 +38,7 @@ interface DocumentRepository {
         originalBitmaps: List<Bitmap>,
         scannedBitmaps: List<Bitmap>,
         fileName: String,
-        imageQuality: Int,
+        pdfOptions: PdfOptions,
         progressListener: (currentProgress: Float, totalProgress: Int) -> Unit = { _, _ -> }
     ): DocumentResult<Document>
 

@@ -28,6 +28,7 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItem
@@ -45,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -67,6 +69,7 @@ import io.github.dracula101.jetscan.presentation.features.home.settings_view.Set
 import io.github.dracula101.jetscan.presentation.features.home.settings_view.SettingsViewModel
 import io.github.dracula101.jetscan.presentation.features.home.subscription_view.SubscriptionViewModel
 import io.github.dracula101.jetscan.presentation.features.settings.document.DocumentSettingScreen
+import io.github.dracula101.jetscan.presentation.platform.component.checkbox.AppCheckbox
 import io.github.dracula101.jetscan.presentation.platform.component.dialog.ConfirmAlertDialog
 import io.github.dracula101.jetscan.presentation.platform.component.dialog.IconAlertDialog
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.JetScanScaffold
@@ -77,6 +80,7 @@ import io.github.dracula101.jetscan.presentation.platform.component.snackbar.uti
 import io.github.dracula101.jetscan.presentation.platform.component.textfield.AppTextField
 import io.github.dracula101.jetscan.presentation.platform.feature.app.model.SnackbarState
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -129,16 +133,23 @@ fun MainHomeScreen(
             },
             onDocumentDelete = { document ->
                 mainViewModel.trySendAction(MainHomeAction.Ui.DeleteDocument(document))
-            }
+            },
+            onRememberChoice = { rememberChoice ->
+                mainViewModel.trySendAction(MainHomeAction.Ui.ChangeImportConfig(!rememberChoice))
+            },
         )
     }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
 
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
+
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if(scrollBehavior.state.overlappedFraction > 0.5f && scrollBehavior.state.contentOffset > 0f){
+                    return available
+                }
                 val delta = available.y
-                val isScrolledDown = delta > 0
+                val isScrolledDown = (delta > 0)
                 scope.launch {
                     if(
                         !bottomBarVisibleAnimation.isRunning &&
@@ -191,6 +202,7 @@ fun MainHomeScreen(
                     mainViewModel.trySendAction(MainHomeAction.Ui.ChangeTab(tab))
                 },
                 horizontalModifier = Modifier
+                    .alpha(bottomBarVisibleAnimation.value)
                     .offset {
                         IntOffset(
                             x = 0,
@@ -220,6 +232,7 @@ fun MainHomeScreen(
                         windowSize = windowSize,
                         padding = padding,
                         onDocumentClick = onNavigateDocument,
+                        allowImageForImport = state.value.allowImage,
                         onNavigateToPdfActions = { document, page ->
                             mainViewModel.trySendAction(
                                 MainHomeAction.MainHomeNavigate(
@@ -483,20 +496,23 @@ fun MainHomeDialog(
     onQualityChanged: (ImageQuality) -> Unit = {},
     onImportDocument: () -> Unit = {},
     onDocumentDelete: (Document) -> Unit = {},
+    onRememberChoice: (Boolean) -> Unit = {},
 ) {
     when (dialogState) {
         is MainHomeState.MainHomeDialogState.ShowImportQuality -> {
             val selectedQuality = remember { mutableStateOf(importQuality) }
+            val rememberChoice = remember { mutableStateOf(true) }
             ConfirmAlertDialog(
                 title = "Select Import Quality",
                 onDismiss = onDismiss,
                 onConfirm = {
+                    onRememberChoice(rememberChoice.value)
                     onDismiss()
                     onImportDocument()
                 },
                 onCancel = { onDismiss() },
             ) {
-                key(selectedQuality.value) {
+                key(selectedQuality.value to rememberChoice.value) {
                     Column {
                         ImageQuality.entries
                             .map { quality ->
@@ -516,6 +532,24 @@ fun MainHomeDialog(
                                     )
                                 }
                             }
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                        ){
+                            AppCheckbox(
+                                checked = rememberChoice.value,
+                                onCheckedChange = {
+                                    rememberChoice.value = it
+                                },
+                                modifier = Modifier.size(40.dp)
+                            )
+                            Text(
+                                text = "Remember my choice",
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
                     }
                 }
             }
@@ -572,5 +606,6 @@ fun MainHomeDialog(
                 )
             }
         }
+
     }
 }
