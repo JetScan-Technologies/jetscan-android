@@ -28,8 +28,6 @@ import io.github.dracula101.jetscan.presentation.features.settings.document.crea
 import io.github.dracula101.jetscan.presentation.features.settings.document.navigateToDocumentSettings
 import io.github.dracula101.jetscan.presentation.features.settings.open_source_libs.createOpenSourceLibrariesDestination
 import io.github.dracula101.jetscan.presentation.features.settings.open_source_libs.navigateToOpenSourceLibraryScreen
-import io.github.dracula101.jetscan.presentation.features.testers.TESTER_START_ROUTE
-import io.github.dracula101.jetscan.presentation.features.testers.createTesterGraph
 import io.github.dracula101.jetscan.presentation.features.tools.compress_pdf.createCompressPdfDestination
 import io.github.dracula101.jetscan.presentation.features.tools.compress_pdf.navigateToCompressPdfScreen
 import io.github.dracula101.jetscan.presentation.features.tools.esign_pdf.createESignPdfDestination
