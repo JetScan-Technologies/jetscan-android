@@ -9,5 +9,6 @@ fun FirebaseUser.toUserState() : UserState {
         email = this.email ?: "",
         displayName = this.displayName ?: "",
         photoUrl = this.photoUrl.toString(),
+        isAnonymous = this.isAnonymous
     )
 }

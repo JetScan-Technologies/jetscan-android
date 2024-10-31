@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
 import androidx.navigation.navigation
 import io.github.dracula101.jetscan.presentation.features.auth.authGraph
+import io.github.dracula101.jetscan.presentation.features.auth.login.navigateToLoginRoute
 import io.github.dracula101.jetscan.presentation.features.document.edit.createEditDocumentDestination
 import io.github.dracula101.jetscan.presentation.features.document.edit.navigateToEditDocument
 import io.github.dracula101.jetscan.presentation.features.document.folder.createFolderDocumentDestinationRoute
@@ -77,6 +78,9 @@ fun NavGraphBuilder.homeGraph(navController: NavHostController) {
             },
             navigateToDocumentSettings = { screen ->
                 navController.navigateToDocumentSettings(screen)
+            },
+            navigateToLoginPage = {
+                navController.navigateToLoginRoute(fromHome = true)
             }
         )
         createDocumentSettingsDestination(

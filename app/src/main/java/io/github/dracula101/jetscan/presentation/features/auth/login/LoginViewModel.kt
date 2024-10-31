@@ -38,7 +38,6 @@ class LoginViewModel @Inject constructor(
     override fun handleAction(action: LoginAction) {
         when (action) {
             is LoginAction.LoginWith.EmailAndPassword -> handleLoginWithEmailPass()
-            is LoginAction.Ui.GoogleSignInClicked -> handleGoogleSignInClick()
             is LoginAction.Intent.GoogleSignInIntent -> handleGoogleSignInIntent(action.intent, action.isFromOneTapClient)
             is LoginAction.Intent.GoogleSignInCancelled -> handleGoogleSignInCancelled()
             is LoginAction.Intent.GoogleSignInFailed -> handleGoogleSignInFailed(action.errorMessage, action.errorCode)
@@ -48,6 +47,8 @@ class LoginViewModel @Inject constructor(
             is LoginAction.Ui.TermsAndConditionsChanged -> handleTermsAndConditionsChanged()
             is LoginAction.Ui.DismissDialog -> handleDismissDialog()
             is LoginAction.Ui.DismissSnackbar -> handleDismissSnackbar()
+            is LoginAction.Ui.GoogleSignInClicked -> handleGoogleSignInClick()
+            is LoginAction.Ui.SkipLogin -> handleSkipLogin()
             is LoginAction.Ui.Logout -> handleLogout()
         }
     }
@@ -110,6 +111,12 @@ class LoginViewModel @Inject constructor(
         /*
         * Activity Result Launcher for Google Sign In will be called here frm UI side
         * */
+    }
+
+    private fun handleSkipLogin(){
+        viewModelScope.launch {
+            authRepository.loginPasswordLess()
+        }
     }
 
     private fun handleGoogleSignInIntent(
@@ -365,6 +372,7 @@ sealed class LoginAction {
         data object DismissDialog : Ui()
         data object DismissSnackbar : Ui()
         data object GoogleSignInClicked : Ui()
+        data object SkipLogin: Ui()
         data object Logout: Ui()
     }
 

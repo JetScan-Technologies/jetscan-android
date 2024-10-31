@@ -95,6 +95,7 @@ fun MainHomeScreen(
     onNavigateToFolder: (DocumentFolder) -> Unit = {},
     onNavigateToAboutPage: () -> Unit = {},
     onNavigateToDocumentSettings: (DocumentSettingScreen) -> Unit = {},
+    onNavigateToLogin: () -> Unit = {},
 ) {
     val state = mainViewModel.stateFlow.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -283,7 +284,8 @@ fun MainHomeScreen(
                         viewModel = settingsViewModel,
                         mainHomeState = state.value,
                         onNavigateToAboutPage = onNavigateToAboutPage,
-                        onNavigateToDocumentSettings = onNavigateToDocumentSettings
+                        onNavigateToDocumentSettings = onNavigateToDocumentSettings,
+                        onNavigateToLogin = onNavigateToLogin,
                     )
                 }
             }

@@ -326,15 +326,14 @@ class MainHomeViewModel @Inject constructor(
 enum class MainHomeTabs {
     HOME,
     FILES,
-
-    //    SUBSCRIPTION,
+    // SUBSCRIPTION,
     SETTINGS;
 
     fun toLabel(): String {
         return when (this) {
             HOME -> "JetScan"
             FILES -> "Files"
-//            SUBSCRIPTION -> "Premium"
+            // SUBSCRIPTION -> "Premium"
             SETTINGS -> "Settings"
         }
     }
@@ -343,7 +342,7 @@ enum class MainHomeTabs {
         return when (this) {
             HOME -> 0
             FILES -> 1
-//            SUBSCRIPTION -> 2
+            // SUBSCRIPTION -> 2
             SETTINGS -> 3
         }
     }
