@@ -26,6 +26,13 @@ interface ConfigRepository {
     fun changeFirstLaunchState(isFirstLaunch: Boolean)
 
     /*
+    * Show Tester Info
+    * */
+    var showTesterInfo: Boolean
+    val showTesterInfoStateFlow: StateFlow<Boolean>
+    fun changeShowTesterInfo(showTesterInfo: Boolean)
+
+    /*
     * Import Export Quality
     * */
     var importExportQuality: ImageQuality

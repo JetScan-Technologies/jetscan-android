@@ -96,6 +96,10 @@ class MainHomeViewModel @Inject constructor(
                 mutableStateFlow.update { state.copy(allowImage = allowImage) }
             }
             .launchIn(viewModelScope)
+        mutableStateFlow
+            .update {
+                state.copy(showTesterInstructions = configRepository.showTesterInfo)
+            }
     }
 
 
@@ -110,6 +114,7 @@ class MainHomeViewModel @Inject constructor(
             is MainHomeAction.Ui.Logout -> handleLogout()
             is MainHomeAction.Ui.ChangeTab -> handleTabChange(action.tab)
             is MainHomeAction.Ui.ChangeImportConfig -> handleImportConfig(action.shouldShow)
+            is MainHomeAction.Ui.HideTesterInstructions -> handleHideTesterInstructions()
 
             is MainHomeAction.MainHomeNavigate -> handleNavigateTo(action.navigatePage, action.document)
             is MainHomeAction.MainHomeClearNavigate -> handleClearNavigate()
@@ -321,20 +326,24 @@ class MainHomeViewModel @Inject constructor(
     private fun handleImportConfig(shouldShow: Boolean) {
         configRepository.changeShowImportQualityDialog(shouldShow)
     }
+
+    private fun handleHideTesterInstructions() {
+        configRepository.changeShowTesterInfo(false)
+        mutableStateFlow.update { state.copy( showTesterInstructions = false ) }
+    }
 }
 
 enum class MainHomeTabs {
     HOME,
     FILES,
-
-    //    SUBSCRIPTION,
+    // SUBSCRIPTION,
     SETTINGS;
 
     fun toLabel(): String {
         return when (this) {
             HOME -> "JetScan"
             FILES -> "Files"
-//            SUBSCRIPTION -> "Premium"
+            // SUBSCRIPTION -> "Premium"
             SETTINGS -> "Settings"
         }
     }
@@ -343,7 +352,7 @@ enum class MainHomeTabs {
         return when (this) {
             HOME -> 0
             FILES -> 1
-//            SUBSCRIPTION -> 2
+            // SUBSCRIPTION -> 2
             SETTINGS -> 3
         }
     }
@@ -361,6 +370,7 @@ data class MainHomeState(
     val snackbarState: SnackbarState? = null,
     val navigateTo: PdfActionPage? = null,
     val currentTab: MainHomeTabs = MainHomeTabs.HOME,
+    val showTesterInstructions: Boolean = false,
 ) : Parcelable {
 
     sealed class MainHomeDialogState : Parcelable {
@@ -392,6 +402,7 @@ sealed class MainHomeAction {
         data object DismissDialog : Ui()
         data class ChangeTab(val tab: MainHomeTabs) : Ui()
         data class ChangeImportConfig(val shouldShow: Boolean) : Ui()
+        data object HideTesterInstructions : Ui()
     }
 
     @Parcelize

@@ -17,7 +17,8 @@ fun NavGraphBuilder.createMainHomeDestination(
     onNavigateToScanner: () -> Unit,
     onNavigateToFolder: (folderId: String, path: String) -> Unit,
     navigateToAboutPage: () -> Unit,
-    navigateToDocumentSettings: (DocumentSettingScreen) -> Unit
+    navigateToDocumentSettings: (DocumentSettingScreen) -> Unit,
+    navigateToTester: () -> Unit,
 ) {
     composableWithStayTransitions(
         route = MAIN_HOME_ROUTE,
@@ -37,6 +38,9 @@ fun NavGraphBuilder.createMainHomeDestination(
                 },
                 onNavigateToDocumentSettings = { screen ->
                     navigateToDocumentSettings(screen)
+                },
+                navigateToTester = {
+                    navigateToTester()
                 }
             )
         }

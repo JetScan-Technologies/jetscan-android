@@ -95,6 +95,7 @@ fun MainHomeScreen(
     onNavigateToFolder: (DocumentFolder) -> Unit = {},
     onNavigateToAboutPage: () -> Unit = {},
     onNavigateToDocumentSettings: (DocumentSettingScreen) -> Unit = {},
+    navigateToTester: () -> Unit = {},
 ) {
     val state = mainViewModel.stateFlow.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -115,6 +116,13 @@ fun MainHomeScreen(
         if (state.value.navigateTo != null) {
             navigateTo(state.value.navigateTo!!)
             mainViewModel.trySendAction(MainHomeAction.MainHomeClearNavigate)
+        }
+    }
+
+    LaunchedEffect(state.value.showTesterInstructions){
+        if (state.value.showTesterInstructions) {
+            mainViewModel.trySendAction(MainHomeAction.Ui.HideTesterInstructions)
+            navigateToTester()
         }
     }
 

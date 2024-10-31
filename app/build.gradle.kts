@@ -208,6 +208,7 @@ dependencies {
 
     // ==================== COIL ====================
     implementation(libs.coil)
+    implementation(libs.coil.gif)
 
     // ==================== FIREBASE ====================
     implementation(platform(libs.firebase.bom))

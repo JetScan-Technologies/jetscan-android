@@ -15,6 +15,9 @@ interface ConfigDiskSource {
     var isFirstLaunch: Boolean
     val isFirstLaunchStateFlow: Flow<Boolean>
 
+    var showTesterInfo: Boolean
+    val showTesterInfoStateFlow: Flow<Boolean>
+
     var importExportQuality: ImageQuality?
     val importExportQualityStateFlow: Flow<ImageQuality?>
 

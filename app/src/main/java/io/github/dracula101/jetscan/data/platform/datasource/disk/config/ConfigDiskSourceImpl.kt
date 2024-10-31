@@ -18,6 +18,7 @@ class ConfigDiskSourceImpl(
 
     private val onboardingCompleteFlow = bufferedMutableSharedFlow<Boolean>(replay = 1)
     private val isFirstLaunchFlow = bufferedMutableSharedFlow<Boolean>(replay = 1)
+    private val showTesterInfoFlow = bufferedMutableSharedFlow<Boolean>(replay = 1)
 
     private val importExportQualityFlow = bufferedMutableSharedFlow<ImageQuality?>(replay = 1)
     private val importExportQualityDialogFlow = bufferedMutableSharedFlow<Boolean?>(replay = 1)
@@ -58,6 +59,15 @@ class ConfigDiskSourceImpl(
     override val isFirstLaunchStateFlow: Flow<Boolean>
         get() = isFirstLaunchFlow.onSubscription { emit(isFirstLaunch) }
 
+    override var showTesterInfo: Boolean
+        get() = getBoolean(key = SHOW_TESTER_INFO_KEY) ?: true
+        set(value) {
+            putBoolean(key = SHOW_TESTER_INFO_KEY, value = value)
+            showTesterInfoFlow.tryEmit(value)
+        }
+
+    override val showTesterInfoStateFlow: Flow<Boolean>
+        get() = showTesterInfoFlow.onSubscription { emit(showTesterInfo) }
 
     override var importExportQuality: ImageQuality?
         get() = getString(key = IMPORT_EXPORT_QUALITY_KEY)
@@ -252,6 +262,7 @@ class ConfigDiskSourceImpl(
     companion object {
         private const val ONBOARDING_COMPLETE_KEY = "onboarding_complete"
         private const val IS_FIRST_LAUNCH_KEY = "is_first_launch"
+        private const val SHOW_TESTER_INFO_KEY = "show_tester_info"
 
         private const val IMPORT_EXPORT_QUALITY_KEY = "import_export_quality"
         private const val ALLOW_IMAGE_FOR_IMPORT_KEY = "allow_image_for_import"

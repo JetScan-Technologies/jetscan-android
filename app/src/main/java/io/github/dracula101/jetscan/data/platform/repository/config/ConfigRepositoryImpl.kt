@@ -59,6 +59,25 @@ class ConfigRepositoryImpl(
         configDiskSource.isFirstLaunch = isFirstLaunch
     }
 
+    override var showTesterInfo: Boolean
+        get() = configDiskSource.showTesterInfo
+        set(value) {
+            configDiskSource.showTesterInfo = value
+        }
+
+    override val showTesterInfoStateFlow: StateFlow<Boolean>
+        get() = configDiskSource
+            .showTesterInfoStateFlow
+            .stateIn(
+                scope = CoroutineScope(Dispatchers.Unconfined),
+                started = SharingStarted.Eagerly,
+                initialValue = configDiskSource.showTesterInfo,
+            )
+
+    override fun changeShowTesterInfo(showTesterInfo: Boolean) {
+        configDiskSource.showTesterInfo = showTesterInfo
+    }
+
     override var importExportQuality: ImageQuality
         get() = configDiskSource.importExportQuality ?: DEFAULT_IMPORT_EXPORT_QUALITY
         set(value) {

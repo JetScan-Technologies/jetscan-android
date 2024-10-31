@@ -21,7 +21,8 @@ import androidx.compose.ui.unit.dp
 fun CircleButton(
     modifier: Modifier = Modifier,
     imageVector: ImageVector = Icons.TwoTone.MoreVert,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    enabled: Boolean = true
 ) {
     Box(
         modifier = Modifier
@@ -33,13 +34,14 @@ fun CircleButton(
                 MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
                 CircleShape
             )
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick, enabled = enabled)
             .padding(4.dp),
         contentAlignment = Alignment.Center
     ) {
         Icon(
             imageVector = imageVector,
             contentDescription = "",
+            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 1f else 0.4f)
         )
     }
 }
