@@ -30,6 +30,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -62,6 +63,7 @@ import io.github.dracula101.jetscan.data.platform.utils.bytesToReadableSize
 import io.github.dracula101.jetscan.data.platform.utils.bytesToSizeAndUnit
 import io.github.dracula101.jetscan.presentation.features.tools.merge_pdf.components.DocumentTile
 import io.github.dracula101.jetscan.presentation.platform.component.bottomsheet.DocumentFilesBottomSheet
+import io.github.dracula101.jetscan.presentation.platform.component.button.GradientButton
 import io.github.dracula101.jetscan.presentation.platform.component.document.preview.PreviewIcon
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.JetScanScaffoldWithFlexAppBar
 import io.github.dracula101.jetscan.presentation.platform.component.textfield.AppTextField
@@ -122,15 +124,20 @@ fun MergePdfScreen(
         },
         bottomBar = {
             when(state.value.view){
-                MergePdfView.DOCUMENT -> FilledTonalButton(
-                    onClick = {
-                        viewModel.trySendAction(MergePdfAction.Ui.OnMergeDocument)
-                    },
+                MergePdfView.DOCUMENT -> Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    enabled = state.value.selectedDocuments.size >= 2,
-                ) { Text("Merge") }
+                        .padding(8.dp)
+                ){
+                    GradientButton(
+                        text = "Merge PDF",
+                        showContent = state.value.isLoading,
+                        onClick = {
+                            viewModel.trySendAction(MergePdfAction.Ui.OnMergeDocument)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = state.value.selectedDocuments.size >= 2,
+                    )
+                }
                 MergePdfView.MERGED -> FilledTonalButton(
                     onClick = {
                         if (state.value.mergedDocument != null){
@@ -162,14 +169,16 @@ fun MergePdfScreen(
                 .verticalScroll(rememberScrollState())
         ){
             when(state.value.view){
-                MergePdfView.DOCUMENT -> MergeDocumentScreen(
-                    state = state.value,
-                    onAction = { action ->
-                        viewModel.trySendAction(action)
-                    },
-                    coroutineScope = coroutineScope,
-                    bottomSheetState = bottomSheetState,
-                )
+                MergePdfView.DOCUMENT -> {
+                    MergeDocumentScreen(
+                        state = state.value,
+                        onAction = { action ->
+                            viewModel.trySendAction(action)
+                        },
+                        coroutineScope = coroutineScope,
+                        bottomSheetState = bottomSheetState,
+                    )
+                }
                 MergePdfView.MERGED -> {
                     Text(
                         "PDF File is Merged",
@@ -179,33 +188,49 @@ fun MergePdfScreen(
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
                     Spacer(modifier = Modifier.padding(vertical = 4.dp))
-                    Text(
-                        "File Name\n${state.value.fileName}\n${state.value.mergedDocument?.length()?.bytesToReadableSize()}",
-                        style = MaterialTheme.typography.bodyMedium,
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(MaterialTheme.shapes.medium)
                             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                             .padding(8.dp)
-                    )
+                    ) {
+                        Icon(
+                            Icons.Rounded.Description,
+                            contentDescription = "Document",
+                            modifier = Modifier.size(40.dp),
+                        )
+                        Spacer(modifier = Modifier.size(8.dp))
+                        Text(
+                            "File Name\n${state.value.fileName}\n${
+                                state.value.mergedDocument?.length()?.bytesToReadableSize()
+                            }",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
                     Spacer(modifier = Modifier.padding(vertical = 4.dp))
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .customContainer(
-                                shape = MaterialTheme.shapes.medium,
-                            )
                             .padding(vertical = 8.dp),
                     ) {
+                        Text(
+                            "Selected Documents",
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Spacer(modifier = Modifier.padding(vertical = 4.dp))
                         state.value.selectedDocuments.forEachIndexed { index, document ->
                             document.previewImageUri?.let {
                                 Row(
                                     modifier = Modifier
-                                        .padding(horizontal = 8.dp)
+                                        .customContainer(
+                                            shape = MaterialTheme.shapes.large,
+                                        )
                                         .border(
                                             width = 1.dp,
                                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                                            shape = MaterialTheme.shapes.small
+                                            shape = MaterialTheme.shapes.large
                                         )
                                         .padding(12.dp),
                                     verticalAlignment = Alignment.CenterVertically,
@@ -214,7 +239,7 @@ fun MergePdfScreen(
                                     PreviewIcon(
                                         uri = it,
                                         modifier = Modifier
-                                            .clip(MaterialTheme.shapes.small)
+                                            .clip(MaterialTheme.shapes.medium)
                                             .weight(0.7f)
                                     )
                                     Column(
@@ -318,8 +343,8 @@ fun MergeDocumentScreen(
                         bottomSheetState.show()
                     }
                 }
-                .clip(MaterialTheme.shapes.medium)
-                .customContainer(MaterialTheme.shapes.medium)
+                .clip(MaterialTheme.shapes.large)
+                .customContainer(MaterialTheme.shapes.large)
                 .height(80.dp),
             contentAlignment = Alignment.Center
         ){
@@ -359,7 +384,7 @@ fun MergeDocumentScreen(
                         bottomSheetState.show()
                     }
                 }
-                .clip(MaterialTheme.shapes.medium)
+                .clip(MaterialTheme.shapes.large)
                 .customContainer(MaterialTheme.shapes.medium)
                 .height(80.dp),
             contentAlignment = Alignment.Center

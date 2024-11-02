@@ -11,8 +11,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,6 +30,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -65,6 +68,8 @@ import kotlinx.coroutines.launch
 fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
     onNavigateToRegister: () -> Unit,
+    onNavigateBack: () -> Unit,
+    isRequestFromHome: Boolean = false,
     useOneTapClient: Boolean = false,
 ) {
     val state = viewModel.stateFlow.collectAsStateWithLifecycle()
@@ -227,22 +232,50 @@ fun LoginScreen(
                     )
                 }
 
-                GradientButton(
-                    onClick = {
-                        viewModel.trySendAction(LoginAction.LoginWith.EmailAndPassword)
-                    },
-                    showContent = state.value.isLoading,
-                    loadingContent = {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            strokeWidth = 1.5.dp
-                        )
-                    },
-                    text = "Login",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    GradientButton(
+                        onClick = {
+                            viewModel.trySendAction(LoginAction.LoginWith.EmailAndPassword)
+                        },
+                        showContent = state.value.isLoading,
+                        text = "Login",
+                        modifier = Modifier
+                            .weight(1f)
+                    )
+                    if (!isRequestFromHome) {
+                        Box(
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .clip(MaterialTheme.shapes.large)
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    MaterialTheme.shapes.large
+                                )
+                                .clickable {
+                                    viewModel.trySendAction(LoginAction.Ui.SkipLogin)
+                                }
+                                .border(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                                    shape = MaterialTheme.shapes.large
+                                )
+                                .padding(
+                                    horizontal = 32.dp,
+                                    vertical = 12.dp
+                                )
+
+                        ) {
+                            Text(
+                                "Skip",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                        }
+                    }
+                }
 
             }
             item {

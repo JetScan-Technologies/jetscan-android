@@ -45,7 +45,6 @@ fun ExpandedHomeScreen(
             modifier = Modifier
                 .fillMaxWidth(0.8f)
                 .weight(1f),
-            maxItemsInEachRow = 2,
             isExpanded = true,
             viewModel = viewModel,
         )

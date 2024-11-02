@@ -1,4 +1,4 @@
-package io.github.dracula101.jetscan.data.ocr.datasource.network.interceptors
+package io.github.dracula101.jetscan.data.platform.datasource.network.interceptors
 
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull

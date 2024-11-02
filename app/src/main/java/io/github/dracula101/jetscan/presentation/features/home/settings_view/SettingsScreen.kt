@@ -3,6 +3,8 @@ package io.github.dracula101.jetscan.presentation.features.home.settings_view
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -59,6 +61,7 @@ import io.github.dracula101.jetscan.presentation.features.settings.document.Docu
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.ScaffoldSize
 import io.github.dracula101.jetscan.presentation.platform.component.switch.AppSwitch
 import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.customContainer
+import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.debugBorder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -71,6 +74,7 @@ fun SettingsScreen(
     mainHomeState: MainHomeState,
     onNavigateToAboutPage: () -> Unit,
     onNavigateToDocumentSettings: (DocumentSettingScreen) -> Unit,
+    onNavigateToLogin: () -> Unit,
 ) {
     val context = LocalContext.current
     val state = viewModel.stateFlow.collectAsStateWithLifecycle()
@@ -91,31 +95,34 @@ fun SettingsScreen(
                 start = padding.calculateStartPadding(layoutDirection),
                 end = padding.calculateEndPadding(layoutDirection),
             ),
-        contentPadding = PaddingValues(bottom = 120.dp),
+        contentPadding = PaddingValues(top = 8.dp, bottom = 120.dp),
     ) {
-        if (state.value.user?.displayName != "") {
-            item {
-                state.value.user?.let { AccountInfo(it) }
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
-                )
-            }
+        item {
+            AccountInfo(
+                user = state.value.user,
+                navigateToLogin = onNavigateToLogin
+            )
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+            )
         }
-        item{
-            SettingsSection(
-                title = "Account"
-            ) {
-                SettingsItem(
-                    title = "Edit Profile",
-                    icon = Icons.Rounded.Person,
-                    onClick = {}
-                )
-                SettingsItem(
-                    title = "Delete Account",
-                    icon = Icons.Rounded.NoAccounts,
-                    onClick = {},
-                    showDivider = false
-                )
+        if(state.value.user?.isAnonymous == false){
+            item{
+                SettingsSection(
+                    title = "Account"
+                ) {
+                    SettingsItem(
+                        title = "Edit Profile",
+                        icon = Icons.Rounded.Person,
+                        onClick = {}
+                    )
+                    SettingsItem(
+                        title = "Delete Account",
+                        icon = Icons.Rounded.NoAccounts,
+                        onClick = {},
+                        showDivider = false
+                    )
+                }
             }
         }
         item{
@@ -189,32 +196,34 @@ fun SettingsScreen(
                 )
             }
         }
-        item {
-            HorizontalDivider(
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
-                modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.error.copy(alpha = 0.3f),
-                        MaterialTheme.shapes.large
-                    )
-                    .clip(MaterialTheme.shapes.large)
-                    .background(MaterialTheme.colorScheme.error.copy(alpha = 0.1f))
-            ){
-                SettingsItem(
-                    title = "Logout",
-                    icon = Icons.AutoMirrored.Rounded.Logout,
-                    color = MaterialTheme.colorScheme.error,
-                    onClick = {
-                        viewModel.trySendAction(SettingsAction.Alerts.ShowLogoutConfirmation)
-                    },
-                    showDivider = false
+        if(state.value.user?.isAnonymous == false){
+            item {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                    modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
                 )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.error.copy(alpha = 0.3f),
+                            MaterialTheme.shapes.large
+                        )
+                        .clip(MaterialTheme.shapes.large)
+                        .background(MaterialTheme.colorScheme.error.copy(alpha = 0.1f))
+                ){
+                    SettingsItem(
+                        title = "Logout",
+                        icon = Icons.AutoMirrored.Rounded.Logout,
+                        color = MaterialTheme.colorScheme.error,
+                        onClick = {
+                            viewModel.trySendAction(SettingsAction.Alerts.ShowLogoutConfirmation)
+                        },
+                        showDivider = false
+                    )
+                }
             }
         }
         item {
@@ -224,7 +233,10 @@ fun SettingsScreen(
 }
 
 @Composable
-fun AccountInfo(user: UserState) {
+fun AccountInfo(
+    user: UserState?,
+    navigateToLogin: () -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -235,47 +247,110 @@ fun AccountInfo(user: UserState) {
                 vertical = 12.dp
             ),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            SubcomposeAsyncImage(
-                model = user.photoUrl,
-                error = {
-                    Icon(
-                        imageVector = Icons.Rounded.Person,
+        when(user?.isAnonymous){
+            null, true -> {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+                            .border(
+                                1.dp,
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ){
+                        Icon(
+                            Icons.Rounded.Person,
+                            contentDescription = "User Photo",
+                            modifier = Modifier
+                                .size(50.dp)
+                                .padding(8.dp),
+                        )
+                    }
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = "Guest",
+                                style = MaterialTheme.typography.headlineSmall,
+                            )
+                            Text(
+                                text = "Sign in to access more features",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .clip(MaterialTheme.shapes.large)
+                                .clickable(onClick = navigateToLogin)
+                                .background(MaterialTheme.colorScheme.primary)
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                        ){
+                            Text(
+                                text = "Sign In",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
+                }
+            }
+            else -> {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    SubcomposeAsyncImage(
+                        model = user.photoUrl,
+                        error = {
+                            Icon(
+                                imageVector = Icons.Rounded.Person,
+                                contentDescription = "User Photo",
+                                modifier = Modifier
+                                    .padding(8.dp),
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        },
                         contentDescription = "User Photo",
                         modifier = Modifier
-                            .padding(8.dp),
-                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            .size(60.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+                            .border(
+                                1.dp,
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                                CircleShape
+                            )
                     )
-                },
-                contentDescription = "User Photo",
-                modifier = Modifier
-                    .size(60.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
-                        CircleShape
-                    )
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(
-                    text = user.displayName,
-                    style = MaterialTheme.typography.headlineSmall,
-                )
-                Text(
-                    text = user.email,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
-                Spacer(modifier = Modifier.size(4.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(
+                            text = user.displayName,
+                            style = MaterialTheme.typography.headlineSmall,
+                        )
+                        Text(
+                            text = user.email,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                        Spacer(modifier = Modifier.size(4.dp))
+                    }
+                }
             }
         }
+
     }
 }
 

@@ -94,7 +94,19 @@ fun Int.bytesToReadableSize(): String {
     }
 }
 
-fun Long.bytesToReadableSize(): String = this.toInt().bytesToReadableSize()
+fun Long.bytesToReadableSize(): String {
+    val decimalFormat = "%.2f"
+    val size = this.toFloat()
+    val kb = decimalFormat.format(size / 1024).toFloat()
+    val mb = decimalFormat.format(kb / 1024).toFloat()
+    val gb = decimalFormat.format(mb / 1024).toFloat()
+    return when {
+        gb >= 1 -> "$gb GB"
+        mb >= 1 -> "$mb MB"
+        kb >= 1 -> "$kb KB"
+        else -> "$size bytes"
+    }
+}
 
 fun Long.bytesToSizeAndUnit(): Pair<Float, String> {
     val size = this.toFloat()

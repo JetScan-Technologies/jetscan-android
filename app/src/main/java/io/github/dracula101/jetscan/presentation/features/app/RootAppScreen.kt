@@ -37,6 +37,7 @@ import io.github.dracula101.jetscan.presentation.theme.RootTransitionProviders
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import timber.log.Timber
 import java.util.concurrent.atomic.AtomicReference
 
 @Composable
@@ -81,7 +82,7 @@ fun RootAppScreen(
         RootAppState.Splash -> SPLASH_ROUTE
         RootAppState.Onboarding -> ONBOARDING_ROUTE
         RootAppState.Auth -> AUTH_GRAPH_ROUTE
-        RootAppState.Home -> HOME_GRAPH_ROUTE
+        is RootAppState.Home -> HOME_GRAPH_ROUTE
         is RootAppState.ImportPdf -> IMPORT_PDF_GRAPH_ROUTE
     }
     val currentRoute = navController.currentDestination?.rootLevelRoute()
@@ -119,7 +120,7 @@ fun RootAppScreen(
             RootAppState.Auth -> navController.navigateToAuthGraph(rootNavOptions)
             RootAppState.Onboarding -> navController.navigateToOnboarding()
             RootAppState.Splash -> navController.navigateToSplashRoute(rootNavOptions)
-            RootAppState.Home -> navController.navigateToHomeGraph(rootNavOptions)
+            is RootAppState.Home -> navController.navigateToHomeGraph(rootNavOptions)
             is RootAppState.ImportPdf -> {
                 navController.navigateToImportPdf(
                     originalUri = currentState.importPdfEvent.uri,

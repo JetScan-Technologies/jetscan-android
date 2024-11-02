@@ -75,6 +75,10 @@ abstract class BaseViewModel<S, E, A>(
         actionChannel.trySend(action)
     }
 
+    fun setState(newState: ()-> S) {
+        mutableStateFlow.value = newState()
+    }
+
     /**
      * Helper method for sending an internal action.
      */

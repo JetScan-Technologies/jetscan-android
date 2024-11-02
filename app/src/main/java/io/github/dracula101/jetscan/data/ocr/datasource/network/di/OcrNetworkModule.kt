@@ -13,7 +13,7 @@ import dagger.hilt.components.SingletonComponent
 import io.github.dracula101.jetscan.data.ocr.datasource.network.api.OcrApi
 import io.github.dracula101.jetscan.data.ocr.datasource.network.api.OcrTokenApi
 import io.github.dracula101.jetscan.data.ocr.datasource.network.interceptors.AuthTokenInterceptor
-import io.github.dracula101.jetscan.data.ocr.datasource.network.interceptors.BaseUrlInterceptors
+import io.github.dracula101.jetscan.data.platform.datasource.network.interceptors.BaseUrlInterceptors
 import io.github.dracula101.jetscan.data.ocr.datasource.network.retrofit.OcrRetrofit
 import io.github.dracula101.jetscan.data.ocr.datasource.network.retrofit.OcrRetrofitImpl
 import javax.inject.Singleton

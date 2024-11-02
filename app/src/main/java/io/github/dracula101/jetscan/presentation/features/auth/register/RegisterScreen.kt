@@ -189,13 +189,6 @@ fun RegisterScreen(
                         viewModel.trySendAction(RegisterAction.RegisterWith.EmailAndPassword)
                     },
                     showContent = state.value.isLoading,
-                    loadingContent = {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            strokeWidth = 1.5.dp
-                        )
-                    },
                     text = "Register",
                     modifier = Modifier
                         .fillMaxWidth()

@@ -29,8 +29,7 @@ import io.github.dracula101.jetscan.presentation.features.settings.document.navi
 import io.github.dracula101.jetscan.presentation.features.settings.open_source_libs.createOpenSourceLibrariesDestination
 import io.github.dracula101.jetscan.presentation.features.settings.open_source_libs.navigateToOpenSourceLibraryScreen
 import io.github.dracula101.jetscan.presentation.features.testers.TESTER_START_ROUTE
-import io.github.dracula101.jetscan.presentation.features.testers.createTesterDestination
-import io.github.dracula101.jetscan.presentation.features.testers.navigateToTester
+import io.github.dracula101.jetscan.presentation.features.testers.createTesterGraph
 import io.github.dracula101.jetscan.presentation.features.tools.compress_pdf.createCompressPdfDestination
 import io.github.dracula101.jetscan.presentation.features.tools.compress_pdf.navigateToCompressPdfScreen
 import io.github.dracula101.jetscan.presentation.features.tools.esign_pdf.createESignPdfDestination
@@ -83,6 +82,9 @@ fun NavGraphBuilder.homeGraph(navController: NavHostController) {
             },
             navigateToTester = {
                 navController.navigateToTester()
+            },
+            navigateToLoginPage = {
+                navController.navigateToLoginRoute(fromHome = true)
             }
         )
         createDocumentSettingsDestination(
@@ -213,9 +215,6 @@ fun NavGraphBuilder.homeGraph(navController: NavHostController) {
             onNavigateBack = {
                 navController.navigateUp()
             }
-        )
-        createTesterDestination(
-            navController = navController
         )
     }
 }

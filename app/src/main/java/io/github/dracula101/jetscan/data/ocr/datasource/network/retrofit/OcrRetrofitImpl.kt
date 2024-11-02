@@ -6,7 +6,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import io.github.dracula101.jetscan.BuildConfig
 import io.github.dracula101.jetscan.data.ocr.datasource.network.interceptors.AuthTokenInterceptor
-import io.github.dracula101.jetscan.data.ocr.datasource.network.interceptors.BaseUrlInterceptors
+import io.github.dracula101.jetscan.data.platform.datasource.network.interceptors.BaseUrlInterceptors
 import io.github.dracula101.jetscan.data.platform.datasource.network.core.ResultCallAdapterFactory
 import io.github.dracula101.jetscan.data.platform.datasource.network.util.HEADER_KEY_AUTHORIZATION
 import okhttp3.MediaType.Companion.toMediaType

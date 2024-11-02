@@ -5,7 +5,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
 import androidx.navigation.navigation
-import io.github.dracula101.jetscan.presentation.features.auth.login.LOGIN_ROUTE
+import io.github.dracula101.jetscan.presentation.features.auth.login.LOGIN_START_ROUTE
 import io.github.dracula101.jetscan.presentation.features.auth.login.createLoginDestination
 import io.github.dracula101.jetscan.presentation.features.auth.register.createRegisterDestination
 import io.github.dracula101.jetscan.presentation.features.auth.register.navigateToRegisterRoute
@@ -16,12 +16,15 @@ const val AUTH_GRAPH_ROUTE = "auth_graph"
 @Suppress("LongMethod")
 fun NavGraphBuilder.authGraph(navController: NavHostController) {
     navigation(
-        startDestination = LOGIN_ROUTE,
+        startDestination = LOGIN_START_ROUTE,
         route = AUTH_GRAPH_ROUTE,
     ) {
         createLoginDestination(
             onNavigateToRegister = {
                 navController.navigateToRegisterRoute()
+            },
+            onNavigateBack = {
+                navController.navigateUp()
             }
         )
         createRegisterDestination(

@@ -23,13 +23,6 @@ import javax.inject.Singleton
 @Module
 object AppModule {
 
-    // ======================== App Context ========================
-    @Provides
-    @Singleton
-    fun provideAppContext(@ApplicationContext context: Context): Context {
-        return context
-    }
-
     // ======================== Main Executor ========================
     @Provides
     @Singleton

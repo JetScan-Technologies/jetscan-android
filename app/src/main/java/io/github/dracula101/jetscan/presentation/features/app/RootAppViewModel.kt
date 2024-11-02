@@ -15,7 +15,6 @@ import io.github.dracula101.jetscan.data.platform.repository.config.ConfigReposi
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.shareIn
@@ -72,7 +71,7 @@ class RootAppViewModel @Inject constructor(
                                 is SpecialCircumstance.ImportPdfEvent -> RootAppState.ImportPdf(action.specialCircumstance)
                             }
                         }
-                        else -> RootAppState.Home
+                        else -> RootAppState.Home(isAnonymous = action.userState.isAnonymous)
                     }
                 }
             }
@@ -105,7 +104,9 @@ sealed class RootAppState : Parcelable {
      * App should show home.
      */
     @Parcelize
-    data object Home : RootAppState()
+    data class Home(
+        val isAnonymous: Boolean = false
+    ) : RootAppState()
 
     /**
      * App should show import pdf.
