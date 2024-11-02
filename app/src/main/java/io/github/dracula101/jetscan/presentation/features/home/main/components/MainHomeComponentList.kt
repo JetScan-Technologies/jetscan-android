@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -27,43 +28,39 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.debugBorder
 
 @Composable
-fun MainHomeComponentList(icon: Painter, title: String, color: Color, onClick: () -> Unit = {}) {
+fun MainHomeComponentList(
+    modifier: Modifier = Modifier,
+    icon: Painter,
+    title: String,
+    color: Color,
+    onClick: () -> Unit = {}
+) {
     Column(
-        modifier = Modifier
-            .padding(vertical = 4.dp),
+        modifier = modifier
+            .clip(MaterialTheme.shapes.medium)
+            .background(color.copy(alpha = 0.2f))
+            .clickable { onClick() }
+            .padding(vertical = 12.dp, horizontal = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Box(
-            modifier = Modifier
-                .size(70.dp)
-                .padding(8.dp)
-                .border(
-                    width = 0.5.dp,
-                    color = color.copy(alpha = 0.5f),
-                    shape = CircleShape,
-                )
-                .clip(CircleShape)
-                .background(color.copy(alpha = 0.2f))
-                .clickable(onClick = onClick),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-        Spacer(modifier = Modifier.width(32.dp))
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(32.dp)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = title,
             color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.bodySmall
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold
         )
     }
 }

@@ -118,16 +118,16 @@ fun DocumentDetailBottomSheet(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
                 modifier = Modifier.padding(12.dp)
             )
-            DocumentActionItem(
-                title = "Add Watermark",
-                resource = R.drawable.watermark_pdf,
-                onClick = { onAction(DocumentAction.WATERMARK) }
-            )
-            DocumentActionItem(
-                title = "Add Digital signature",
-                resource = R.drawable.esign_pdf,
-                onClick = { onAction(DocumentAction.DIGITAL_SIGNATURE) }
-            )
+            // DocumentActionItem(
+            //     title = "Add Watermark",
+            //     resource = R.drawable.watermark_pdf,
+            //     onClick = { onAction(DocumentAction.WATERMARK) }
+            // )
+            // DocumentActionItem(
+            //     title = "Add Digital signature",
+            //     resource = R.drawable.esign_pdf,
+            //     onClick = { onAction(DocumentAction.DIGITAL_SIGNATURE) }
+            // )
             DocumentActionItem(
                 title = "Split PDF",
                 resource = R.drawable.split_pdf,

@@ -22,7 +22,7 @@ interface PdfToolApi {
     @POST("api/pdf/split")
     suspend fun split(
         @Part file: MultipartBody.Part,
-        @Field("ranges") ranges: String,
+        @Part ranges: MultipartBody.Part,
     ): Result<PdfSplitResponse>
 
 }

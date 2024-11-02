@@ -30,7 +30,7 @@ class DocumentRetrofitImpl(
             redactHeader(name = HEADER_KEY_AUTHORIZATION)
             setLevel(
                 if (BuildConfig.DEBUG) {
-                    HttpLoggingInterceptor.Level.HEADERS
+                    HttpLoggingInterceptor.Level.BODY
                 } else {
                     HttpLoggingInterceptor.Level.NONE
                 },
