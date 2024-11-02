@@ -4,7 +4,6 @@ import android.content.ContentResolver
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.ui.unit.Dp
-import io.github.dracula101.pdf.models.PdfCompressionLevel
 import io.github.dracula101.pdf.models.PdfOptions
 import java.io.File
 

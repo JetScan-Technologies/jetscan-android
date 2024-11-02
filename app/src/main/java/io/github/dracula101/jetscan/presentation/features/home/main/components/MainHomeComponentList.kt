@@ -28,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
+import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.debugBorder
 
 @Composable
 fun MainHomeComponentList(icon: Painter, title: String, color: Color, onClick: () -> Unit = {}) {
@@ -41,6 +42,11 @@ fun MainHomeComponentList(icon: Painter, title: String, color: Color, onClick: (
             modifier = Modifier
                 .size(70.dp)
                 .padding(8.dp)
+                .border(
+                    width = 0.5.dp,
+                    color = color.copy(alpha = 0.5f),
+                    shape = CircleShape,
+                )
                 .clip(CircleShape)
                 .background(color.copy(alpha = 0.2f))
                 .clickable(onClick = onClick),

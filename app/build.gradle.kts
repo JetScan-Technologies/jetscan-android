@@ -279,6 +279,7 @@ fun buildConfigSecrets(config: ApplicationDefaultConfig) {
     config.buildConfigField("String", "GOOGLE_CLIENT_ID", properties["GOOGLE_CLIENT_ID"].toString())
     config.buildConfigField("String","GCP_DOCUMENT_AI_BASE_URL",properties["GCP_DOCUMENT_AI_BASE_URL"].toString())
     config.buildConfigField("String","GCP_DOCUMENT_AI_ENDPOINT",properties["GCP_DOCUMENT_AI_ENDPOINT"].toString())
+    config.buildConfigField("String", "JETSCAN_BACKEND_URL", properties["JETSCAN_BACKEND_URL"].toString())
 
     serviceAccountJsonObject.let { json ->
         config.buildConfigField("String", "SERVICE_ACCOUNT_TYPE", "\"${json?.get("type")}\"")

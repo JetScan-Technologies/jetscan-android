@@ -62,6 +62,7 @@ import io.github.dracula101.jetscan.data.platform.utils.bytesToReadableSize
 import io.github.dracula101.jetscan.data.platform.utils.bytesToSizeAndUnit
 import io.github.dracula101.jetscan.presentation.features.tools.merge_pdf.components.DocumentTile
 import io.github.dracula101.jetscan.presentation.platform.component.bottomsheet.DocumentFilesBottomSheet
+import io.github.dracula101.jetscan.presentation.platform.component.button.GradientButton
 import io.github.dracula101.jetscan.presentation.platform.component.document.preview.PreviewIcon
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.JetScanScaffoldWithFlexAppBar
 import io.github.dracula101.jetscan.presentation.platform.component.textfield.AppTextField
@@ -122,15 +123,21 @@ fun MergePdfScreen(
         },
         bottomBar = {
             when(state.value.view){
-                MergePdfView.DOCUMENT -> FilledTonalButton(
-                    onClick = {
-                        viewModel.trySendAction(MergePdfAction.Ui.OnMergeDocument)
-                    },
+                MergePdfView.DOCUMENT -> Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    enabled = state.value.selectedDocuments.size >= 2,
-                ) { Text("Merge") }
+                        .padding(8.dp)
+                ){
+                    GradientButton(
+                        text = "Merge PDF",
+                        showContent = state.value.isLoading,
+                        onClick = {
+                            viewModel.trySendAction(MergePdfAction.Ui.OnMergeDocument)
+                        },
+
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = state.value.selectedDocuments.size >= 2,
+                    )
+                }
                 MergePdfView.MERGED -> FilledTonalButton(
                     onClick = {
                         if (state.value.mergedDocument != null){

@@ -241,13 +241,6 @@ fun LoginScreen(
                             viewModel.trySendAction(LoginAction.LoginWith.EmailAndPassword)
                         },
                         showContent = state.value.isLoading,
-                        loadingContent = {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                strokeWidth = 1.5.dp
-                            )
-                        },
                         text = "Login",
                         modifier = Modifier
                             .weight(1f)

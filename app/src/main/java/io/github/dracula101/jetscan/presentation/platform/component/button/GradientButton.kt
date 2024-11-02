@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CornerBasedShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +25,7 @@ fun GradientButton(
     modifier: Modifier = Modifier,
     text: String,
     onClick: () -> Unit,
+    enabled: Boolean = true,
     showContent: Boolean = false,
     shape: CornerBasedShape = MaterialTheme.shapes.large,
     disabledColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -36,12 +38,12 @@ fun GradientButton(
             .clip(shape)
             .border(
                 width = 1.dp,
-                color = if (!showContent) MaterialTheme.colorScheme.primary
+                color = if (!showContent && enabled) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                 shape = shape
             )
             .then(
-                if (showContent) Modifier
+                if (showContent || !enabled) Modifier
                     .background(disabledColor, shape = shape)
                 else Modifier.background(
                     Brush.linearGradient(GradientColors()),
@@ -49,7 +51,7 @@ fun GradientButton(
                 )
             )
             .then(
-                if (!showContent) Modifier.clickable { onClick() }
+                if (!showContent) Modifier.clickable(enabled) { onClick() }
                 else Modifier
             )
             .padding(12.dp)
@@ -63,13 +65,17 @@ fun GradientButton(
                 contentAlignment = Alignment.Center
             ) {
                 if (loadingContent!=null) loadingContent()
-                else Box{}
+                else CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    strokeWidth = 1.5.dp
+                )
             }
         } else {
             Text(
                 text = text,
                 style = MaterialTheme.typography.labelMedium.copy(
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 1f else 0.5f),
                 ),
             )
         }

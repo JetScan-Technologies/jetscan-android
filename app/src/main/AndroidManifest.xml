@@ -17,10 +17,10 @@
     <application
         android:name=".JetScanApplication"
         android:allowBackup="false"
+        android:fullBackupContent="@xml/backup_rules"
         android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:enableOnBackInvokedCallback="true"
-        android:fullBackupContent="@xml/backup_rules"
         android:hardwareAccelerated="true"
         android:icon="${appIcon}"
         android:label="@string/app_name"
