@@ -285,7 +285,8 @@ fun MainHomeScreen(
                         viewModel = settingsViewModel,
                         mainHomeState = state.value,
                         onNavigateToAboutPage = onNavigateToAboutPage,
-                        onNavigateToDocumentSettings = onNavigateToDocumentSettings
+                        onNavigateToDocumentSettings = onNavigateToDocumentSettings,
+                        onNavigateToLogin = onNavigateToLogin,
                     )
                 }
             }

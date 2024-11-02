@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
 import androidx.navigation.navigation
 import io.github.dracula101.jetscan.presentation.features.auth.authGraph
+import io.github.dracula101.jetscan.presentation.features.auth.login.navigateToLoginRoute
 import io.github.dracula101.jetscan.presentation.features.document.edit.createEditDocumentDestination
 import io.github.dracula101.jetscan.presentation.features.document.edit.navigateToEditDocument
 import io.github.dracula101.jetscan.presentation.features.document.folder.createFolderDocumentDestinationRoute
@@ -28,8 +29,7 @@ import io.github.dracula101.jetscan.presentation.features.settings.document.crea
 import io.github.dracula101.jetscan.presentation.features.settings.document.navigateToDocumentSettings
 import io.github.dracula101.jetscan.presentation.features.settings.open_source_libs.createOpenSourceLibrariesDestination
 import io.github.dracula101.jetscan.presentation.features.settings.open_source_libs.navigateToOpenSourceLibraryScreen
-import io.github.dracula101.jetscan.presentation.features.testers.TESTER_START_ROUTE
-import io.github.dracula101.jetscan.presentation.features.testers.createTesterGraph
+import io.github.dracula101.jetscan.presentation.features.testers.navigateToTester
 import io.github.dracula101.jetscan.presentation.features.tools.compress_pdf.createCompressPdfDestination
 import io.github.dracula101.jetscan.presentation.features.tools.compress_pdf.navigateToCompressPdfScreen
 import io.github.dracula101.jetscan.presentation.features.tools.esign_pdf.createESignPdfDestination
