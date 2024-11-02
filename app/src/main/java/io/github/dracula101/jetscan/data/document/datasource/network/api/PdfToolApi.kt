@@ -1,5 +1,7 @@
 package io.github.dracula101.jetscan.data.document.datasource.network.api
 
+import io.github.dracula101.jetscan.data.document.datasource.network.models.PdfCompressResponse
+import io.github.dracula101.jetscan.data.document.datasource.network.models.PdfCompressSizesResponse
 import io.github.dracula101.jetscan.data.document.datasource.network.models.PdfMergeResponse
 import io.github.dracula101.jetscan.data.document.datasource.network.models.PdfSplitResponse
 import okhttp3.MultipartBody
@@ -25,4 +27,19 @@ interface PdfToolApi {
         @Part ranges: MultipartBody.Part,
     ): Result<PdfSplitResponse>
 
+
+    @Multipart
+    @POST("api/pdf/compress")
+    suspend fun compress(
+        @Part file: MultipartBody.Part,
+        @Part quality: MultipartBody.Part,
+    ): Result<PdfCompressResponse>
+
+
+    @Multipart
+    @POST("api/pdf/compress_sizes")
+    suspend fun compressSizes(
+        @Part file: MultipartBody.Part,
+        @Part qualities: MultipartBody.Part,
+    ): Result<PdfCompressSizesResponse>
 }

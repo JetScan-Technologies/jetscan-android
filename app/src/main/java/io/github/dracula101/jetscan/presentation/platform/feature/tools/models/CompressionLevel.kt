@@ -6,4 +6,12 @@ enum class CompressionLevel {
     MEDIUM,
     HIGH;
 
+    fun toQuality(): Int {
+        return when (this) {
+            LOW -> 30
+            MEDIUM -> 75
+            HIGH -> 90
+        }
+    }
+
 }

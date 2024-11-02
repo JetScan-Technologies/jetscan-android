@@ -1,5 +1,7 @@
 package io.github.dracula101.jetscan.data.document.datasource.network.repository
 
+import io.github.dracula101.jetscan.data.document.datasource.network.repository.models.PdfCompressResult
+import io.github.dracula101.jetscan.data.document.datasource.network.repository.models.PdfCompressSizesResult
 import io.github.dracula101.jetscan.data.document.datasource.network.repository.models.PdfMergeResult
 import io.github.dracula101.jetscan.data.document.datasource.network.repository.models.PdfSplitResult
 import java.io.File
@@ -18,5 +20,17 @@ interface PdfToolRepository {
         outputFiles: List<File>,
         ranges: String,
     ) : PdfSplitResult
+
+
+    suspend fun compressPdfFile(
+        file: File,
+        quality: Int,
+        outputFile: File
+    ) : PdfCompressResult
+
+    suspend fun getPdfCompressionSizes(
+        file: File,
+        qualities: List<Int>
+    ) : PdfCompressSizesResult
 
 }

@@ -21,4 +21,12 @@ enum class PdfCompressionLevel {
             LOW -> "Largest size, better quality"
         }
     }
+
+    fun toQuality(): Int {
+        return when (this) {
+            LOW -> 30
+            MEDIUM -> 75
+            HIGH -> 90
+        }
+    }
 }
