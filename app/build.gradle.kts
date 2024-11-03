@@ -90,7 +90,7 @@ android {
             signingConfig = signingConfigs.getByName("release")
 
             firebaseAppDistribution {
-                serviceCredentialsFile = "service-account.json"
+                serviceCredentialsFile = "app/service-account.json"
                 releaseNotes = "Alpha Release"
                 groups = "alpha-testing"
                 artifactPath = "app/build/outputs/apk/release/app-universal-release.apk"

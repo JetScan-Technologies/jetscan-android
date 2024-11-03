@@ -42,6 +42,9 @@ fun NavGraphBuilder.createMainHomeDestination(
                 },
                 onNavigateToLogin = {
                     navigateToLoginPage()
+                },
+                navigateToTester = {
+                    navigateToTester()
                 }
             )
         }

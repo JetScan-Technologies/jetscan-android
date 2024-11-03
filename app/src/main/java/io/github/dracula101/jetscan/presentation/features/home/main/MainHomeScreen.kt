@@ -100,8 +100,6 @@ fun MainHomeScreen(
 ) {
     val state = mainViewModel.stateFlow.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val bottomBarVisibleAnimation = remember { Animatable(1f) }
 
     state.value.snackbarState?.let { snackbarState ->
         MainHomeAlertSnackbar(
@@ -117,6 +115,13 @@ fun MainHomeScreen(
         if (state.value.navigateTo != null) {
             navigateTo(state.value.navigateTo!!)
             mainViewModel.trySendAction(MainHomeAction.MainHomeClearNavigate)
+        }
+    }
+
+    LaunchedEffect(state.value.showTesterInstructions) {
+        if (state.value.showTesterInstructions) {
+            navigateToTester()
+            mainViewModel.trySendAction(MainHomeAction.Ui.HideTesterInstructions)
         }
     }
 
@@ -143,34 +148,10 @@ fun MainHomeScreen(
     }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
 
-    val nestedScrollConnection = remember {
-        object : NestedScrollConnection {
-
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if(scrollBehavior.state.overlappedFraction > 0.5f && scrollBehavior.state.contentOffset > 0f){
-                    return available
-                }
-                val delta = available.y
-                val isScrolledDown = (delta > 0)
-                scope.launch {
-                    if(
-                        !bottomBarVisibleAnimation.isRunning &&
-                        (isScrolledDown && bottomBarVisibleAnimation.value == 0f) ||
-                        (!isScrolledDown && bottomBarVisibleAnimation.value == 1f)
-                    ){
-                        bottomBarVisibleAnimation.animateTo(if(isScrolledDown) 1f else 0f)
-                    }
-                }
-                return Offset.Zero
-            }
-        }
-    }
-
     JetScanScaffold(
         modifier = Modifier
             .fillMaxSize()
-            .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .nestedScroll(nestedScrollConnection),
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
         snackbarHostState = snackbarHostState,
         useImePadding = false,
         topBar = {
@@ -187,13 +168,6 @@ fun MainHomeScreen(
                 MainHomeFloatingActionButton(
                     onClick = { onNavigateToScanner() },
                     isExtended = state.value.currentTab == MainHomeTabs.HOME,
-                    modifier = Modifier
-                        .offset {
-                            IntOffset(
-                                x = 0,
-                                y = ((1 - bottomBarVisibleAnimation.value) * 250).toInt()
-                            )
-                        }
                 )
             }
         },
@@ -203,14 +177,6 @@ fun MainHomeScreen(
                 onTabSelected = { tab ->
                     mainViewModel.trySendAction(MainHomeAction.Ui.ChangeTab(tab))
                 },
-                horizontalModifier = Modifier
-                    .alpha(bottomBarVisibleAnimation.value)
-                    .offset {
-                        IntOffset(
-                            x = 0,
-                            y = ((1 - bottomBarVisibleAnimation.value) * 300).toInt()
-                        )
-                    }
             )
         }
     ) { padding, windowSize ->
@@ -222,7 +188,7 @@ fun MainHomeScreen(
                         mainViewModel.trySendAction(MainHomeAction.Ui.ChangeTab(tab))
                     },
                     isVertical = true,
-                    verticalModifier  = Modifier
+                    modifier  = Modifier
                         .padding(padding)
                         .padding(top = 16.dp)
                 )
@@ -320,15 +286,14 @@ fun MainHomeFloatingActionButton(
 
 @Composable
 fun MainHomeBottomBar(
-    horizontalModifier: Modifier = Modifier,
-    verticalModifier: Modifier = Modifier,
+    modifier: Modifier = Modifier,
     state: MainHomeState,
     isVertical: Boolean = false,
     onTabSelected: (MainHomeTabs) -> Unit = {},
 ) {
     if (isVertical) {
         Column(
-            verticalModifier
+            modifier
                 .fillMaxHeight()
                 .widthIn(min = 80.dp)
                 .selectableGroup(),
@@ -373,9 +338,7 @@ fun MainHomeBottomBar(
             )
         }
     } else {
-        BottomAppBar(
-            modifier = horizontalModifier,
-        ) {
+        BottomAppBar {
             MainHomeNavbarItem(
                 icons = Pair(
                     Icons.Rounded.Home,
