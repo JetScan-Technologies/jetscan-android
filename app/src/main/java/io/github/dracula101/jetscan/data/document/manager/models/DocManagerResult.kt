@@ -16,5 +16,6 @@ enum class DocManagerErrorType {
     UNKNOWN,
     IO_EXCEPTION,
     FILE_NOT_CREATED,
+    FILE_NOT_UPDATED,
     INVALID_EXTENSION,
 }

@@ -100,7 +100,7 @@ fun JetScanScaffold(
                             if (useImePadding) Modifier
                                 .imePadding()
                                 .then(
-                                    if (useNavigationBarPadding) Modifier
+                                    if (useNavigationBarPadding && bottomBar == {}) Modifier
                                         .navigationBarsPadding()
                                     else
                                         Modifier

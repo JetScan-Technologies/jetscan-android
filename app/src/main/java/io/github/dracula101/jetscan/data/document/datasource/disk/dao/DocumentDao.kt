@@ -109,6 +109,9 @@ interface DocumentDao {
     @Update(entity = DocumentEntity::class)
     suspend fun updateDocument(documentEntity: DocumentEntity)
 
+    @Update(entity = ScannedImageEntity::class)
+    suspend fun updateDocumentImage(scannedImageEntity: ScannedImageEntity)
+
     /**
      * Deletes a document by its id from the database.
      * @param id the primary id of the document to be deleted.

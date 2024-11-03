@@ -539,6 +539,7 @@ class ScannerViewModel @Inject constructor(
                 )
             }
         }
+
     }
 
     private fun handleApplyFilter(index: Int, filter: ImageFilter) {

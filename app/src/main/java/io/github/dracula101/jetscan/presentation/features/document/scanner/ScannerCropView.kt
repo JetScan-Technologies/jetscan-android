@@ -93,9 +93,9 @@ fun ScannerCropView(
     val isPreviewCropLoading = remember { mutableStateOf(false) }
 
     val imageCropCoords = remember { mutableStateOf<ImageCropCoords?>(null) }
-    val currentPositionCoords = remember { mutableStateOf<CPoint?>(null) }
     val filterBitmaps = remember { mutableStateOf<List<Bitmap>?>(null) }
     val boundary = remember { mutableStateOf<Size?>(null) }
+    val currentPositionCoords = remember { mutableStateOf<CPoint?>(null) }
     val currentPointPosition = remember { mutableStateOf<PointPosition?>(null) }
     val rotationAnim = remember { Animatable(0f) }
     val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
