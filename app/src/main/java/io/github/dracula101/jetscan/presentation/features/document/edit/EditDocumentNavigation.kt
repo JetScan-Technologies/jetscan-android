@@ -35,7 +35,7 @@ fun NavGraphBuilder.createEditDocumentDestination(
         val pageIndex = it.arguments?.getInt(EDIT_DOC_PAGE_INDEX_ARGUMENT)
             ?: throw IllegalArgumentException("Missing $EDIT_DOC_PAGE_INDEX_ARGUMENT argument")
 
-        LockOrientation(isBoth = true) {
+        LockOrientation(isPortraitOnly = true) {
             EditDocumentScreen(
                 onNavigateBack = onNavigateBack,
                 onNavigateToPdf = onNavigateToPdf,

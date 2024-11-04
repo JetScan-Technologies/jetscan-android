@@ -24,9 +24,11 @@ import io.github.dracula101.jetscan.data.platform.repository.config.ConfigReposi
 import io.github.dracula101.pdf.models.PdfOptions
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
+import java.io.File
 import java.io.IOException
 import java.sql.SQLException
 import javax.inject.Inject
@@ -157,9 +159,7 @@ class DocumentRepositoryImpl @Inject constructor(
                         error = result.error,
                         type = when(result.type) {
                             DocManagerErrorType.UNKNOWN -> DocumentErrorType.UNKNOWN
-                            DocManagerErrorType.IO_EXCEPTION -> DocumentErrorType.INVALID_DOCUMENT
-                            DocManagerErrorType.FILE_NOT_CREATED -> DocumentErrorType.INVALID_DOCUMENT
-                            DocManagerErrorType.INVALID_EXTENSION -> DocumentErrorType.INVALID_DOCUMENT
+                            else-> DocumentErrorType.INVALID_DOCUMENT
                         }
                     )
                 }
@@ -231,9 +231,7 @@ class DocumentRepositoryImpl @Inject constructor(
                         error = result.error,
                         type = when(result.type) {
                             DocManagerErrorType.UNKNOWN -> DocumentErrorType.UNKNOWN
-                            DocManagerErrorType.IO_EXCEPTION -> DocumentErrorType.INVALID_DOCUMENT
-                            DocManagerErrorType.FILE_NOT_CREATED -> DocumentErrorType.INVALID_DOCUMENT
-                            DocManagerErrorType.INVALID_EXTENSION -> DocumentErrorType.INVALID_DOCUMENT
+                            else -> DocumentErrorType.INVALID_DOCUMENT
                         }
                     )
                 }
@@ -333,6 +331,115 @@ class DocumentRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateDocumentImage(
+        bitmap: Bitmap,
+        documentUid: String,
+        documentImageIndex: Int
+    ): DocumentResult<Nothing> {
+        return try {
+            val document = documentDao.getDocumentByUid(documentUid).first()
+                ?: return DocumentResult.Error(
+                    message = "Document not found",
+                    type = DocumentErrorType.DOCUMENT_NOT_FOUND
+                )
+            val documentResult = documentManager.updateDocumentImage(
+                bitmap = bitmap,
+                documentName = document.documentEntity.name,
+                documentImageIndex = documentImageIndex
+            )
+            return when(documentResult){
+                is DocManagerResult.Error -> {
+                     DocumentResult.Error(
+                        message = documentResult.message,
+                        error = documentResult.error,
+                        type = when(documentResult.type){
+                            DocManagerErrorType.UNKNOWN -> DocumentErrorType.UNKNOWN
+                            else -> DocumentErrorType.INVALID_DOCUMENT
+                        }
+                    )
+                }
+                is DocManagerResult.Success -> {
+                    var scannedImageEntity = document.scannedImageEntities.getOrNull(documentImageIndex)
+                        ?: return DocumentResult.Error(
+                            message = "Scanned image not found",
+                            type = DocumentErrorType.INVALID_DOCUMENT
+                        )
+                    scannedImageEntity = scannedImageEntity.copy(
+                        width = bitmap.width,
+                        height = bitmap.height,
+                        size = documentResult.data.length(),
+                        date = System.currentTimeMillis(),
+                        uri = documentResult.data.toUri().toString(),
+                    )
+                    documentDao.updateDocumentImage(scannedImageEntity)
+                    val documentEntity = document.documentEntity.copy(
+                        dateModified = System.currentTimeMillis(),
+                    )
+                    documentDao.updateDocument(documentEntity)
+                    DocumentResult.Success()
+                }
+            }
+        } catch (e: Exception) {
+            Timber.e(e)
+            DocumentResult.Error(
+                message = when(e){
+                    is SQLException -> "Error in database operation"
+                    else -> "Failed to update document image"
+                },
+                error = e,
+                type = when(e){
+                    is SQLException -> DocumentErrorType.DB_EXCEPTION
+                    else -> DocumentErrorType.UNKNOWN
+                }
+            )
+        }
+    }
+
+
+    override suspend fun updatePdfDocument(pdf: File, document: Document): DocumentResult<Nothing> {
+        return try {
+            val documentManagerResult = documentManager.replacePdf(
+                documentName = document.name,
+                tempPdf = pdf,
+            )
+            when(documentManagerResult){
+                is DocManagerResult.Success -> {
+                    val documentEntity = document.toDocumentEntity().copy(
+                        dateModified = System.currentTimeMillis(),
+                        size = documentManagerResult.data.length(),
+                        uri = documentManagerResult.data.toUri().toString()
+                    )
+                    documentDao.updateDocument(documentEntity)
+                    DocumentResult.Success()
+                }
+                is DocManagerResult.Error -> {
+                    Timber.e(documentManagerResult.error)
+                    DocumentResult.Error(
+                        message = documentManagerResult.message,
+                        error = documentManagerResult.error,
+                        type = when(documentManagerResult.type){
+                            DocManagerErrorType.UNKNOWN -> DocumentErrorType.UNKNOWN
+                            else -> DocumentErrorType.INVALID_DOCUMENT
+                        }
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            Timber.e(e)
+            DocumentResult.Error(
+                message = when(e){
+                    is SQLException -> "Error in database operation"
+                    else -> "Failed to delete all documents"
+                },
+                error = e,
+                type = when(e){
+                    is SQLException -> DocumentErrorType.DB_EXCEPTION
+                    else -> DocumentErrorType.UNKNOWN
+                }
+            )
+        }
+    }
+
     override suspend fun deleteAllDocuments(): DocumentResult<Nothing> {
         return try {
             documentDao.deleteAllDocuments()
@@ -371,9 +478,7 @@ class DocumentRepositoryImpl @Inject constructor(
                         error = result.error,
                         type = when(result.type) {
                             DocManagerErrorType.UNKNOWN -> DocumentErrorType.UNKNOWN
-                            DocManagerErrorType.IO_EXCEPTION -> DocumentErrorType.INVALID_DOCUMENT
-                            DocManagerErrorType.FILE_NOT_CREATED -> DocumentErrorType.INVALID_DOCUMENT
-                            DocManagerErrorType.INVALID_EXTENSION -> DocumentErrorType.INVALID_DOCUMENT
+                            else -> DocumentErrorType.INVALID_DOCUMENT
                         }
                     )
                 }

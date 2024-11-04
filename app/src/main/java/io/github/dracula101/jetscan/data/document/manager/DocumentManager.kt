@@ -31,6 +31,17 @@ interface DocumentManager {
         progressListener: (currentProgress: Float, totalProgress: Int) -> Unit,
     ): DocManagerResult<DocumentDirectory>
 
+    suspend fun updateDocumentImage(
+        bitmap: Bitmap,
+        documentName: String,
+        documentImageIndex: Int,
+    ): DocManagerResult<File>
+
+    suspend fun replacePdf(
+        tempPdf: File,
+        documentName: String,
+    ): DocManagerResult<File>
+
     suspend fun addExtraDocument(
         file: File,
         fileName: String,

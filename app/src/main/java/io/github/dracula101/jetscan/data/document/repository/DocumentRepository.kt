@@ -5,6 +5,7 @@ import android.net.Uri
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.models.doc.DocumentFolder
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
+import io.github.dracula101.jetscan.data.document.models.image.ScannedImage
 import io.github.dracula101.jetscan.data.document.repository.models.DocumentResult
 import io.github.dracula101.pdf.models.PdfOptions
 import kotlinx.coroutines.flow.Flow
@@ -48,6 +49,15 @@ interface DocumentRepository {
 
     // ================= Update Documents =================
     suspend fun updateDocument(document: Document): DocumentResult<Nothing>
+    suspend fun updateDocumentImage(
+        bitmap: Bitmap,
+        documentUid: String,
+        documentImageIndex: Int,
+    ): DocumentResult<Nothing>
+    suspend fun updatePdfDocument(
+        pdf: File,
+        document: Document
+    ): DocumentResult<Nothing>
 
     // ================= Delete Documents =================
     suspend fun deleteAllDocuments(): DocumentResult<Nothing>

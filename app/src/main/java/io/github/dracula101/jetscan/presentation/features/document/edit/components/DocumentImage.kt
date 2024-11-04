@@ -9,10 +9,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import me.saket.telephoto.zoomable.coil.ZoomableAsyncImage
 import me.saket.telephoto.zoomable.rememberZoomableImageState
+import me.saket.telephoto.zoomable.rememberZoomableState
 import timber.log.Timber
 
 
@@ -20,6 +22,7 @@ import timber.log.Timber
 fun DocumentImage(
     uri: Uri,
     modifier: Modifier = Modifier,
+    canZoom: Boolean = true,
     onZoomImage: (isZoomed: Boolean) -> Unit = {}
 ) {
     val zoomState = rememberZoomableImageState()
@@ -36,16 +39,29 @@ fun DocumentImage(
                 zoomed.value = zoomedScale > 1.0f
             }
     }
-    ZoomableAsyncImage(
-        model = ImageRequest.Builder(LocalContext.current)
-            .data(uri)
-            .bitmapConfig(Bitmap.Config.ARGB_8888)
-            .memoryCachePolicy(CachePolicy.ENABLED)
-            .diskCachePolicy(CachePolicy.ENABLED)
-            .build(),
-        state = zoomState,
-        contentDescription = null,
-        modifier = modifier
-    )
+    if (canZoom){
+        ZoomableAsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(uri)
+                .bitmapConfig(Bitmap.Config.ARGB_8888)
+                .memoryCachePolicy(CachePolicy.ENABLED)
+                .diskCachePolicy(CachePolicy.ENABLED)
+                .build(),
+            state = zoomState,
+            contentDescription = null,
+            modifier = modifier
+        )
+    } else {
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(uri)
+                .bitmapConfig(Bitmap.Config.ARGB_8888)
+                .memoryCachePolicy(CachePolicy.ENABLED)
+                .diskCachePolicy(CachePolicy.ENABLED)
+                .build(),
+            contentDescription = null,
+            modifier = modifier
+        )
+    }
 }
 

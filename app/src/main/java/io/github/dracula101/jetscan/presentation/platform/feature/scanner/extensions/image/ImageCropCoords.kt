@@ -63,6 +63,22 @@ data class ImageCropCoords(
             )
         }
 
+        fun fromSize(size: Size): ImageCropCoords {
+            val outerSpacingRatio = 0.90
+            val width = size.width
+            val height = size.height
+            val outerSpacingHeight = height * outerSpacingRatio
+            val outerSpacingWidth = width * outerSpacingRatio
+            val innerSpacingHeight = height * (1 - outerSpacingRatio)
+            val innerSpacingWidth = width * (1 - outerSpacingRatio)
+            return ImageCropCoords(
+                CPoint(innerSpacingWidth, innerSpacingHeight),
+                CPoint(outerSpacingWidth, innerSpacingHeight),
+                CPoint(innerSpacingWidth, outerSpacingHeight),
+                CPoint(outerSpacingWidth, outerSpacingHeight)
+            )
+        }
+
         fun fromBitmap(bitmap: Bitmap): ImageCropCoords {
             val outerSpacingRatio = 0.90
             val width = bitmap.width

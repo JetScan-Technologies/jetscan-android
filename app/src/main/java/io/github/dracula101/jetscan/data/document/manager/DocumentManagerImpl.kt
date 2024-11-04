@@ -269,6 +269,67 @@ class DocumentManagerImpl(
         }
     }
 
+    override suspend fun updateDocumentImage(
+        bitmap: Bitmap,
+        documentName: String,
+        documentImageIndex: Int
+    ): DocManagerResult<File> {
+        return try {
+            val directoryName = hashEncoder(documentName)
+            val mainFileDirectory = File(scannedDirectory, directoryName)
+            if (mainFileDirectory.exists().not()) {
+                return DocManagerResult.Error(
+                    message = "Document not found",
+                    type = DocManagerErrorType.FILE_NOT_UPDATED
+                )
+            }
+            val scannedImageDirectory = File(mainFileDirectory, SCANNED_DOCUMENTS_SCANNED_IMAGES_FOLDER)
+            val scannedImage = File(
+                scannedImageDirectory,
+                "${SCANNED_DOCUMENT_SCANNED_IMAGE_PREFIX}_${documentImageIndex}.$SCANNED_DOCUMENT_IMAGE_EXTENSION"
+            )
+            val outputStream = ByteArrayOutputStream()
+            bitmap.compress(CompressFormat.JPEG, 100, outputStream)
+            val byteArray = outputStream.toByteArray()
+            scannedImage.writeBytes(byteArray)
+            DocManagerResult.Success(scannedImage)
+        } catch (error: Exception) {
+            Timber.e(error)
+            DocManagerResult.Error(
+                message = "Error updating document",
+                error = error,
+                type = DocManagerErrorType.FILE_NOT_UPDATED
+            )
+        }
+    }
+
+    override suspend fun replacePdf(tempPdf: File, documentName: String): DocManagerResult<File> {
+        return try {
+            val fileDirectoryName = hashEncoder(documentName)
+            val mainFileDirectory = File(scannedDirectory, fileDirectoryName)
+            if (mainFileDirectory.exists().not()) {
+                DocManagerResult.Error(
+                    message = "Document not found",
+                    type = DocManagerErrorType.FILE_NOT_UPDATED
+                )
+            }
+            val originalFile = File(mainFileDirectory, "$documentName.pdf")
+            if (originalFile.exists()) {
+                originalFile.delete()
+            }
+            tempPdf.copyTo(originalFile)
+            DocManagerResult.Success(originalFile)
+        } catch (error: Exception) {
+            Timber.e(error)
+            DocManagerResult.Error(
+                message = "Error updating document",
+                error = error,
+                type = DocManagerErrorType.FILE_NOT_UPDATED
+            )
+        }
+
+    }
+
     override fun deleteDocument(fileName: String): DocManagerResult<Boolean> {
         val removedFileName = hashEncoder(fileName)
         val file = File(scannedDirectory, removedFileName)

@@ -77,21 +77,36 @@ data class HolderVisibility(
 
 fun DrawScope.toCropOverlay(
     imageCropCoords: ImageCropCoords,
+    primaryColor: Color? = null,
     color: Color = Color.White,
     strokeWidth: Float = 4f,
     cornerRadius: Float = 30f,
     cornerPointVisibility: CornerPointVisibility = CornerPointVisibility(),
     holderVisibility: HolderVisibility = HolderVisibility()
 ) {
+
+    val outline = Path().apply {
+        moveTo(imageCropCoords.topLeft.x.toFloat(), imageCropCoords.topLeft.y.toFloat())
+        lineTo(imageCropCoords.topRight.x.toFloat(), imageCropCoords.topRight.y.toFloat())
+        lineTo(imageCropCoords.bottomRight.x.toFloat(), imageCropCoords.bottomRight.y.toFloat())
+        lineTo(imageCropCoords.bottomLeft.x.toFloat(), imageCropCoords.bottomLeft.y.toFloat())
+        close()
+    }
+    drawPath(
+        path = outline,
+        color = primaryColor?:color,
+        style = Stroke(strokeWidth),
+    )
+
     if (cornerPointVisibility.topLeft) {
         drawCircle(
-            color = color,
+            color = primaryColor?: color,
             center = Offset(imageCropCoords.topLeft.x.toFloat(), imageCropCoords.topLeft.y.toFloat()),
             style = Stroke(strokeWidth),
             radius = cornerRadius
         )
         drawCircle(
-            color = color,
+            color = primaryColor?: color,
             center = Offset(imageCropCoords.topLeft.x.toFloat(), imageCropCoords.topLeft.y.toFloat()),
             style = Fill,
             radius = cornerRadius,
@@ -100,13 +115,13 @@ fun DrawScope.toCropOverlay(
     }
     if (cornerPointVisibility.topRight) {
         drawCircle(
-            color = color,
+            color = primaryColor?:color,
             center = Offset(imageCropCoords.topRight.x.toFloat(), imageCropCoords.topRight.y.toFloat()),
             style = Stroke(strokeWidth),
             radius = cornerRadius
         )
         drawCircle(
-            color = color,
+            color = primaryColor?:color,
             center = Offset(imageCropCoords.topRight.x.toFloat(), imageCropCoords.topRight.y.toFloat()),
             style = Fill,
             radius = cornerRadius,
@@ -115,13 +130,13 @@ fun DrawScope.toCropOverlay(
     }
     if (cornerPointVisibility.bottomLeft) {
         drawCircle(
-            color = color,
+            color = primaryColor?:color,
             center = Offset(imageCropCoords.bottomLeft.x.toFloat(), imageCropCoords.bottomLeft.y.toFloat()),
             style = Stroke(strokeWidth),
             radius = cornerRadius
         )
         drawCircle(
-            color = color,
+            color = primaryColor?:color,
             center = Offset(imageCropCoords.bottomLeft.x.toFloat(), imageCropCoords.bottomLeft.y.toFloat()),
             style = Fill,
             radius = cornerRadius,
@@ -130,13 +145,13 @@ fun DrawScope.toCropOverlay(
     }
     if (cornerPointVisibility.bottomRight) {
         drawCircle(
-            color = color,
+            color = primaryColor?:color,
             center = Offset(imageCropCoords.bottomRight.x.toFloat(), imageCropCoords.bottomRight.y.toFloat()),
             style = Stroke(strokeWidth),
             radius = cornerRadius
         )
         drawCircle(
-            color = color,
+            color = primaryColor?:color,
             center = Offset(imageCropCoords.bottomRight.x.toFloat(), imageCropCoords.bottomRight.y.toFloat()),
             style = Fill,
             radius = cornerRadius,
@@ -172,6 +187,16 @@ fun DrawScope.toCropOverlay(
                 cornerRadius = CornerRadius(holderCornerRadius),
                 style = Fill,
             )
+            drawRoundRect(
+                color = primaryColor?:color,
+                topLeft = Offset(
+                    x = topCenter.x - holderWidth / 2,
+                    y = topCenter.y - holderHeight / 2
+                ),
+                size = androidx.compose.ui.geometry.Size(holderWidth, holderHeight),
+                cornerRadius = CornerRadius(holderCornerRadius),
+                style = Stroke(strokeWidth),
+            )
         }
     }
 
@@ -199,6 +224,16 @@ fun DrawScope.toCropOverlay(
                 size = androidx.compose.ui.geometry.Size(holderHeight, holderWidth),
                 cornerRadius = CornerRadius(holderCornerRadius),
                 style = Fill,
+            )
+            drawRoundRect(
+                color = primaryColor?:color,
+                topLeft = Offset(
+                    x = rightCenter.x - holderHeight / 2,
+                    y = rightCenter.y - holderWidth / 2
+                ),
+                size = androidx.compose.ui.geometry.Size(holderHeight, holderWidth),
+                cornerRadius = CornerRadius(holderCornerRadius),
+                style = Stroke(strokeWidth),
             )
         }
     }
@@ -228,6 +263,16 @@ fun DrawScope.toCropOverlay(
                 cornerRadius = CornerRadius(holderCornerRadius),
                 style = Fill,
             )
+            drawRoundRect(
+                color = primaryColor?:color,
+                topLeft = Offset(
+                    x = bottomCenter.x - holderWidth / 2,
+                    y = bottomCenter.y - holderHeight / 2
+                ),
+                size = androidx.compose.ui.geometry.Size(holderWidth, holderHeight),
+                cornerRadius = CornerRadius(holderCornerRadius),
+                style = Stroke(strokeWidth),
+            )
         }
     }
 
@@ -255,22 +300,20 @@ fun DrawScope.toCropOverlay(
                 cornerRadius = CornerRadius(holderCornerRadius),
                 style = Fill,
             )
+            drawRoundRect(
+                color = primaryColor?:color,
+                topLeft = Offset(
+                    x = leftCenter.x - holderHeight / 2,
+                    y = leftCenter.y - holderWidth / 2
+                ),
+                size = androidx.compose.ui.geometry.Size(holderHeight, holderWidth),
+                cornerRadius = CornerRadius(holderCornerRadius),
+                style = Stroke(strokeWidth),
+            )
         }
     }
 
 
-    val outline = Path().apply {
-        moveTo(imageCropCoords.topLeft.x.toFloat(), imageCropCoords.topLeft.y.toFloat())
-        lineTo(imageCropCoords.topRight.x.toFloat(), imageCropCoords.topRight.y.toFloat())
-        lineTo(imageCropCoords.bottomRight.x.toFloat(), imageCropCoords.bottomRight.y.toFloat())
-        lineTo(imageCropCoords.bottomLeft.x.toFloat(), imageCropCoords.bottomLeft.y.toFloat())
-        close()
-    }
-    drawPath(
-        path = outline,
-        color = color,
-        style = Stroke(strokeWidth),
-    )
 }
 
 @Composable
