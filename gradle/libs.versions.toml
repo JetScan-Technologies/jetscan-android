@@ -4,8 +4,8 @@
 compileSdk = "34"
 minSdk = "23"
 targetSdk = "31"
-versionCode = "3"
-versionName = "1.1.1"
+versionCode = "4"
+versionName = "1.1.2"
 kotlinCompilerVersion = "1.5.1"
 
 # DEPENDENCIES VERSIONS
