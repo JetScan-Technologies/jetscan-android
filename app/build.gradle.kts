@@ -281,21 +281,19 @@ fun buildConfigSecrets(config: ApplicationDefaultConfig) {
     config.buildConfigField("String","GCP_DOCUMENT_AI_ENDPOINT",properties["GCP_DOCUMENT_AI_ENDPOINT"].toString())
     config.buildConfigField("String", "JETSCAN_BACKEND_URL", properties["JETSCAN_BACKEND_URL"].toString())
 
-    serviceAccountJsonObject.let { json ->
-        config.buildConfigField("String", "SERVICE_ACCOUNT_TYPE", "\"${json?.get("type")}\"")
-        config.buildConfigField("String", "SERVICE_ACCOUNT_PROJECT_ID", "\"${json?.get("project_id")}\"")
-        config.buildConfigField("String", "SERVICE_ACCOUNT_PRIVATE_KEY_ID", "\"${json?.get("private_key_id")}\"")
-        config.buildConfigField("String", "SERVICE_ACCOUNT_CLIENT_EMAIL", "\"${json?.get("client_email")}\"")
-        config.buildConfigField("String", "SERVICE_ACCOUNT_CLIENT_ID", "\"${json?.get("client_id")}\"")
-        config.buildConfigField("String", "SERVICE_ACCOUNT_AUTH_URI", "\"${json?.get("auth_uri")}\"")
-        config.buildConfigField("String", "SERVICE_ACCOUNT_TOKEN_URI", "\"${json?.get("token_uri")}\"")
-        config.buildConfigField("String", "SERVICE_ACCOUNT_AUTH_PROVIDER_X509_CERT_URL", "\"${json?.get("auth_provider_x509_cert_url")}\"")
-        config.buildConfigField("String", "SERVICE_ACCOUNT_CLIENT_X509_CERT_URL", "\"${json?.get("client_x509_cert_url")}\"")
+    config.buildConfigField("String", "SERVICE_ACCOUNT_TYPE", "\"${json?.get("type")}\"")
+    config.buildConfigField("String", "SERVICE_ACCOUNT_PROJECT_ID", "\"${json?.get("project_id")}\"")
+    config.buildConfigField("String", "SERVICE_ACCOUNT_PRIVATE_KEY_ID", "\"${json?.get("private_key_id")}\"")
+    config.buildConfigField("String", "SERVICE_ACCOUNT_CLIENT_EMAIL", "\"${json?.get("client_email")}\"")
+    config.buildConfigField("String", "SERVICE_ACCOUNT_CLIENT_ID", "\"${json?.get("client_id")}\"")
+    config.buildConfigField("String", "SERVICE_ACCOUNT_AUTH_URI", "\"${json?.get("auth_uri")}\"")
+    config.buildConfigField("String", "SERVICE_ACCOUNT_TOKEN_URI", "\"${json?.get("token_uri")}\"")
+    config.buildConfigField("String", "SERVICE_ACCOUNT_AUTH_PROVIDER_X509_CERT_URL", "\"${json?.get("auth_provider_x509_cert_url")}\"")
+    config.buildConfigField("String", "SERVICE_ACCOUNT_CLIENT_X509_CERT_URL", "\"${json?.get("client_x509_cert_url")}\"")
 
 
-        val privateKey = json?.get("private_key").toString()
-        val base64Encoder = Base64.getEncoder()
-        val privateKeyBase64Encoded = base64Encoder.encodeToString(privateKey.toByteArray())
-        config.buildConfigField("String", "SERVICE_ACCOUNT_PRIVATE_KEY_ID_BASE64_ENCODED", "\"$privateKeyBase64Encoded\"")
-    }
+    val privateKey = json?.get("private_key").toString()
+    val base64Encoder = Base64.getEncoder()
+    val privateKeyBase64Encoded = base64Encoder.encodeToString(privateKey.toByteArray())
+    config.buildConfigField("String", "SERVICE_ACCOUNT_PRIVATE_KEY_ID_BASE64_ENCODED", "\"$privateKeyBase64Encoded\"")
 }
