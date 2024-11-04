@@ -24,6 +24,7 @@ import androidx.compose.material.icons.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.CropOriginal
 import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.FileOpen
+import androidx.compose.material.icons.rounded.GridOn
 import androidx.compose.material.icons.rounded.HighQuality
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
@@ -31,7 +32,9 @@ import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Margin
 import androidx.compose.material.icons.rounded.PhotoSizeSelectLarge
 import androidx.compose.material.icons.rounded.PictureAsPdf
+import androidx.compose.material.icons.rounded.SpeakerPhone
 import androidx.compose.material.icons.rounded.SubdirectoryArrowRight
+import androidx.compose.material.icons.rounded.Vibration
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -475,5 +478,62 @@ fun ColumnScope.CameraConfigScreen(
     state: DocumentSettingsState,
     onAction: (DocumentSettingsAction) -> Unit
 ) {
+
+    SettingSwitchTile(
+        title = "Best Camera Quality",
+        description = "Prioritize camera quality over performance",
+        leading = {
+            Icon(
+                imageVector = Icons.Rounded.HighQuality,
+                contentDescription = "Quality"
+            )
+        },
+        checked = state.prioritizeCameraQuality,
+        onCheckedChange = {
+            onAction(DocumentSettingsAction.Ui.CameraConfig.ChangePrioritizeCameraQuality)
+        }
+    )
+    SettingSwitchTile(
+        title = "Grid Status",
+        description = "Show grid on the camera preview",
+        leading = {
+            Icon(
+                imageVector = Icons.Rounded.GridOn,
+                contentDescription = "Grid"
+            )
+        },
+        checked = state.cameraGridStatus,
+        onCheckedChange = {
+            onAction(DocumentSettingsAction.Ui.CameraConfig.ChangeCameraGridStatus)
+        }
+    )
+    SettingSwitchTile(
+        title = "Capture Sound",
+        description = "Play sound on capturing the image",
+        leading = {
+            Icon(
+                imageVector = Icons.Rounded.SpeakerPhone,
+                contentDescription = "Sound"
+            )
+        },
+        checked = state.cameraCaptureSound,
+        onCheckedChange = {
+            onAction(DocumentSettingsAction.Ui.CameraConfig.ChangeCameraCaptureSound)
+        }
+    )
+    SettingSwitchTile(
+        title = "Capture Vibration",
+        description = "Vibrate on capturing the image",
+        leading = {
+            Icon(
+                imageVector = Icons.Rounded.Vibration,
+                contentDescription = "Vibration"
+            )
+        },
+        checked = state.cameraCaptureVibration,
+        onCheckedChange = {
+            onAction(DocumentSettingsAction.Ui.CameraConfig.ChangeCameraCaptureVibration)
+        }
+    )
 
 }

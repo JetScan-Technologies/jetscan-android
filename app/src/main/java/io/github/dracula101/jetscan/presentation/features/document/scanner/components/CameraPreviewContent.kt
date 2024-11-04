@@ -34,6 +34,7 @@ fun CameraPreviewContent(
     gridStatus: Boolean,
     previewAspectRatio: CameraAspectRatio,
     modifier: Modifier = Modifier,
+    prioritizeCameraQuality: Boolean = true,
 ) {
     val density = LocalDensity.current.density
     BoxWithConstraints(
@@ -51,7 +52,8 @@ fun CameraPreviewContent(
             aspectRatio = previewAspectRatio.toAspectRatio(),
             modifier = Modifier
                 .width(maxWidth)
-                .aspectRatio(previewAspectRatio.toFloat())
+                .aspectRatio(previewAspectRatio.toFloat()),
+            maxCameraQuality = prioritizeCameraQuality
         )
         AnimatedContent(
             targetState = gridStatus,

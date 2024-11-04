@@ -90,6 +90,26 @@ class DocumentSettingsViewModel @Inject constructor(
         configRepository.documentTimePatternStateFlow.onEach { timePattern ->
             mutableStateFlow.update { state.copy(documentTimePattern = timePattern) }
         }.launchIn(viewModelScope)
+
+        configRepository.prioritizeCameraQualityStateFlow.onEach { prioritizeCameraQuality ->
+            mutableStateFlow.update { state.copy(prioritizeCameraQuality = prioritizeCameraQuality) }
+        }.launchIn(viewModelScope)
+
+        configRepository.cameraGridStatusStateFlow.onEach { cameraGridStatus ->
+            mutableStateFlow.update { state.copy(cameraGridStatus = cameraGridStatus) }
+        }.launchIn(viewModelScope)
+
+        configRepository.cameraCaptureSoundStatusStateFlow.onEach { cameraCaptureSound ->
+            mutableStateFlow.update { state.copy(cameraCaptureSound = cameraCaptureSound) }
+        }.launchIn(viewModelScope)
+
+        configRepository.cameraCaptureVibrationStatusStateFlow.onEach { cameraCaptureVibration ->
+            mutableStateFlow.update { state.copy(cameraCaptureVibration = cameraCaptureVibration) }
+        }.launchIn(viewModelScope)
+
+        configRepository.cameraCaptureSoundStatusStateFlow.onEach { cameraCaptureSound ->
+            mutableStateFlow.update { state.copy(cameraCaptureSound = cameraCaptureSound) }
+        }.launchIn(viewModelScope)
     }
 
     override fun handleAction(action: DocumentSettingsAction) {
@@ -111,6 +131,11 @@ class DocumentSettingsViewModel @Inject constructor(
             is DocumentSettingsAction.Ui.DocConfig.ChangeDocumentSuffix -> changeDocumentSuffix(action.suffix)
             is DocumentSettingsAction.Ui.DocConfig.ChangeDocumentDatePattern -> changeDocumentDatePattern(action.datePattern)
             is DocumentSettingsAction.Ui.DocConfig.ChangeDocumentTimePattern -> changeDocumentTimePattern(action.timePattern)
+
+            is DocumentSettingsAction.Ui.CameraConfig.ChangePrioritizeCameraQuality -> changePrioritizeCameraQuality()
+            is DocumentSettingsAction.Ui.CameraConfig.ChangeCameraGridStatus -> changeCameraGridStatus()
+            is DocumentSettingsAction.Ui.CameraConfig.ChangeCameraCaptureSound -> changeCameraCaptureSound()
+            is DocumentSettingsAction.Ui.CameraConfig.ChangeCameraCaptureVibration -> changeCameraCaptureVibration()
         }
     }
 
@@ -144,6 +169,14 @@ class DocumentSettingsViewModel @Inject constructor(
 
     private fun changeAvoidPasswordProtectionFiles() = configRepository.changeAvoidPasswordProtectionFiles(!state.avoidPasswordProtectionFiles)
 
+    private fun changePrioritizeCameraQuality() = configRepository.changePrioritizeCameraQuality(!state.prioritizeCameraQuality)
+
+    private fun changeCameraGridStatus() = configRepository.changeCameraGridStatus(!state.cameraGridStatus)
+
+    private fun changeCameraCaptureSound() = configRepository.changeCameraCaptureSoundStatus(!state.cameraCaptureSound)
+
+    private fun changeCameraCaptureVibration() = configRepository.changeCameraCaptureVibrationStatus(!state.cameraCaptureVibration)
+
     override fun onCleared() {
         super.onCleared()
         savedStateHandle[DOCUMENT_SETTINGS_STATE] = state
@@ -169,7 +202,12 @@ data class DocumentSettingsState(
     val documentHasDate: Boolean = false,
     val documentHasTime: Boolean = false,
     val documentDatePattern: DocumentDatePattern = DocumentDatePattern.MEDIUM_DATE,
-    val documentTimePattern: DocumentTimePattern = DocumentTimePattern.DEFAULT
+    val documentTimePattern: DocumentTimePattern = DocumentTimePattern.DEFAULT,
+
+    val prioritizeCameraQuality: Boolean = true,
+    val cameraGridStatus: Boolean = false,
+    val cameraCaptureSound: Boolean = false,
+    val cameraCaptureVibration: Boolean = true,
 ) : Parcelable {
 
     sealed class DialogState : Parcelable {}
@@ -221,6 +259,13 @@ sealed class DocumentSettingsAction {
             @Parcelize class ChangeDocumentTimePattern(
                 val timePattern: DocumentTimePattern
             ) : DocConfig()
+        }
+
+        sealed class CameraConfig: Ui() {
+            @Parcelize object ChangePrioritizeCameraQuality : CameraConfig()
+            @Parcelize object ChangeCameraGridStatus : CameraConfig()
+            @Parcelize object ChangeCameraCaptureSound : CameraConfig()
+            @Parcelize object ChangeCameraCaptureVibration : CameraConfig()
         }
 
     }

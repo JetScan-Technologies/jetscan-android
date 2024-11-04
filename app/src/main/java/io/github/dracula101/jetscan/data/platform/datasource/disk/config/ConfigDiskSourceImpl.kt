@@ -38,6 +38,11 @@ class ConfigDiskSourceImpl(
     private val documentDatePatternFlow = bufferedMutableSharedFlow<DocumentDatePattern?>(replay = 1)
     private val documentTimePatternFlow = bufferedMutableSharedFlow<DocumentTimePattern?>(replay = 1)
 
+    private val prioritizeCameraQualityFlow = bufferedMutableSharedFlow<Boolean?>(replay = 1)
+    private val cameraGridStatusFlow = bufferedMutableSharedFlow<Boolean?>(replay = 1)
+    private val cameraCaptureSoundStatusFlow = bufferedMutableSharedFlow<Boolean?>(replay = 1)
+    private val cameraCaptureVibrationStatusFlow = bufferedMutableSharedFlow<Boolean?>(replay = 1)
+
     override var onboardingComplete: Boolean
         get() = getBoolean(key = ONBOARDING_COMPLETE_KEY) ?: false
         set(value) {
@@ -234,6 +239,46 @@ class ConfigDiskSourceImpl(
         get() = documentTimePatternFlow.onSubscription { emit(documentTimePattern) }
 
 
+    override var prioritizeCameraQuality: Boolean?
+        get() = getBoolean(key = PRIORITIZE_CAMERA_QUALITY_KEY)
+        set(value) {
+            putBoolean(key = PRIORITIZE_CAMERA_QUALITY_KEY, value)
+            prioritizeCameraQualityFlow.tryEmit(value)
+        }
+
+    override val prioritizeCameraQualityStateFlow: Flow<Boolean?>
+        get() = prioritizeCameraQualityFlow.onSubscription { emit(prioritizeCameraQuality) }
+
+    override var cameraGridStatus: Boolean?
+        get() = getBoolean(key = CAMERA_GRID_STATUS)
+        set(value) {
+            putBoolean(key = CAMERA_GRID_STATUS, value)
+            cameraGridStatusFlow.tryEmit(value)
+        }
+
+    override val cameraGridStatusStateFlow: Flow<Boolean?>
+        get() = cameraGridStatusFlow.onSubscription { emit(cameraGridStatus) }
+
+    override var cameraCaptureSoundStatus: Boolean?
+        get() = getBoolean(key = CAMERA_CAPTURE_SOUND_STATUS)
+        set(value) {
+            putBoolean(key = CAMERA_CAPTURE_SOUND_STATUS, value)
+            cameraCaptureSoundStatusFlow.tryEmit(value)
+        }
+
+    override val cameraCaptureSoundStatusStateFlow: Flow<Boolean?>
+        get() = cameraCaptureSoundStatusFlow.onSubscription { emit(cameraCaptureSoundStatus) }
+
+    override var cameraCaptureVibrationStatus: Boolean?
+        get() = getBoolean(key = CAMERA_CAPTURE_VIBRATION_STATUS)
+        set(value) {
+            putBoolean(key = CAMERA_CAPTURE_VIBRATION_STATUS, value)
+            cameraCaptureVibrationStatusFlow.tryEmit(value)
+        }
+
+    override val cameraCaptureVibrationStatusStateFlow: Flow<Boolean?>
+        get() = cameraCaptureVibrationStatusFlow.onSubscription { emit(cameraCaptureVibrationStatus) }
+
     override fun clearData() {
         removeWithPrefix(prefix = IMPORT_EXPORT_QUALITY_KEY)
         removeWithPrefix(prefix = ALLOW_IMAGE_FOR_IMPORT_KEY)
@@ -247,6 +292,8 @@ class ConfigDiskSourceImpl(
         removeWithPrefix(prefix = DOCUMENT_HAS_TIME_KEY)
         removeWithPrefix(prefix = DOCUMENT_DATE_PATTERN_KEY)
         removeWithPrefix(prefix = DOCUMENT_TIME_PATTERN_KEY)
+        removeWithPrefix(prefix = PRIORITIZE_CAMERA_QUALITY_KEY)
+        removeWithPrefix(prefix = CAMERA_GRID_STATUS)
     }
 
     companion object {
@@ -271,5 +318,10 @@ class ConfigDiskSourceImpl(
         private const val DOCUMENT_HAS_TIME_KEY = "document_has_time"
         private const val DOCUMENT_DATE_PATTERN_KEY = "document_date_pattern"
         private const val DOCUMENT_TIME_PATTERN_KEY = "document_time_pattern"
+
+        private const val PRIORITIZE_CAMERA_QUALITY_KEY = "prioritize_camera_quality"
+        private const val CAMERA_GRID_STATUS = "camera_grid_status"
+        private const val CAMERA_CAPTURE_SOUND_STATUS = "camera_sound_status"
+        private const val CAMERA_CAPTURE_VIBRATION_STATUS = "camera_vibration_status"
     }
 }

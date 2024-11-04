@@ -63,6 +63,18 @@ interface ConfigDiskSource {
     var documentTimePattern: DocumentTimePattern?
     val documentTimePatternStateFlow: Flow<DocumentTimePattern?>
 
+    var prioritizeCameraQuality: Boolean?
+    val prioritizeCameraQualityStateFlow: Flow<Boolean?>
+
+    var cameraGridStatus: Boolean?
+    val cameraGridStatusStateFlow: Flow<Boolean?>
+
+    var cameraCaptureSoundStatus: Boolean?
+    val cameraCaptureSoundStatusStateFlow: Flow<Boolean?>
+
+    var cameraCaptureVibrationStatus: Boolean?
+    val cameraCaptureVibrationStatusStateFlow: Flow<Boolean?>
+
     fun clearData()
 
 }

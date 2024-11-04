@@ -4,6 +4,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.hardware.Sensor
 import android.hardware.SensorManager
+import android.media.AudioManager
+import android.media.MediaActionSound
 import android.net.Uri
 import android.os.Parcelable
 import androidx.annotation.FloatRange
@@ -72,6 +74,8 @@ class ScannerViewModel @Inject constructor(
 ) : BaseViewModel<ScannerState, Unit, ScannerAction>(
     initialState = savedStateHandle[SCANNER_STATE] ?: ScannerState()
 ) {
+    private val mediaSound = MediaActionSound()
+
     // ================== Camera Controller StateFlow ======================
     private val _cameraController = MutableStateFlow<CameraController?>(null)
     private val cameraController: CameraController?
@@ -111,6 +115,12 @@ class ScannerViewModel @Inject constructor(
 
     init {
         sensorManager.registerListener(rotationListener, rotationSensor, SensorManager.SENSOR_DELAY_NORMAL)
+        mutableStateFlow.update {
+            it.copy(
+                prioritizeCameraQuality = configRepository.prioritizeCameraQuality,
+                gridMode = if (configRepository.cameraGridStatus) GridMode.ON else GridMode.OFF,
+            )
+        }
     }
 
 
@@ -155,12 +165,22 @@ class ScannerViewModel @Inject constructor(
     }
 
     private fun handleCapturePhoto(cropCoords: ImageCropCoords?) {
-        mutableStateFlow.update { it.copy(isCapturingPhoto = true) }
+        mutableStateFlow.update { it.copy(isCapturingPhoto = true, vibrateWhenCapture = false) }
+        try {
+            if (configRepository.cameraCaptureSoundStatus) {
+                mediaSound.play(MediaActionSound.SHUTTER_CLICK)
+            }
+        } catch (e: Exception) { Timber.e(e) }
         cameraController?.takePicture(
             mainExecutor,
             object : ImageCapture.OnImageCapturedCallback() {
                 override fun onCaptureSuccess(image: ImageProxy) {
                     super.onCaptureSuccess(image)
+                    if (configRepository.cameraCaptureVibrationStatus) {
+                        mutableStateFlow.update {
+                            it.copy(vibrateWhenCapture = true)
+                        }
+                    }
                     onPhotoClickedSuccess(image, cropCoords)
                 }
 
@@ -769,6 +789,8 @@ data class ScannerState(
     val snackbarAlert: String? = null,
     val cameraModeChangedAlert: String? = null,
     val isCapturingPhoto: Boolean = false,
+    val prioritizeCameraQuality: Boolean = false,
+    val vibrateWhenCapture: Boolean = false,
     val dialogState: ScannerDialogState? = null,
     val snackbarState: SnackbarState? = null,
     val retakeDocumentIndex: Int? = null,

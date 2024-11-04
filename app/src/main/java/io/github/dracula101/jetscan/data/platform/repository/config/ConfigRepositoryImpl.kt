@@ -12,7 +12,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import java.util.Calendar
 import java.util.Date
@@ -410,6 +409,86 @@ class ConfigRepositoryImpl(
         return "$prefix ${if (hasDate) dateStr else ""} ${if (hasTime) timeStr else ""}${if (suffix.isNotEmpty()) " $suffix" else ""}"
     }
 
+    override var prioritizeCameraQuality: Boolean
+        get() = configDiskSource.prioritizeCameraQuality ?: DEFAULT_CAMERA_PRIORITIZE_QUALITY
+        set(value) {
+            configDiskSource.prioritizeCameraQuality = value
+        }
+
+    override val prioritizeCameraQualityStateFlow: StateFlow<Boolean>
+        get() = configDiskSource
+            .prioritizeCameraQualityStateFlow
+            .map { it ?: DEFAULT_CAMERA_PRIORITIZE_QUALITY }
+            .stateIn(
+                scope = CoroutineScope(Dispatchers.Unconfined),
+                started = SharingStarted.Eagerly,
+                initialValue = configDiskSource.prioritizeCameraQuality ?: DEFAULT_CAMERA_PRIORITIZE_QUALITY,
+            )
+
+    override fun changePrioritizeCameraQuality(prioritizeCameraQuality: Boolean) {
+        configDiskSource.prioritizeCameraQuality = prioritizeCameraQuality
+    }
+
+    override var cameraGridStatus: Boolean
+        get() = configDiskSource.cameraGridStatus ?: DEFAULT_CAMERA_GRID_STATUS
+        set(value) {
+            configDiskSource.cameraGridStatus = value
+        }
+
+    override val cameraGridStatusStateFlow: StateFlow<Boolean>
+        get() = configDiskSource
+            .cameraGridStatusStateFlow
+            .map { it ?: DEFAULT_CAMERA_GRID_STATUS }
+            .stateIn(
+                scope = CoroutineScope(Dispatchers.Unconfined),
+                started = SharingStarted.Eagerly,
+                initialValue = configDiskSource.cameraGridStatus ?: DEFAULT_CAMERA_GRID_STATUS,
+            )
+
+    override fun changeCameraGridStatus(cameraGridStatus: Boolean) {
+        configDiskSource.cameraGridStatus = cameraGridStatus
+    }
+
+    override var cameraCaptureSoundStatus: Boolean
+        get() = configDiskSource.cameraCaptureSoundStatus ?: DEFAULT_CAMERA_CAPTURE_SOUND_STATUS
+        set(value) {
+            configDiskSource.cameraCaptureSoundStatus = value
+        }
+
+    override val cameraCaptureSoundStatusStateFlow: StateFlow<Boolean>
+        get() = configDiskSource
+            .cameraCaptureSoundStatusStateFlow
+            .map { it ?: DEFAULT_CAMERA_CAPTURE_SOUND_STATUS }
+            .stateIn(
+                scope = CoroutineScope(Dispatchers.Unconfined),
+                started = SharingStarted.Eagerly,
+                initialValue = configDiskSource.cameraCaptureSoundStatus ?: DEFAULT_CAMERA_CAPTURE_SOUND_STATUS,
+            )
+
+    override fun changeCameraCaptureSoundStatus(cameraCaptureSoundStatus: Boolean) {
+        configDiskSource.cameraCaptureSoundStatus = cameraCaptureSoundStatus
+    }
+
+    override var cameraCaptureVibrationStatus: Boolean
+        get() = configDiskSource.cameraCaptureVibrationStatus ?: DEFAULT_CAMERA_CAPTURE_VIBRATION_STATUS
+        set(value) {
+            configDiskSource.cameraCaptureVibrationStatus = value
+        }
+
+    override val cameraCaptureVibrationStatusStateFlow: StateFlow<Boolean>
+        get() = configDiskSource
+            .cameraCaptureVibrationStatusStateFlow
+            .map { it ?: DEFAULT_CAMERA_CAPTURE_VIBRATION_STATUS }
+            .stateIn(
+                scope = CoroutineScope(Dispatchers.Unconfined),
+                started = SharingStarted.Eagerly,
+                initialValue = configDiskSource.cameraCaptureVibrationStatus ?: DEFAULT_CAMERA_CAPTURE_VIBRATION_STATUS,
+            )
+
+    override fun changeCameraCaptureVibrationStatus(cameraCaptureVibrationStatus: Boolean) {
+        configDiskSource.cameraCaptureVibrationStatus = cameraCaptureVibrationStatus
+    }
+
     companion object {
         // Default Values
         val DEFAULT_IMPORT_EXPORT_QUALITY = ImageQuality.HIGH
@@ -428,5 +507,10 @@ class ConfigRepositoryImpl(
         const val DEFAULT_DOCUMENT_HAS_TIME = true
         val DEFAULT_DOCUMENT_DATE_PATTERN = DocumentDatePattern.MEDIUM_DATE
         val DEFAULT_DOCUMENT_TIME_PATTERN = DocumentTimePattern.DEFAULT
+
+        const val DEFAULT_CAMERA_PRIORITIZE_QUALITY = true
+        const val DEFAULT_CAMERA_GRID_STATUS = false
+        const val DEFAULT_CAMERA_CAPTURE_SOUND_STATUS = true
+        const val DEFAULT_CAMERA_CAPTURE_VIBRATION_STATUS = false
     }
 }

@@ -65,6 +65,7 @@ fun CameraPreview(
     imageAnalyzer: ImageAnalysis.Analyzer?,
     cameraViewModel: CameraViewModel = hiltViewModel(),
     aspectRatio: Int = AspectRatio.RATIO_4_3,
+    maxCameraQuality: Boolean = true,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -127,7 +128,7 @@ fun CameraPreview(
                     context = context,
                     lifecycleOwner = lifecycleOwner,
                     aspectRatio = aspectRatio,
-                    maximizeQuality = true,
+                    maximizeQuality = maxCameraQuality,
                     imageAnalyzer = imageAnalyzer
                 )
                 view.initializeCameraListeners(

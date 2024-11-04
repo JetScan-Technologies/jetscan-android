@@ -3,6 +3,7 @@ package io.github.dracula101.jetscan.data.platform.di
 import android.content.ContentResolver
 import android.content.Context
 import android.content.pm.PackageManager
+import android.media.AudioManager
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
@@ -43,6 +44,14 @@ object AppModule {
     fun providePackageManager(@ApplicationContext context: Context): PackageManager {
         return context.packageManager
     }
+
+    // ======================== Audio Manager ========================
+    @Provides
+    @Singleton
+    fun provideAudioManager(@ApplicationContext context: Context): AudioManager {
+        return context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    }
+
 
     // ======================== File System Provider ========================
     @RequiresApi(Build.VERSION_CODES.O)

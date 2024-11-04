@@ -213,7 +213,8 @@ fun ScannerScreenView(
                 viewModel = viewModel,
                 previewAspectRatio = state.value.cameraAspectRatio,
                 onDocumentDetected = { lines ->
-                }
+                },
+                maximizeCameraQuality = state.value.prioritizeCameraQuality,
             )
         }
 
@@ -249,6 +250,7 @@ private fun CameraScannerView(
     viewModel: ScannerViewModel,
     previewAspectRatio: CameraAspectRatio,
     onDocumentDetected: (List<Line>) -> Unit,
+    maximizeCameraQuality: Boolean
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val context = LocalContext.current
@@ -264,6 +266,13 @@ private fun CameraScannerView(
             }
         )
     }
+
+    LaunchedEffect(state.value.vibrateWhenCapture) {
+        if(state.value.vibrateWhenCapture){
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+        }
+    }
+
     JetScanScaffold(
         modifier = Modifier,
         snackbarHostState = snackbarHostState,
@@ -330,11 +339,12 @@ private fun CameraScannerView(
                     gridStatus = state.value.gridMode == GridMode.ON,
                     previewAspectRatio = state.value.cameraAspectRatio,
                     modifier = Modifier
-                        .aspectRatio(previewAspectRatio.toFloat())
+                        .aspectRatio(previewAspectRatio.toFloat()),
+                    prioritizeCameraQuality = maximizeCameraQuality
                 )
                 AnimatedCropCoords(
                     modifier = Modifier
-                        .aspectRatio(3/4f)
+                        .aspectRatio(3 / 4f)
                         .fillMaxWidth(),
                     coords = documentOutline.value,
                 )

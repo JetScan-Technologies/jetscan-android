@@ -113,4 +113,20 @@ interface ConfigRepository {
     fun getDocumentName(): String
     fun getDocumentName(date: Date): String
 
+    var prioritizeCameraQuality: Boolean
+    val prioritizeCameraQualityStateFlow: StateFlow<Boolean>
+    fun changePrioritizeCameraQuality(prioritizeCameraQuality: Boolean)
+
+    var cameraGridStatus: Boolean
+    val cameraGridStatusStateFlow: StateFlow<Boolean>
+    fun changeCameraGridStatus(cameraGridStatus: Boolean)
+
+    var cameraCaptureSoundStatus: Boolean
+    val cameraCaptureSoundStatusStateFlow: StateFlow<Boolean>
+    fun changeCameraCaptureSoundStatus(cameraCaptureSoundStatus: Boolean)
+
+    var cameraCaptureVibrationStatus: Boolean
+    val cameraCaptureVibrationStatusStateFlow: StateFlow<Boolean>
+    fun changeCameraCaptureVibrationStatus(cameraCaptureVibrationStatus: Boolean)
+
 }
