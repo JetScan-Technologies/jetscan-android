@@ -22,7 +22,7 @@ JetScan is built using MVVM architecture with Repository pattern. The project is
 - `opencv`: Contains the OpenCV library and JNI bindings.
 - `pdf`: Contains the PDF generation logic.
 
-To know more on the architecture and how new screens are constructed, refer to the [Architecture](docs/Architecture.md) document.
+To know more on the architecture and how new screens are constructed, refer to the [Architecture](docs/ARCHITECTURE.md) document.
 
 ## 📱 Preview Screens
 
@@ -44,7 +44,7 @@ To know more on the architecture and how new screens are constructed, refer to t
 | ----------------------------------------------------- | ---------------------------------------------------- |
 | <img src="docs/images/doc_scanning.jpg" width="180"/> | <img src="docs/images/doc_preview.jpg" width="180"/> |
 
-In order to view more screens in details, visit the [Screens](docs/Preview.md) document.
+In order to view more screens in details, visit the [Screens](docs/PREVIEW.md) document.
 
 ## 🚀 Setup
 

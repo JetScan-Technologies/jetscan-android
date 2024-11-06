@@ -281,6 +281,7 @@ fun buildConfigSecrets(config: ApplicationDefaultConfig) {
     config.buildConfigField("String","GCP_DOCUMENT_AI_ENDPOINT",properties["GCP_DOCUMENT_AI_ENDPOINT"].toString())
     config.buildConfigField("String", "JETSCAN_BACKEND_URL", properties["JETSCAN_BACKEND_URL"].toString())
 
+    val json = serviceAccountJsonObject
     config.buildConfigField("String", "SERVICE_ACCOUNT_TYPE", "\"${json?.get("type")}\"")
     config.buildConfigField("String", "SERVICE_ACCOUNT_PROJECT_ID", "\"${json?.get("project_id")}\"")
     config.buildConfigField("String", "SERVICE_ACCOUNT_PRIVATE_KEY_ID", "\"${json?.get("private_key_id")}\"")

@@ -12,6 +12,7 @@ import androidx.navigation.navArgument
 import io.github.dracula101.jetscan.presentation.platform.base.util.composableWithStayTransitions
 import io.github.dracula101.jetscan.presentation.platform.composition.LockOrientation
 import timber.log.Timber
+import java.io.File
 
 const val IMPORT_PDF_GRAPH_ROUTE = "import_pdf_graph"
 const val IMPORT_PDF_ROUTE = "import_pdf"
@@ -33,8 +34,8 @@ fun NavGraphBuilder.importPdfDestination(navController: NavHostController) {
         )
     ) {
         val pdfNameArgument = it.arguments?.getString(IMPORT_PDF_NAME_ARGUMENT) ?: ""
-        val pdfUri = Uri.parse(it.arguments?.getString(IMPORT_PDF_URI_ARGUMENT))
-        Timber.d("pdfUri: $pdfUri, ${pdfUri.isHierarchical}")
+        val pdfUriArgument = it.arguments?.getString(IMPORT_PDF_URI_ARGUMENT) ?: ""
+        val pdfUri = Uri.parse(Uri.encode(pdfUriArgument, ":/"))
 
         LockOrientation(isPortraitOnly = true) {
             ImportPdfScreen(
@@ -51,8 +52,9 @@ fun NavController.navigateToImportPdf(
     pdfName: String?,
     navOptions: NavOptions? = null
 ) {
+    val encodedPath = originalUri.toString().replace(" ", "%20")
     navigate(
-        "$IMPORT_PDF_ROUTE?$IMPORT_PDF_URI_ARGUMENT=${originalUri.path}&$IMPORT_PDF_NAME_ARGUMENT=$pdfName",
+        "$IMPORT_PDF_ROUTE?$IMPORT_PDF_URI_ARGUMENT=${encodedPath}&$IMPORT_PDF_NAME_ARGUMENT=$pdfName",
         navOptions
     )
 }
