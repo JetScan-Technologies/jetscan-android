@@ -183,6 +183,6 @@ dependencies {
 }
 
 fun buildConfigSecrets(config: ApplicationDefaultConfig) {
-    config.buildConfigField("String", "GOOGLE_CLIENT_ID", properties["GOOGLE_CLIENT_ID"].toString())
-    config.buildConfigField("String", "JETSCAN_BACKEND_URL", properties["JETSCAN_BACKEND_URL"].toString())
+    config.buildConfigField("String", "GOOGLE_CLIENT_ID", "\"${properties["GOOGLE_CLIENT_ID"]}\"")
+    config.buildConfigField("String", "JETSCAN_BACKEND_URL", "\"${properties["JETSCAN_BACKEND_URL"]}\"")
 }
