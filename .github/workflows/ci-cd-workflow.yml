@@ -70,16 +70,13 @@ jobs:
           run: |
             echo ${{ secrets.JETSCAN_ANDROID_RELEASE_KEYSTORE_BASE64_ENCODED }} | base64 -d > release-keystore.jks
             echo ${{ secrets.JETSCAN_ANDROID_GOOGLE_CERT_BASE64_ENCODED }} | base64 -d > app/google-services.json
-            echo ${{ secrets.JETSCAN_ANDROID_KEY_PROPERTIES }} | base64 -d > app/key.properties
+            # echo ${{ secrets.JETSCAN_ANDROID_KEY_PROPERTIES }} > app/key.properties
+            # the above coomand doesnt work since 
             chmod +x gradlew
           
         - name: Change wrapper permissions
           run: chmod +x ./gradlew
 
-        - name: Build gradle project
-          run: ./gradlew build
-          continue-on-error: true
-          
         - name: Add Local properties values
           env:
               GOOGLE_CLIENT_ID: ${{ secrets.JETSCAN_ANDROID_GOOGLE_CLIENT_ID }}

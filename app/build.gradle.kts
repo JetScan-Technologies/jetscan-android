@@ -1,16 +1,11 @@
 import com.android.build.api.dsl.ApplicationDefaultConfig
-import com.google.firebase.appdistribution.gradle.firebaseAppDistribution
-import groovy.json.JsonSlurper
-import org.apache.groovy.json.internal.LazyMap
 import java.io.FileInputStream
-import java.util.Base64
 import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.crashlytics)
-    alias(libs.plugins.app.distribution)
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.dagger.hilt.android)
     alias(libs.plugins.kotlin.ksp)
@@ -84,7 +79,7 @@ android {
             manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_debug"
             manifestPlaceholders["appRoundIcon"] = "@mipmap/ic_launcher_debug_round"
             manifestPlaceholders["crashlyticsCollectionEnabled"] = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
