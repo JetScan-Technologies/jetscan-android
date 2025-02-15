@@ -1,0 +1,114 @@
+name: JetScan Release Build Workflow
+
+on:
+  push:
+    branches:
+      - workflow-test
+  workflow_dispatch:
+    inputs:
+        release:
+            description: 'Add to GitHub Release'
+            type: choice
+            options:
+                - Yes
+                - No
+            default: 'No'
+
+permissions:
+  contents: write
+
+
+jobs:
+  extract-version:
+    runs-on: ubuntu-latest
+    outputs: 
+        version: ${{ steps.extract_version.outputs.version }}
+        version_code: ${{ steps.extract_version.outputs.version_code }}
+        release: ${{ steps.check_release.outputs.release }}
+    steps:
+        - name: Checkout Code
+          uses: actions/checkout@v2
+        - name: Extract Version
+          id: extract_version
+          run: |
+            # extract the version from build.gradle file
+            echo "Extracting version from gradle/libs.versions.toml"
+            VERSION=$(grep -oP 'versionName = "\K[^"]+' gradle/libs.versions.toml)
+            VERSION_CODE=$(grep -oP 'versionCode = \K[^"]+' gradle/libs.versions.toml)
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+        - name: Check Release
+          id: check_release
+          if: ${{ github.event_name == 'workflow_dispatch' }}
+          run: |
+            if [ "${{ github.event.inputs.release }}" == "Yes" ]; then
+                echo "release=Yes" >> $GITHUB_OUTPUT
+            else
+                echo "release=No" >> $GITHUB_OUTPUT
+            fi
+
+  build-android:
+    needs: extract-version
+    runs-on: ubuntu-latest
+    env:
+        VERSION: ${{ needs.extract-version.outputs.version }}
+        VERSION_CODE: ${{ needs.extract-version.outputs.version_code }}
+        RELEASE: ${{ needs.extract-version.outputs.release }}
+    steps:
+        - name: Checkout
+          uses: actions/checkout@v2
+          with:
+            submodules: true
+        
+        - name: Set Up JDK
+          uses: actions/setup-java@v4
+          with:
+            distribution: 'zulu'
+            java-version: '17'
+            cache: 'gradle'
+
+        - name: Setup Config
+          run: |
+            echo ${{ secrets.JETSCAN_ANDROID_RELEASE_KEYSTORE_BASE64_ENCODED }} | base64 -d > release-keystore.jks
+            echo ${{ secrets.JETSCAN_ANDROID_GOOGLE_CERT_BASE64_ENCODED }} | base64 -d > app/google-services.json
+            echo ${{ secrets.JETSCAN_ANDROID_KEY_PROPERTIES }} | base64 -d > app/key.properties
+            chmod +x gradlew
+          
+        - name: Change wrapper permissions
+          run: chmod +x ./gradlew
+
+        - name: Build gradle project
+          run: ./gradlew build
+          continue-on-error: true
+          
+        - name: Add Local properties values
+          env:
+              GOOGLE_CLIENT_ID: ${{ secrets.JETSCAN_ANDROID_GOOGLE_CLIENT_ID }}
+              BACKEND_URL: ${{ secrets.JETSCAN_ANDROID_BACKEND_URL }}
+          run: |
+            echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> local.properties
+            echo "JETSCAN_BACKEND_URL=$BACKEND_URL" >> local.properties
+        
+        - name: Build Android App
+          run: ./gradlew assembleDebug --stacktrace > build.log
+        
+        - name: Upload Build Artifacts
+          uses: actions/upload-artifact@v2
+          with:
+            name: Debug Apk v${{ env.VERSION }}
+            path: app/build/outputs/apk/debug/app-debug.apk
+        
+        - name: Upload Build Log
+          if: ${{ failure() }}
+          uses: actions/upload-artifact@v2
+          with:
+            name: Build Log
+            path: build.log
+
+        - name: Clean up config
+          if: ${{ always() }}
+          run: |
+           rm -f release-keystore.jks
+           rm -f app/google-services.json
+           rm -f app/key.properties
+           rm -f local.properties
