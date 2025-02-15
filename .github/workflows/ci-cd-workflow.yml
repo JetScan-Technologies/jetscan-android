@@ -70,9 +70,7 @@ jobs:
           run: |
             echo ${{ secrets.JETSCAN_ANDROID_RELEASE_KEYSTORE_BASE64_ENCODED }} | base64 -d > release-keystore.jks
             echo ${{ secrets.JETSCAN_ANDROID_GOOGLE_CERT_BASE64_ENCODED }} | base64 -d > app/google-services.json
-            # echo ${{ secrets.JETSCAN_ANDROID_KEY_PROPERTIES }} > app/key.properties
-            # the above coomand doesnt work since 
-            chmod +x gradlew
+            echo ${{ secrets.JETSCAN_ANDROID_KEY_PROPERTIES }} > app/key.properties
           
         - name: Change wrapper permissions
           run: chmod +x ./gradlew
@@ -86,7 +84,7 @@ jobs:
             echo "JETSCAN_BACKEND_URL=$BACKEND_URL" >> local.properties
         
         - name: Build Android App
-          run: ./gradlew assembleDebug --stacktrace > build.log
+          run: ./gradlew assembleDebug --stacktrace
         
         - name: Upload Build Artifacts
           uses: actions/upload-artifact@v4
