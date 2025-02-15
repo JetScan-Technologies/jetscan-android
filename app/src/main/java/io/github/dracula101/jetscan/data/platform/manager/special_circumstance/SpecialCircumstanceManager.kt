@@ -1,8 +1,7 @@
 package io.github.dracula101.jetscan.data.platform.manager.special_circumstance
 
-import com.google.api.Authentication
 import io.github.dracula101.jetscan.data.platform.manager.models.SpecialCircumstance
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Tracks any [SpecialCircumstance] that may be present.
@@ -20,6 +19,6 @@ interface SpecialCircumstanceManager {
     /**
      * Emits updates that track changes to [specialCircumstance].
      */
-    val specialCircumstanceStateFlow: StateFlow<SpecialCircumstance?>
+    val specialCircumstanceFlow: Flow<SpecialCircumstance?>
 
 }

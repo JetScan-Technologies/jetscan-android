@@ -1,5 +1,6 @@
 package io.github.dracula101.jetscan.data.document.datasource.network.retrofit
 
+import android.os.Build
 import android.util.Log
 import com.google.gson.Gson
 import io.github.dracula101.jetscan.BuildConfig
@@ -11,6 +12,8 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.time.Duration
+import java.util.concurrent.TimeUnit
 
 class DocumentRetrofitImpl(
     private val baseUrlInterceptors: BaseUrlInterceptors,
@@ -46,6 +49,9 @@ class DocumentRetrofitImpl(
      */
     private val pdfToolOkHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .connectTimeout(5, TimeUnit.MINUTES) // connect timeout
+            .writeTimeout(5, TimeUnit.MINUTES) // write timeout
+            .readTimeout(5, TimeUnit.MINUTES)
             .addInterceptor(loggingInterceptor)
             .addInterceptor(baseUrlInterceptors.apiInterceptor)
             .addInterceptor(userInfoInterceptor)

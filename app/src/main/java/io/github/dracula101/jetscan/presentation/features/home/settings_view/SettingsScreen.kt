@@ -20,17 +20,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
-import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.PictureAsPdf
-import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Description
-import androidx.compose.material.icons.rounded.ImportExport
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.NoAccounts
 import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
@@ -39,7 +34,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -47,12 +41,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.SubcomposeAsyncImage
+import io.github.dracula101.jetscan.BuildConfig
 import io.github.dracula101.jetscan.data.auth.model.UserState
 import io.github.dracula101.jetscan.presentation.features.home.main.MainHomeState
 import io.github.dracula101.jetscan.presentation.features.home.settings_view.components.SettingsItem
@@ -61,9 +55,10 @@ import io.github.dracula101.jetscan.presentation.features.settings.document.Docu
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.ScaffoldSize
 import io.github.dracula101.jetscan.presentation.platform.component.switch.AppSwitch
 import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.customContainer
-import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.debugBorder
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,6 +75,7 @@ fun SettingsScreen(
     val state = viewModel.stateFlow.collectAsStateWithLifecycle()
     val bottomSheetState = rememberModalBottomSheetState()
     val layoutDirection = LocalLayoutDirection.current
+    val scope = rememberCoroutineScope()
 
     state.value.bottomSheetState?.let {
         SettingsBottomSheet(
@@ -106,7 +102,7 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
             )
         }
-        if(state.value.user?.isAnonymous == false){
+        if(state.value.user?.isGuest == false){
             item{
                 SettingsSection(
                     title = "Account"
@@ -196,7 +192,7 @@ fun SettingsScreen(
                 )
             }
         }
-        if(state.value.user?.isAnonymous == false){
+        if(state.value.user?.isGuest == false){
             item {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
@@ -227,6 +223,25 @@ fun SettingsScreen(
             }
         }
         item {
+            if(BuildConfig.DEBUG){
+                SettingsSection(
+                    title = "Debug Options"
+                ) {
+                    SettingsItem(
+                        title = "FCM Token",
+                        icon = Icons.Rounded.Person,
+                        onClick = {
+                            scope.launch {
+                                val fcmToken = viewModel.getFCMToken()
+                                Timber.i("FCM Token: $fcmToken")
+                                Toast.makeText(context,"Check console for FCM Token", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    )
+                }
+            }
+        }
+        item {
             Spacer(modifier = Modifier.size(120.dp))
         }
     }
@@ -247,7 +262,7 @@ fun AccountInfo(
                 vertical = 12.dp
             ),
     ) {
-        when(user?.isAnonymous){
+        when(user?.isGuest){
             null, true -> {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
@@ -428,7 +443,6 @@ fun SettingsBottomSheet(
                     onClick = {
                         coroutineScope.launch {
                             viewModel.trySendAction(SettingsAction.Ui.Logout)
-                            delay(1000L)
                             bottomSheetState.hide()
                         }
                     },

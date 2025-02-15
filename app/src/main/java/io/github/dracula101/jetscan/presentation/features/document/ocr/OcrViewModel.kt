@@ -8,20 +8,16 @@ import androidx.core.net.toFile
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.dracula101.jetscan.data.document.datasource.network.repository.PdfToolRepository
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
-import io.github.dracula101.jetscan.data.ocr.repository.OcrRepository
-import io.github.dracula101.jetscan.data.ocr.repository.models.OcrDocumentResult
-import io.github.dracula101.jetscan.data.ocr.repository.models.ocr.OcrResult
+import io.github.dracula101.jetscan.data.document.datasource.network.repository.models.PdfOcrResult
+import io.github.dracula101.jetscan.data.document.datasource.network.repository.models.OcrResult
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
-import timber.log.Timber
 import javax.inject.Inject
 
 const val OCR_STATE = "ocr_state"
@@ -31,7 +27,7 @@ class OcrViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val contentResolver: ContentResolver,
     private val documentRepository: DocumentRepository,
-    private val ocrRepository: OcrRepository,
+    private val pdfToolRepository: PdfToolRepository
 ) : BaseViewModel<OcrState, Unit, OcrAction>(
     initialState = savedStateHandle[OCR_STATE] ?: OcrState(),
 ) {
@@ -59,14 +55,13 @@ class OcrViewModel @Inject constructor(
             mutableStateFlow.update { it.copy(isLoading = true) }
             val pageIndex = stateFlow.value.pageIndex ?: return@launch
             val imageFile = document.scannedImages[pageIndex].scannedUri.toFile()
-            val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(imageFile.extension)
-            val ocrResult = ocrRepository.processImageDocument(imageFile, mimeType ?: "image/jpeg")
+            val ocrResult = pdfToolRepository.getOcrPdf(imageFile)
             mutableStateFlow.update {
                 it.copy(
                     isLoading = false,
                     ocrResult = when(ocrResult){
-                        is OcrDocumentResult.Error -> null
-                        is OcrDocumentResult.Success -> ocrResult.data
+                        is PdfOcrResult.Error -> null
+                        is PdfOcrResult.Success -> ocrResult.data
                     }
                 )
             }

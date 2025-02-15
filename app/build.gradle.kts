@@ -31,17 +31,6 @@ if (localPropertiesFile.exists()) {
     properties.load(FileInputStream(localPropertiesFile))
 }
 
-val serviceAccountFile = File(projectDir, "service-account.json")
-val serviceAccountJsonObject = if (serviceAccountFile.exists()) {
-    val jsonSlurper = JsonSlurper()
-    val json = jsonSlurper.parseText(serviceAccountFile.readText())
-    json as LazyMap
-} else {
-    println("Service account file not found - skipping")
-    null
-}
-
-
 android {
     namespace = "io.github.dracula101.jetscan"
     compileSdk = libs.versions.compileSdk.get().toInt()
@@ -88,14 +77,6 @@ android {
             manifestPlaceholders["appRoundIcon"] = "@mipmap/ic_launcher_release_round"
             manifestPlaceholders["crashlyticsCollectionEnabled"] = true
             signingConfig = signingConfigs.getByName("release")
-
-            firebaseAppDistribution {
-                serviceCredentialsFile = "service-account.json"
-                releaseNotes = "Alpha Release"
-                groups = "alpha-testing"
-                artifactPath = "app/build/outputs/apk/release/app-universal-release.apk"
-                artifactType = "APK"
-            }
         }
         debug {
             isShrinkResources = false
@@ -144,157 +125,69 @@ dependencies {
     implementation(projects.opencv)
     implementation(projects.pdf)
 
-    // ==================== ANDROIDX ====================
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.activity.ktx)
+    implementation(libs.about.libraries.core)
+    implementation(libs.about.libraries.ui)
+    implementation(libs.accompanist)
     implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.splashscreen)
-    implementation(libs.androidx.security.crypto.ktx)
-
-    // ==================== COMPOSE ====================
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.espresso.core)
+    implementation(libs.androidx.biometrics)
     implementation(libs.androidx.compose.adaptive.android)
-
-    // ==================== LIFECYCLE ====================
-    implementation(libs.androidx.lifecycle.viewmodel.ktx)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.android.lifecycle.viewmodel.compose)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.android.lifecycle.runtime.compose)
-    implementation(libs.android.lifecycle.runtime.ktx)
-
-    // ==================== MATERIAL  ====================
-    implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.compose.ripple)
+    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.icons.core)
     implementation(libs.androidx.compose.icons.extended)
-    implementation(libs.androidx.ui.graphics)
-
-    // ==================== BIOMETRICS ====================
-    implementation(libs.androidx.biometrics)
-
-    // ==================== COROUTINES ====================
-    implementation(libs.kotlin.coroutines)
-    implementation(libs.kotlin.coroutines.core)
-    implementation(libs.kotlin.coroutines.play.services)
-
-    // ==================== HILT ====================
-    implementation(libs.dagger.hilt)
-    implementation(libs.androidx.compose.adaptive.android)
-    implementation(libs.material)
-    implementation(libs.androidx.constraintlayout)
-    implementation(libs.androidx.navigation.fragment.ktx)
-    implementation(libs.androidx.navigation.ui.ktx)
-    ksp(libs.dagger.hilt.compiler)
-    implementation(libs.dagger.hilt.navigation.compose)
-
-    // ==================== ROOM ====================
-    implementation(libs.androidx.room.runtime)
-    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.ripple)
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel)
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.room.ktx)
-
-    // ==================== LIVE DATA ====================
-    implementation(libs.androidx.liveData)
-
-    // ==================== SHARED PREFERENCES ====================
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.security.crypto.ktx)
     implementation(libs.androidx.sharedPrefs)
-
-    // ==================== LOTTIE ====================
-    implementation(libs.lottie)
-
-    // ==================== COIL ====================
-    implementation(libs.coil)
-
-    // ==================== FIREBASE ====================
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.firestore)
-    implementation(libs.firebase.storage)
-    implementation(libs.firebase.analytics)
-    implementation(libs.firebase.crashlytics)
-    implementation(libs.firebase.config)
-
-    // ==================== GOOGLE ====================
-    implementation(libs.google.auth)
-    implementation(libs.google.mlkit.barcode)
-    implementation(libs.google.mlkit.common)
-
-    // ==================== HTTP CLIENT ====================
-    implementation(libs.square.okhttp)
-    implementation(libs.square.okhttp.logging)
-    implementation(platform(libs.square.retrofit.bom))
-    implementation(libs.square.retrofit)
-    implementation(libs.gson)
-    implementation(libs.square.retrofit.gson)
-
-    // ==================== LOGGER ====================
-    implementation(libs.timber)
-    implementation(libs.logger)
-
-    // ==================== CAMERAX ====================
+    implementation(libs.androidx.splashscreen)
     implementation(libs.camerax)
     implementation(libs.camerax.lifecycle)
     implementation(libs.camerax.view)
-    implementation(libs.camerax.extensions)
-
-    // ==================== PAGING ====================
-    implementation(libs.paging)
-    implementation(libs.paging.compose)
-
-    // ==================== ACCOMPANIST ====================
-    implementation(libs.accompanist)
-
-    // ==================== BOUQUET ====================
-    implementation(libs.bouquet)
-
-    // ==================== ZOOMABLE ====================
-    implementation(libs.zoomable)
-
-    // ==================== REORDERING ====================
-    implementation(libs.reordering.compose)
-
-    // ==================== COMPRESSOR ====================
+    implementation(libs.coil)
     implementation(libs.compressor)
+    implementation(libs.dagger.hilt)
+    implementation(libs.dagger.hilt.navigation.compose)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.config)
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.storage)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.messaging)
+    implementation(libs.google.auth)
+    implementation(libs.google.mlkit.barcode)
+    implementation(libs.google.mlkit.common)
+    implementation(libs.gson)
+    implementation(libs.kotlin.coroutines)
+    implementation(libs.lottie)
+    implementation(platform(libs.square.retrofit.bom))
+    implementation(libs.square.okhttp)
+    implementation(libs.square.okhttp.logging)
+    implementation(libs.square.retrofit)
+    implementation(libs.square.retrofit.gson)
+    implementation(libs.timber)
+    implementation(libs.logger)
+    implementation(libs.zoomable)
+    implementation(libs.reordering.compose)
+    ksp(libs.androidx.room.compiler)
+    ksp(libs.dagger.hilt.compiler)
 
-    // ==================== ABOUT LIBRARIES ====================
-    implementation(libs.about.libraries.core)
-    implementation(libs.about.libraries.ui)
-
-    // ==================== TESTING ====================
     testImplementation(libs.junit)
     implementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.tooling.preview)
     debugImplementation(libs.androidx.ui.test.manifest)
     androidTestImplementation(libs.androidx.junit)
-
-
-
 }
 
 fun buildConfigSecrets(config: ApplicationDefaultConfig) {
     config.buildConfigField("String", "GOOGLE_CLIENT_ID", properties["GOOGLE_CLIENT_ID"].toString())
-    config.buildConfigField("String","GCP_DOCUMENT_AI_BASE_URL",properties["GCP_DOCUMENT_AI_BASE_URL"].toString())
-    config.buildConfigField("String","GCP_DOCUMENT_AI_ENDPOINT",properties["GCP_DOCUMENT_AI_ENDPOINT"].toString())
     config.buildConfigField("String", "JETSCAN_BACKEND_URL", properties["JETSCAN_BACKEND_URL"].toString())
-
-    val json = serviceAccountJsonObject
-    config.buildConfigField("String", "SERVICE_ACCOUNT_TYPE", "\"${json?.get("type")}\"")
-    config.buildConfigField("String", "SERVICE_ACCOUNT_PROJECT_ID", "\"${json?.get("project_id")}\"")
-    config.buildConfigField("String", "SERVICE_ACCOUNT_PRIVATE_KEY_ID", "\"${json?.get("private_key_id")}\"")
-    config.buildConfigField("String", "SERVICE_ACCOUNT_CLIENT_EMAIL", "\"${json?.get("client_email")}\"")
-    config.buildConfigField("String", "SERVICE_ACCOUNT_CLIENT_ID", "\"${json?.get("client_id")}\"")
-    config.buildConfigField("String", "SERVICE_ACCOUNT_AUTH_URI", "\"${json?.get("auth_uri")}\"")
-    config.buildConfigField("String", "SERVICE_ACCOUNT_TOKEN_URI", "\"${json?.get("token_uri")}\"")
-    config.buildConfigField("String", "SERVICE_ACCOUNT_AUTH_PROVIDER_X509_CERT_URL", "\"${json?.get("auth_provider_x509_cert_url")}\"")
-    config.buildConfigField("String", "SERVICE_ACCOUNT_CLIENT_X509_CERT_URL", "\"${json?.get("client_x509_cert_url")}\"")
-
-
-    val privateKey = json?.get("private_key").toString()
-    val base64Encoder = Base64.getEncoder()
-    val privateKeyBase64Encoded = base64Encoder.encodeToString(privateKey.toByteArray())
-    config.buildConfigField("String", "SERVICE_ACCOUNT_PRIVATE_KEY_ID_BASE64_ENCODED", "\"$privateKeyBase64Encoded\"")
 }

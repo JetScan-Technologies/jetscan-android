@@ -9,5 +9,5 @@ data class UserState(
     val email: String,
     val displayName: String,
     val photoUrl: String,
-    val isAnonymous: Boolean,
+    val isGuest: Boolean,
 ) : Parcelable

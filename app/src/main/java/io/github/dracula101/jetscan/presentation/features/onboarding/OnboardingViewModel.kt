@@ -41,7 +41,7 @@ class OnboardingViewModel @Inject constructor(
         if (usePasswordlessSignIn) {
             viewModelScope.launch {
                 mutableStateFlow.update { it.copy(isLoadingAuthSignIn = true) }
-                authRepository.loginPasswordLess()
+                authRepository.guestLogin()
                 mutableStateFlow.update { it.copy(isLoadingAuthSignIn = false) }
             }
         }

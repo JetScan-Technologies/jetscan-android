@@ -4,6 +4,8 @@ import android.content.ContentResolver
 import android.os.Parcelable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.messaging.ktx.messaging
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.dracula101.jetscan.data.auth.model.UserState
 import io.github.dracula101.jetscan.data.auth.repository.AuthRepository
@@ -14,6 +16,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.parcelize.Parcelize
 import javax.inject.Inject
 
@@ -50,6 +53,10 @@ class SettingsViewModel @Inject constructor(
                 }
             }
             .launchIn(viewModelScope)
+    }
+
+    suspend fun getFCMToken(): String? {
+        return Firebase.messaging.token.await()
     }
 
     override fun handleAction(action: SettingsAction) {

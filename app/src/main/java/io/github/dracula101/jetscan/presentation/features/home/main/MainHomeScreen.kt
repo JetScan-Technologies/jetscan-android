@@ -1,5 +1,7 @@
 package io.github.dracula101.jetscan.presentation.features.home.main
 
+import android.Manifest
+import android.os.Build
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -57,6 +59,9 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.PermissionStatus
+import com.google.accompanist.permissions.rememberPermissionState
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.models.doc.DocumentFolder
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
@@ -82,7 +87,7 @@ import io.github.dracula101.jetscan.presentation.platform.feature.app.model.Snac
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun MainHomeScreen(
     mainViewModel: MainHomeViewModel = hiltViewModel(),
@@ -99,6 +104,17 @@ fun MainHomeScreen(
 ) {
     val state = mainViewModel.stateFlow.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val notificationPermissionState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        rememberPermissionState(permission = Manifest.permission.POST_NOTIFICATIONS)
+    } else {
+        rememberPermissionState(permission = Manifest.permission.ACCESS_NOTIFICATION_POLICY)
+    }
+
+    LaunchedEffect(Unit) {
+        if(notificationPermissionState.status != PermissionStatus.Granted){
+            notificationPermissionState.launchPermissionRequest()
+        }
+    }
 
     state.value.snackbarState?.let { snackbarState ->
         MainHomeAlertSnackbar(

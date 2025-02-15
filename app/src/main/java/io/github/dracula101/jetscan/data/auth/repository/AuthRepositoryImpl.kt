@@ -18,6 +18,7 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.UserProfileChangeRequest
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.dracula101.jetscan.BuildConfig
+import io.github.dracula101.jetscan.data.auth.datasource.disk.AuthDiskSource
 import io.github.dracula101.jetscan.data.auth.model.GoogleSignInResult
 import io.github.dracula101.jetscan.data.auth.model.LoginResult
 import io.github.dracula101.jetscan.data.auth.model.RegisterResult
@@ -25,33 +26,76 @@ import io.github.dracula101.jetscan.data.auth.model.UpdateProfileResult
 import io.github.dracula101.jetscan.data.auth.model.UserState
 import io.github.dracula101.jetscan.data.auth.util.getErrorMessage
 import io.github.dracula101.jetscan.data.auth.util.toUserState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 import java.util.concurrent.CancellationException
 import javax.inject.Inject
 
-
 class AuthRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val firebaseAuth: FirebaseAuth,
     private val oneTapClient: SignInClient,
+    private val authDiskSource: AuthDiskSource,
 ) : AuthRepository {
 
     override val currentUser: UserState?
-        get() = firebaseAuth.currentUser?.toUserState()
+        get() = authDiskSource.getGuestToken()?.let {
+            UserState(
+                displayName = "Guest",
+                email = "",
+                photoUrl = "",
+                uid = it,
+                isGuest = true,
+            )
+        } ?: firebaseAuth.currentUser?.toUserState()
+
+    private val currentScope = CoroutineScope(Dispatchers.IO)
+
+    private val _firebaseAuthFlow = MutableStateFlow(firebaseAuth.currentUser)
 
     private val _authStateFlow = MutableStateFlow(currentUser)
     override val authStateFlow: Flow<UserState?> = _authStateFlow
         .onSubscription { emit(currentUser) }
+        .map {
+            if (it != null) { authDiskSource.addFirebaseToken() }
+            it
+        }
 
     init {
         firebaseAuth.addAuthStateListener { authChange ->
-            val authUser = authChange.currentUser?.toUserState()
-            _authStateFlow.tryEmit(authUser)
+            val authUser = authChange.currentUser
+            if (authUser != null) {
+                authDiskSource.clearGuestLogin()
+            }
+            _firebaseAuthFlow.value = authUser
         }
+        combine(
+            _firebaseAuthFlow,
+            authDiskSource.guestTokenFlow
+        ) { firebaseUser, token ->
+            token?.let {
+                UserState(
+                    displayName = "Guest",
+                    email = "",
+                    photoUrl = "",
+                    uid = it,
+                    isGuest = true,
+                )
+            } ?: firebaseUser?.toUserState()
+        }.distinctUntilChanged().onEach {
+            Timber.d("Auth State: $it")
+            _authStateFlow.value = it
+        }.launchIn(currentScope)
     }
 
     override fun isLoggedIn(): Boolean {
@@ -69,29 +113,52 @@ class AuthRepositoryImpl @Inject constructor(
                     val errorMessage = error.getErrorMessage()
                     LoginResult.Error(errorMessage)
                 }
+
                 is CancellationException -> {
-                    LoginResult.Error(error.localizedMessage ?: "An unexpected error occurred", "CANCELLED")
+                    LoginResult.Error(
+                        error.localizedMessage ?: "An unexpected error occurred",
+                        "CANCELLED"
+                    )
                 }
+
                 is FirebaseException -> {
                     val errorMessage = error.getErrorMessage()
                     LoginResult.Error(errorMessage)
                 }
+
                 else -> {
                     error.printStackTrace()
-                    LoginResult.Error(error.localizedMessage ?: "An unexpected error occurred", "UNKNOWN_ERROR")
+                    LoginResult.Error(
+                        error.localizedMessage ?: "An unexpected error occurred",
+                        "UNKNOWN_ERROR"
+                    )
                 }
             }
         }
     }
 
+    override suspend fun guestLogin(): LoginResult {
+        return try {
+            val guestToken = authDiskSource.setGuestLoginIn()
+            LoginResult.Success(
+                UserState(
+                    displayName = "Guest",
+                    email = "",
+                    photoUrl = "",
+                    uid = guestToken,
+                    isGuest = true,
+                )
+            )
+        } catch (e: Exception) {
+            Timber.e(e)
+            LoginResult.Error(e.localizedMessage ?: "An unexpected error occurred", "UNKNOWN_ERROR")
+        }
+    }
+
     override suspend fun loginPasswordLess(): LoginResult {
         return try {
-            val authResult = firebaseAuth.signInAnonymously().await()
-            if(authResult.user == null){
-                return LoginResult.Error("Couldn't Authenticate User", "AUTH_FAIL")
-            }else {
-                LoginResult.Success(authResult.user!!.toUserState())
-            }
+            val authUser = firebaseAuth.signInAnonymously().await()
+            LoginResult.Success(authUser.user!!.toUserState())
         } catch (e: Exception) {
             Timber.e(e)
             LoginResult.Error(e.localizedMessage ?: "An unexpected error occurred", "UNKNOWN_ERROR")
@@ -122,12 +189,15 @@ class AuthRepositoryImpl @Inject constructor(
             val authResult = firebaseAuth.signInWithCredential(googleAuthCredential).await()
             if (authResult.user == null) {
                 return GoogleSignInResult.Error("Couldn't Authenticate User", "AUTH_FAIL")
-            }else {
+            } else {
                 GoogleSignInResult.Success(googleIdToken)
             }
         } catch (e: Exception) {
             Timber.e(e)
-            GoogleSignInResult.Error(e.localizedMessage ?: "An unexpected error occurred", "UNKNOWN_ERROR")
+            GoogleSignInResult.Error(
+                e.localizedMessage ?: "An unexpected error occurred",
+                "UNKNOWN_ERROR"
+            )
         }
     }
 
@@ -147,7 +217,10 @@ class AuthRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            GoogleSignInResult.Error(e.localizedMessage ?: "An unexpected error occurred", "UNKNOWN_ERROR")
+            GoogleSignInResult.Error(
+                e.localizedMessage ?: "An unexpected error occurred",
+                "UNKNOWN_ERROR"
+            )
         }
     }
 
@@ -195,15 +268,24 @@ class AuthRepositoryImpl @Inject constructor(
                     val errorMessage = e.getErrorMessage()
                     RegisterResult.Error(errorMessage)
                 }
+
                 is CancellationException -> {
-                    RegisterResult.Error(e.localizedMessage ?: "An unexpected error occurred", "CANCELLED")
+                    RegisterResult.Error(
+                        e.localizedMessage ?: "An unexpected error occurred",
+                        "CANCELLED"
+                    )
                 }
+
                 is FirebaseException -> {
                     val errorMessage = e.getErrorMessage()
                     RegisterResult.Error(errorMessage)
                 }
+
                 else -> {
-                    RegisterResult.Error(e.localizedMessage ?: "An unexpected error occurred", "UNKNOWN_ERROR")
+                    RegisterResult.Error(
+                        e.localizedMessage ?: "An unexpected error occurred",
+                        "UNKNOWN_ERROR"
+                    )
                 }
             }
         }
@@ -223,14 +305,17 @@ class AuthRepositoryImpl @Inject constructor(
             UpdateProfileResult.Success
         } catch (e: Exception) {
             e.printStackTrace()
-            UpdateProfileResult.Error(e.localizedMessage ?: "An unexpected error occurred", "UPDATE_FAIL")
+            UpdateProfileResult.Error(
+                e.localizedMessage ?: "An unexpected error occurred",
+                "UPDATE_FAIL"
+            )
         }
     }
 
     override suspend fun setUserName(name: String): UpdateProfileResult {
         return try {
             val user = firebaseAuth.currentUser.let {
-                it ?: return UpdateProfileResult.Error("User not logged in","NO_USER")
+                it ?: return UpdateProfileResult.Error("User not logged in", "NO_USER")
             }
             user.updateProfile(
                 UserProfileChangeRequest.Builder()
@@ -240,7 +325,10 @@ class AuthRepositoryImpl @Inject constructor(
             UpdateProfileResult.Success
         } catch (e: Exception) {
             Timber.e(e)
-            UpdateProfileResult.Error(e.localizedMessage ?: "An unexpected error occurred", "UPDATE_FAIL")
+            UpdateProfileResult.Error(
+                e.localizedMessage ?: "An unexpected error occurred",
+                "UPDATE_FAIL"
+            )
         }
     }
 

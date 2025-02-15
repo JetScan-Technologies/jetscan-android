@@ -12,3 +12,5 @@ local.properties
 release-keystore.jks
 java_pid11740.hprof
 /app/release
+.firebaserc
+firebase.json

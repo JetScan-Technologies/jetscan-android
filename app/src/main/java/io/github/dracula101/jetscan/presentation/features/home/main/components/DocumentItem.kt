@@ -242,8 +242,6 @@ fun DocumentItem(
             }
         }
     }
-
-
 }
 
 @Composable

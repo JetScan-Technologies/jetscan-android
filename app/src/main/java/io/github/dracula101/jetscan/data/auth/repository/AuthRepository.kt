@@ -43,6 +43,11 @@ interface AuthRepository {
     suspend fun loginPasswordLess(): LoginResult
 
     /*
+    * Guest Login
+     */
+    suspend fun guestLogin(): LoginResult
+
+    /*
     * Set the avatar of the user
      */
     suspend fun setAvatar(): UpdateProfileResult

@@ -3,6 +3,7 @@ package io.github.dracula101.jetscan.data.document.datasource.network.api
 import io.github.dracula101.jetscan.data.document.datasource.network.models.PdfCompressResponse
 import io.github.dracula101.jetscan.data.document.datasource.network.models.PdfCompressSizesResponse
 import io.github.dracula101.jetscan.data.document.datasource.network.models.PdfMergeResponse
+import io.github.dracula101.jetscan.data.document.datasource.network.models.PdfOcrResponse
 import io.github.dracula101.jetscan.data.document.datasource.network.models.PdfSplitResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -42,4 +43,10 @@ interface PdfToolApi {
         @Part file: MultipartBody.Part,
         @Part qualities: MultipartBody.Part,
     ): Result<PdfCompressSizesResponse>
+
+    @Multipart
+    @POST("api/pdf/ocr")
+    suspend fun ocr(
+        @Part file: MultipartBody.Part,
+    ): Result<PdfOcrResponse>
 }

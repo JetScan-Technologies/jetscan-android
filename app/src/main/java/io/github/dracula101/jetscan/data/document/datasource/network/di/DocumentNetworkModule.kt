@@ -1,6 +1,7 @@
 package io.github.dracula101.jetscan.data.document.datasource.network.di
 
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -41,6 +42,16 @@ object DocumentNetworkModule {
 
     @Provides
     @Singleton
+    fun provideGson(): Gson {
+        return GsonBuilder()
+            .setLenient()
+            .serializeNulls()
+            .setPrettyPrinting()
+            .create()
+    }
+
+    @Provides
+    @Singleton
     fun providePdfToolApiRetrofit(documentRetrofit: DocumentRetrofit): PdfToolApi {
         return documentRetrofit
             .pdfToolApiRetrofit
@@ -53,13 +64,13 @@ object DocumentNetworkModule {
         pdfToolApi: PdfToolApi,
         userInfoInterceptor: UserInfoInterceptor,
         authRepository: AuthRepository,
-        remoteStorageRepository: RemoteStorageRepository
+        storageRepository: RemoteStorageRepository
     ): PdfToolRepository {
         return PdfToolRepositoryImpl(
             pdfToolApi = pdfToolApi,
             userInfoInterceptor = userInfoInterceptor,
             authRepository = authRepository,
-            remoteStorageRepository = remoteStorageRepository
+            remoteStorageRepository = storageRepository
         )
     }
 }

@@ -12,13 +12,15 @@ import io.github.dracula101.jetscan.data.auth.repository.AuthRepository
 import io.github.dracula101.jetscan.data.platform.manager.models.SpecialCircumstance
 import io.github.dracula101.jetscan.data.platform.manager.special_circumstance.SpecialCircumstanceManager
 import io.github.dracula101.jetscan.data.platform.repository.config.ConfigRepository
+import io.github.dracula101.jetscan.data.platform.utils.zip
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.combineTransform
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.zip
 import kotlinx.parcelize.Parcelize
 import timber.log.Timber
 import javax.inject.Inject
@@ -36,12 +38,12 @@ class RootAppViewModel @Inject constructor(
     init {
         combine(
             authRepository.authStateFlow,
-            specialCircumstanceManager.specialCircumstanceStateFlow,
-        ){ authState, specialCircumstance -> RootAppAction.Internal.UserStateUpdateReceive(authState, specialCircumstance) }
-            .onEach {
-                handleAction(it)
-            }
-            .launchIn(viewModelScope)
+            specialCircumstanceManager.specialCircumstanceFlow,
+        ){ authUser, specialCircumstance ->
+            RootAppAction.Internal.UserStateUpdateReceive(authUser, specialCircumstance)
+        }.onEach {
+            trySendAction(it)
+        }.launchIn(viewModelScope)
     }
 
     override fun handleAction(action: RootAppAction) {
@@ -60,19 +62,22 @@ class RootAppViewModel @Inject constructor(
     ) {
         // Handle all navigation from here
         mutableStateFlow.update {
-            when (action.userState) {
-                null -> configRepository.isOnboardingCompleted.let { isOnboardingCompleted ->
-                    if (isOnboardingCompleted) RootAppState.Auth else RootAppState.Onboarding
+            when(action.userState)  {
+                null -> {
+                    if (!configRepository.isOnboardingCompleted) {
+                        RootAppState.Onboarding
+                    } else {
+                        RootAppState.Auth
+                    }
                 }
                 else -> {
-                    when {
-                        action.specialCircumstance != null -> {
-                            when(action.specialCircumstance) {
-                                is SpecialCircumstance.ImportPdfEvent -> RootAppState.ImportPdf(action.specialCircumstance)
+                    action.specialCircumstance?.let { specialCircumstance ->
+                        when(specialCircumstance) {
+                            is SpecialCircumstance.ImportPdfEvent -> {
+                                RootAppState.ImportPdf(specialCircumstance)
                             }
                         }
-                        else -> RootAppState.Home(isAnonymous = action.userState.isAnonymous)
-                    }
+                    } ?: RootAppState.Home(isAnonymous = action.userState.isGuest)
                 }
             }
         }

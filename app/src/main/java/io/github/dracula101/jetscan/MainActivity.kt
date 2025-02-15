@@ -5,10 +5,10 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.os.Bundle
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -20,7 +20,7 @@ import io.github.dracula101.jetscan.presentation.platform.feature.setting.model.
 import io.github.dracula101.jetscan.presentation.theme.JetScanAppTheme
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
 
     private val mainViewModel: MainViewModel by viewModels()
 

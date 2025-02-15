@@ -115,7 +115,7 @@ class LoginViewModel @Inject constructor(
 
     private fun handleSkipLogin(){
         viewModelScope.launch {
-            authRepository.loginPasswordLess()
+            authRepository.guestLogin()
         }
     }
 

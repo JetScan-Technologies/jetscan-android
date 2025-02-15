@@ -6,6 +6,7 @@ import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.SignInClient
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
 import com.google.firebase.storage.FirebaseStorage
@@ -35,13 +36,6 @@ object DependencyModule {
         return FirebaseFirestore.getInstance()
     }
 
-    // ==================== Firebase Storage ====================
-    @Provides
-    @Singleton
-    fun providesFirebaseStorage(): FirebaseStorage {
-        return FirebaseStorage.getInstance()
-    }
-
     // ==================== Google One Tap Client ====================
     @Provides
     @Singleton
@@ -60,5 +54,17 @@ object DependencyModule {
         mFirebaseRemoteConfig.setConfigSettingsAsync(configSettings)
         mFirebaseRemoteConfig.setDefaultsAsync(R.xml.remote_config_defaults)
         return mFirebaseRemoteConfig
+    }
+
+    @Provides
+    @Singleton
+    fun provideFirebaseStorage() : FirebaseStorage {
+        return FirebaseStorage.getInstance()
+    }
+
+    @Provides
+    @Singleton
+    fun provideFirebaseMessaging(): FirebaseMessaging {
+        return FirebaseMessaging.getInstance()
     }
 }

@@ -9,7 +9,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.dracula101.jetscan.data.document.datasource.disk.converters.toDocument
 import io.github.dracula101.jetscan.data.document.datasource.disk.dao.DocumentDao
 import io.github.dracula101.jetscan.data.document.models.doc.Document
-import io.github.dracula101.jetscan.data.ocr.repository.OcrRepository
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach

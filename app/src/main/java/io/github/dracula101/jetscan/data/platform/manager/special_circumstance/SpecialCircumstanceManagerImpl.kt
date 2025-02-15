@@ -5,6 +5,7 @@ import io.github.dracula101.jetscan.data.auth.repository.AuthRepository
 import io.github.dracula101.jetscan.data.platform.manager.models.SpecialCircumstance
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filter
@@ -35,7 +36,7 @@ class SpecialCircumstanceManagerImpl(
             mutableSpecialCircumstanceFlow.value = value
         }
 
-    override val specialCircumstanceStateFlow: StateFlow<SpecialCircumstance?>
+    override val specialCircumstanceFlow: Flow<SpecialCircumstance?>
         get() = mutableSpecialCircumstanceFlow
 
 }

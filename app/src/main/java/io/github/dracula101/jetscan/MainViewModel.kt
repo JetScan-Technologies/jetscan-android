@@ -20,7 +20,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.parcelize.Parcelize
 import timber.log.Timber
-import java.io.File
 import javax.inject.Inject
 
 private const val SPECIAL_CIRCUMSTANCE_KEY = "special-circumstance"
@@ -51,7 +50,7 @@ class MainViewModel @Inject constructor(
         specialCircumstanceManager.specialCircumstance = specialCircumstance
 
         specialCircumstanceManager
-            .specialCircumstanceStateFlow
+            .specialCircumstanceFlow
             .onEach { specialCircumstance = it }
             .launchIn(viewModelScope)
 

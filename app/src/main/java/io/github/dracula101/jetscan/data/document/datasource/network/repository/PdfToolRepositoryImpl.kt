@@ -1,12 +1,15 @@
 package io.github.dracula101.jetscan.data.document.datasource.network.repository
 
+import android.webkit.MimeTypeMap
 import io.github.dracula101.jetscan.data.auth.repository.AuthRepository
 import io.github.dracula101.jetscan.data.document.datasource.network.api.PdfToolApi
 import io.github.dracula101.jetscan.data.document.datasource.network.interceptors.UserInfoInterceptor
 import io.github.dracula101.jetscan.data.document.datasource.network.repository.models.PdfCompressResult
 import io.github.dracula101.jetscan.data.document.datasource.network.repository.models.PdfCompressSizesResult
 import io.github.dracula101.jetscan.data.document.datasource.network.repository.models.PdfMergeResult
+import io.github.dracula101.jetscan.data.document.datasource.network.repository.models.PdfOcrResult
 import io.github.dracula101.jetscan.data.document.datasource.network.repository.models.PdfSplitResult
+import io.github.dracula101.jetscan.data.document.datasource.network.repository.models.toOcrResult
 import io.github.dracula101.jetscan.data.platform.repository.remote_storage.RemoteStorageRepository
 import io.github.dracula101.jetscan.presentation.platform.feature.tools.models.CompressionLevel
 import io.github.dracula101.pdf.models.PdfCompressionLevel
@@ -163,5 +166,20 @@ class PdfToolRepositoryImpl(
         }
     }
 
+    override suspend fun getOcrPdf(file: File): PdfOcrResult {
+        return try {
+            val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension)
+            val filePart = MultipartBody.Part.createFormData(
+                name = "file",
+                filename = file.name,
+                body = file.asRequestBody(mimeType?.toMediaType())
+            )
+            val ocrResponse = pdfToolApi.ocr(filePart).getOrThrow()
+            return PdfOcrResult.Success(ocrResponse.toOcrResult())
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to OCR PDF file")
+            PdfOcrResult.Error("Failed to OCR PDF file", e)
+        }
+    }
 
 }
