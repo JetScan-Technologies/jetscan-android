@@ -31,7 +31,6 @@ jobs:
         - name: Extract Version
           id: extract_version
           run: |
-            # extract the version from build.gradle file
             echo "Extracting version from gradle/libs.versions.toml"
             VERSION=$(grep -oP 'versionName = "\K[^"]+' gradle/libs.versions.toml)
             VERSION_CODE=$(grep -oP 'versionCode = \K[^"]+' gradle/libs.versions.toml)
