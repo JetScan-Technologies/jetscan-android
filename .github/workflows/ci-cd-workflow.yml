@@ -33,7 +33,7 @@ jobs:
           run: |
             echo "Extracting version from gradle/libs.versions.toml"
             VERSION=$(grep -oP 'versionName = "\K[^"]+' gradle/libs.versions.toml)
-            VERSION_CODE=$(grep -oP 'versionCode = \K[^"]+' gradle/libs.versions.toml)
+            VERSION_CODE=$(grep -oP 'versionCode = "\K[^"]+' gradle/libs.versions.toml)
             echo "version=$VERSION" >> $GITHUB_OUTPUT
             echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
         - name: Check Release
