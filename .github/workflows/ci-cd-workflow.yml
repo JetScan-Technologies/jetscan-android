@@ -70,7 +70,7 @@ jobs:
           run: |
             echo ${{ secrets.JETSCAN_ANDROID_RELEASE_KEYSTORE_BASE64_ENCODED }} | base64 -d > release-keystore.jks
             echo ${{ secrets.JETSCAN_ANDROID_GOOGLE_CERT_BASE64_ENCODED }} | base64 -d > app/google-services.json
-            echo ${{ secrets.JETSCAN_ANDROID_KEY_PROPERTIES }} > app/key.properties
+            echo ${{ secrets.JETSCAN_ANDROID_KEY_PROPERTIES_BASE64_ENCODED }} | base64 -d > app/key.properties
           
         - name: Change wrapper permissions
           run: chmod +x ./gradlew
