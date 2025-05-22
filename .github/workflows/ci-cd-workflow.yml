@@ -104,7 +104,7 @@ jobs:
           uses: actions/upload-artifact@v4
           with:
             name: JetScan-Android-${{ needs.extract-version.outputs.version }}-${{ needs.extract-version.outputs.version_code }}.apk
-            path: app/build/outputs/apk/release/app-release.apk
+            path: app/release/app-release.apk
             retention-days: 30
             if-no-files-found: error
         
@@ -116,6 +116,16 @@ jobs:
             path: |
               build-android.log
               app/build/reports/
+
+        - name: Upload Obfuscation Mapping
+          if: ${{ success()  }}
+          uses: actions/upload-artifact@v4
+          with:
+            name: Obfuscation Mapping
+            path: |
+              app/build/outputs/mapping/release/
+              app/build/outputs/logs/
+            
 
         - name: Clean up config
           if: ${{ always() }}
