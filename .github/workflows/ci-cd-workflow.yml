@@ -98,7 +98,7 @@ jobs:
             echo "JETSCAN_BACKEND_URL=$BACKEND_URL" >> local.properties
         
         - name: Build Release APK
-          run: ./gradlew assembleRelease --parallel --build-cache --info --stacktrace
+          run: ./gradlew assembleRelease --parallel --build-cache --info --stacktrace > build-android.log 2>&1
 
         - name: Upload Build Artifacts
           uses: actions/upload-artifact@v4
@@ -114,7 +114,7 @@ jobs:
           with:
             name: Build Log
             path: |
-              build.log
+              build-android.log
               app/build/reports/
 
         - name: Clean up config
