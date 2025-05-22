@@ -1,18 +1,7 @@
 name: JetScan Release Build Workflow
 
 on:
-  push:
-    branches:
-      - workflow-test
   workflow_dispatch:
-    inputs:
-        release:
-            description: 'Add to GitHub Release'
-            type: choice
-            options:
-                - Yes
-                - No
-            default: 'No'
 
 permissions:
   contents: write
@@ -27,7 +16,7 @@ jobs:
         release: ${{ steps.check_release.outputs.release }}
     steps:
         - name: Checkout Code
-          uses: actions/checkout@v2
+          uses: actions/checkout@v4
         - name: Extract Version
           id: extract_version
           run: |
@@ -55,16 +44,38 @@ jobs:
         RELEASE: ${{ needs.extract-version.outputs.release }}
     steps:
         - name: Checkout
-          uses: actions/checkout@v2
+          uses: actions/checkout@v4
           with:
             submodules: true
-        
+
         - name: Set Up JDK
           uses: actions/setup-java@v4
           with:
             distribution: 'zulu'
             java-version: '17'
             cache: 'gradle'
+
+        - name: Cache Gradle dependencies
+          uses: actions/cache@v4
+          with:
+            path: |
+              ~/.gradle/caches/
+              ~/.gradle/wrapper/
+              ~/.android/build-cache/
+            key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/buildSrc/**/*.kt') }}
+            restore-keys: |
+              ${{ runner.os }}-gradle-
+
+        - name: Cache Android build
+          uses: actions/cache@v4
+          with:
+            path: |
+              app/build/
+              */build/intermediates
+              */build/generated
+            key: ${{ runner.os }}-android-build-${{ hashFiles('**/*.gradle*', '**/*.kt', '**/*.java', '**/*.xml') }}
+            restore-keys: |
+              ${{ runner.os }}-android-build-
 
         - name: Setup Config
           run: |
@@ -83,21 +94,25 @@ jobs:
             echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> local.properties
             echo "JETSCAN_BACKEND_URL=$BACKEND_URL" >> local.properties
         
-        - name: Build Android App
-          run: ./gradlew assembleDebug --stacktrace
-        
+        - name: Build Release APK
+          run: ./gradlew assembleRelease --parallel --build-cache --info --stacktrace
+
         - name: Upload Build Artifacts
           uses: actions/upload-artifact@v4
           with:
-            name: Debug Apk v${{ env.VERSION }}
-            path: app/build/outputs/apk/debug/app-debug.apk
+            name: JetScan-Android-${{ needs.extract-version.outputs.version }}-${{ needs.extract-version.outputs.version_code }}.apk
+            path: app/build/outputs/apk/release/app-release.apk
+            retention-days: 30
+            if-no-files-found: error
         
         - name: Upload Build Log
           if: ${{ failure() }}
           uses: actions/upload-artifact@v4
           with:
             name: Build Log
-            path: build.log
+            path: |
+              build.log
+              app/build/reports/
 
         - name: Clean up config
           if: ${{ always() }}
