@@ -2,6 +2,9 @@ name: JetScan Release Build Workflow
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - workflow-test
 
 permissions:
   contents: write
