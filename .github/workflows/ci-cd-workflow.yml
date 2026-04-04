@@ -13,123 +13,257 @@ permissions:
 jobs:
   extract-version:
     runs-on: ubuntu-latest
-    outputs: 
-        version: ${{ steps.extract_version.outputs.version }}
-        version_code: ${{ steps.extract_version.outputs.version_code }}
-        release: ${{ steps.check_release.outputs.release }}
+    outputs:
+      version: ${{ steps.extract_version.outputs.version }}
+      version_code: ${{ steps.extract_version.outputs.version_code }}
+      release: ${{ steps.check_release.outputs.release }}
     steps:
-        - name: Checkout Code
-          uses: actions/checkout@v4
-        - name: Extract Version
-          id: extract_version
-          run: |
-            echo "Extracting version from gradle/libs.versions.toml"
-            VERSION=$(grep -oP 'versionName = "\K[^"]+' gradle/libs.versions.toml)
-            VERSION_CODE=$(grep -oP 'versionCode = "\K[^"]+' gradle/libs.versions.toml)
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
-        - name: Check Release
-          id: check_release
-          if: ${{ github.event_name == 'workflow_dispatch' }}
-          run: |
-            if [ "${{ github.event.inputs.release }}" == "Yes" ]; then
-                echo "release=Yes" >> $GITHUB_OUTPUT
-            else
-                echo "release=No" >> $GITHUB_OUTPUT
-            fi
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Extract Version
+        id: extract_version
+        run: |
+          echo "Extracting version from gradle/libs.versions.toml"
+          VERSION=$(grep -oP 'versionName = "\K[^"]+' gradle/libs.versions.toml)
+          VERSION_CODE=$(grep -oP 'versionCode = "\K[^"]+' gradle/libs.versions.toml)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+
+      - name: Check Release
+        id: check_release
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          if [ "${{ github.event.inputs.release }}" == "Yes" ]; then
+            echo "release=Yes" >> $GITHUB_OUTPUT
+          else
+            echo "release=No" >> $GITHUB_OUTPUT
+          fi
+
 
   build-android:
     needs: extract-version
     runs-on: ubuntu-latest
     env:
-        VERSION: ${{ needs.extract-version.outputs.version }}
-        VERSION_CODE: ${{ needs.extract-version.outputs.version_code }}
-        RELEASE: ${{ needs.extract-version.outputs.release }}
+      VERSION: ${{ needs.extract-version.outputs.version }}
+      VERSION_CODE: ${{ needs.extract-version.outputs.version_code }}
+      RELEASE: ${{ needs.extract-version.outputs.release }}
     steps:
-        - name: Checkout
-          uses: actions/checkout@v4
-          with:
-            submodules: true
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
 
-        - name: Set Up JDK
-          uses: actions/setup-java@v4
-          with:
-            distribution: 'zulu'
-            java-version: '17'
-            cache: 'gradle'
+      - name: Set Up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: 'gradle'
 
-        - name: Cache Gradle dependencies
-          uses: actions/cache@v4
-          with:
-            path: |
-              ~/.gradle/caches/
-              ~/.gradle/wrapper/
-              ~/.android/build-cache/
-            key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/buildSrc/**/*.kt') }}
-            restore-keys: |
-              ${{ runner.os }}-gradle-
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches/
+            ~/.gradle/wrapper/
+            ~/.android/build-cache/
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/buildSrc/**/*.kt') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
-        - name: Cache Android build
-          uses: actions/cache@v4
-          with:
-            path: |
-              app/build/
-              */build/intermediates
-              */build/generated
-            key: ${{ runner.os }}-android-build-${{ hashFiles('**/*.gradle*', '**/*.kt', '**/*.java', '**/*.xml') }}
-            restore-keys: |
-              ${{ runner.os }}-android-build-
+      - name: Cache Android build
+        uses: actions/cache@v4
+        with:
+          path: |
+            app/build/
+            */build/intermediates
+            */build/generated
+          key: ${{ runner.os }}-android-build-${{ hashFiles('**/*.gradle*', '**/*.kt', '**/*.java', '**/*.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-android-build-
 
-        - name: Setup Config
-          run: |
-            echo ${{ secrets.JETSCAN_ANDROID_RELEASE_KEYSTORE_BASE64_ENCODED }} | base64 -d > release-keystore.jks
-            echo ${{ secrets.JETSCAN_ANDROID_GOOGLE_CERT_BASE64_ENCODED }} | base64 -d > app/google-services.json
-            echo ${{ secrets.JETSCAN_ANDROID_KEY_PROPERTIES_BASE64_ENCODED }} | base64 -d > app/key.properties
-          
-        - name: Change wrapper permissions
-          run: chmod +x ./gradlew
+      - name: Setup Config
+        run: |
+          echo ${{ secrets.JETSCAN_ANDROID_RELEASE_KEYSTORE_BASE64_ENCODED }} | base64 -d > release-keystore.jks
+          echo ${{ secrets.JETSCAN_ANDROID_GOOGLE_CERT_BASE64_ENCODED }} | base64 -d > app/google-services.json
+          echo ${{ secrets.JETSCAN_ANDROID_KEY_PROPERTIES_BASE64_ENCODED }} | base64 -d > app/key.properties
 
-        - name: Add Local properties values
-          env:
-              GOOGLE_CLIENT_ID: ${{ secrets.JETSCAN_ANDROID_GOOGLE_CLIENT_ID }}
-              BACKEND_URL: ${{ secrets.JETSCAN_ANDROID_BACKEND_URL }}
-          run: |
-            echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> local.properties
-            echo "JETSCAN_BACKEND_URL=$BACKEND_URL" >> local.properties
-        
-        - name: Build Release APK
-          run: ./gradlew assembleRelease --parallel --build-cache --info --stacktrace > build-android.log 2>&1
+      - name: Change wrapper permissions
+        run: chmod +x ./gradlew
 
-        - name: Upload Build Artifacts
-          uses: actions/upload-artifact@v4
-          with:
-            name: APKs
-            path: |
-              app/build/outputs/apk/release/
-        
-        - name: Upload Build Log
-          if: ${{ failure() }}
-          uses: actions/upload-artifact@v4
-          with:
-            name: Build Log
-            path: |
-              build-android.log
-              app/build/reports/
+      - name: Add Local properties values
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.JETSCAN_ANDROID_GOOGLE_CLIENT_ID }}
+          BACKEND_URL: ${{ secrets.JETSCAN_ANDROID_BACKEND_URL }}
+        run: |
+          echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> local.properties
+          echo "JETSCAN_BACKEND_URL=$BACKEND_URL" >> local.properties
 
-        - name: Upload Obfuscation Mapping
-          if: ${{ success()  }}
-          uses: actions/upload-artifact@v4
-          with:
-            name: Obfuscation Mapping
-            path: |
-              app/build/outputs/mapping/release/
-              app/build/outputs/logs/
-            
+      - name: Build Release APK
+        run: ./gradlew assembleRelease --parallel --build-cache --info --stacktrace > build-android.log 2>&1
 
-        - name: Clean up config
-          if: ${{ always() }}
-          run: |
-           rm -f release-keystore.jks
-           rm -f app/google-services.json
-           rm -f app/key.properties
-           rm -f local.properties
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: APKs
+          path: app/build/outputs/apk/release/
+
+      - name: Upload Build Log
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Build Log
+          path: |
+            build-android.log
+            app/build/reports/
+
+      - name: Upload Obfuscation Mapping
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Obfuscation Mapping
+          path: |
+            app/build/outputs/mapping/release/
+            app/build/outputs/logs/
+
+      - name: Clean up config
+        if: ${{ always() }}
+        run: |
+          rm -f release-keystore.jks
+          rm -f app/google-services.json
+          rm -f app/key.properties
+          rm -f local.properties
+
+
+  release:
+    needs: [extract-version, build-android]
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.extract-version.outputs.version }}
+      VERSION_CODE: ${{ needs.extract-version.outputs.version_code }}
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get commits since last tag
+        id: get_commits
+        run: |
+          git fetch --tags
+
+          LAST_TAG=$(git tag --sort=-version:refname | head -n 1)
+
+          if [ -z "$LAST_TAG" ]; then
+            echo "No previous tags found — collecting all commits"
+            git log --pretty=format:"%h %s" --no-merges > commits.txt
+          else
+            echo "Last tag found: $LAST_TAG"
+            COMMIT_COUNT=$(git log "${LAST_TAG}..HEAD" --oneline --no-merges | wc -l)
+            if [ "$COMMIT_COUNT" -eq 0 ]; then
+              echo "No new commits since $LAST_TAG — skipping release"
+              echo "skip=true" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            git log "${LAST_TAG}..HEAD" --pretty=format:"%h %s" --no-merges > commits.txt
+          fi
+
+          echo "skip=false" >> $GITHUB_OUTPUT
+          echo "last_tag=${LAST_TAG:-none}" >> $GITHUB_OUTPUT
+          echo "--- Commits to summarize ---"
+          cat commits.txt
+
+      - name: Generate release notes with GitHub Models
+        id: release_notes
+        if: steps.get_commits.outputs.skip != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COMMITS=$(cat commits.txt)
+
+          # Write the system prompt to a file to avoid shell escaping issues
+          cat > system_prompt.txt << 'PROMPT_EOF'
+          You are a senior technical writer producing professional release notes for a mobile application.
+
+          Application Details:
+          - Name: JetScan
+          - Platform: Android (native Java)
+          - Category: Document scanning and management
+          - Build environment: Java 17 (Zulu distribution), Gradle with version catalog (libs.versions.toml)
+          - Distribution: Direct APK install
+
+          Writing rules (follow strictly):
+          - No emojis anywhere in the output
+          - No informal language, exclamation marks, or marketing tone
+          - Use plain markdown only: ## headings and bullet points
+          - Allowed headings (only include if relevant commits exist): ## New Features, ## Bug Fixes, ## Improvements
+          - Each bullet must be a complete, professional, user-facing sentence
+          - Translate raw commit messages into clear descriptions — no hashes, branch names, or author names
+          - Omit CI/CD changes, dependency version bumps, code formatting, and merge commits entirely
+          - Do not add an introduction, version header, summary paragraph, or closing statement
+          - Output only the grouped bullet points under their headings, nothing else
+          PROMPT_EOF
+
+          SYSTEM_PROMPT=$(cat system_prompt.txt)
+          USER_CONTENT="Application version: $VERSION (build $VERSION_CODE)
+
+          Generate release notes from the following git commits:
+
+          $COMMITS"
+
+          # Build JSON payload safely with jq — handles all escaping
+          PAYLOAD=$(jq -n \
+            --arg system "$SYSTEM_PROMPT" \
+            --arg user "$USER_CONTENT" \
+            '{
+              model: "gpt-4o-mini",
+              max_tokens: 1024,
+              messages: [
+                { role: "system", content: $system },
+                { role: "user",   content: $user   }
+              ]
+            }')
+
+          RESPONSE=$(curl -sf https://models.inference.ai.azure.com/chat/completions \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+
+          if echo "$RESPONSE" | jq -e '.choices[0].message.content' > /dev/null 2>&1; then
+            echo "$RESPONSE" | jq -r '.choices[0].message.content' > release_notes.md
+          else
+            echo "GitHub Models API call failed — falling back to plain release note" >&2
+            echo "$RESPONSE" >&2
+            echo "Release $VERSION (build $VERSION_CODE)" > release_notes.md
+          fi
+
+          echo "--- Generated Release Notes ---"
+          cat release_notes.md
+
+      - name: Download APK artifact
+        if: steps.get_commits.outputs.skip != 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: APKs
+          path: ./apk
+
+      - name: Find and rename APK
+        if: steps.get_commits.outputs.skip != 'true'
+        run: |
+          APK_SRC=$(find ./apk -name "*.apk" | head -n 1)
+          echo "Found APK: $APK_SRC"
+          mv "$APK_SRC" "./JetScan_v${VERSION}+${VERSION_CODE}.apk"
+
+      - name: Create GitHub Release
+        if: steps.get_commits.outputs.skip != 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: JetScan v${{ env.VERSION }}
+          body_path: release_notes.md
+          files: ./JetScan_v${{ env.VERSION }}+${{ env.VERSION_CODE }}.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
