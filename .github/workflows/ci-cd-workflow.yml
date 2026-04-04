@@ -1,0 +1,135 @@
+name: JetScan Release Build Workflow
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - workflow-test
+
+permissions:
+  contents: write
+
+
+jobs:
+  extract-version:
+    runs-on: ubuntu-latest
+    outputs: 
+        version: ${{ steps.extract_version.outputs.version }}
+        version_code: ${{ steps.extract_version.outputs.version_code }}
+        release: ${{ steps.check_release.outputs.release }}
+    steps:
+        - name: Checkout Code
+          uses: actions/checkout@v4
+        - name: Extract Version
+          id: extract_version
+          run: |
+            echo "Extracting version from gradle/libs.versions.toml"
+            VERSION=$(grep -oP 'versionName = "\K[^"]+' gradle/libs.versions.toml)
+            VERSION_CODE=$(grep -oP 'versionCode = "\K[^"]+' gradle/libs.versions.toml)
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+        - name: Check Release
+          id: check_release
+          if: ${{ github.event_name == 'workflow_dispatch' }}
+          run: |
+            if [ "${{ github.event.inputs.release }}" == "Yes" ]; then
+                echo "release=Yes" >> $GITHUB_OUTPUT
+            else
+                echo "release=No" >> $GITHUB_OUTPUT
+            fi
+
+  build-android:
+    needs: extract-version
+    runs-on: ubuntu-latest
+    env:
+        VERSION: ${{ needs.extract-version.outputs.version }}
+        VERSION_CODE: ${{ needs.extract-version.outputs.version_code }}
+        RELEASE: ${{ needs.extract-version.outputs.release }}
+    steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+          with:
+            submodules: true
+
+        - name: Set Up JDK
+          uses: actions/setup-java@v4
+          with:
+            distribution: 'zulu'
+            java-version: '17'
+            cache: 'gradle'
+
+        - name: Cache Gradle dependencies
+          uses: actions/cache@v4
+          with:
+            path: |
+              ~/.gradle/caches/
+              ~/.gradle/wrapper/
+              ~/.android/build-cache/
+            key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/buildSrc/**/*.kt') }}
+            restore-keys: |
+              ${{ runner.os }}-gradle-
+
+        - name: Cache Android build
+          uses: actions/cache@v4
+          with:
+            path: |
+              app/build/
+              */build/intermediates
+              */build/generated
+            key: ${{ runner.os }}-android-build-${{ hashFiles('**/*.gradle*', '**/*.kt', '**/*.java', '**/*.xml') }}
+            restore-keys: |
+              ${{ runner.os }}-android-build-
+
+        - name: Setup Config
+          run: |
+            echo ${{ secrets.JETSCAN_ANDROID_RELEASE_KEYSTORE_BASE64_ENCODED }} | base64 -d > release-keystore.jks
+            echo ${{ secrets.JETSCAN_ANDROID_GOOGLE_CERT_BASE64_ENCODED }} | base64 -d > app/google-services.json
+            echo ${{ secrets.JETSCAN_ANDROID_KEY_PROPERTIES_BASE64_ENCODED }} | base64 -d > app/key.properties
+          
+        - name: Change wrapper permissions
+          run: chmod +x ./gradlew
+
+        - name: Add Local properties values
+          env:
+              GOOGLE_CLIENT_ID: ${{ secrets.JETSCAN_ANDROID_GOOGLE_CLIENT_ID }}
+              BACKEND_URL: ${{ secrets.JETSCAN_ANDROID_BACKEND_URL }}
+          run: |
+            echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> local.properties
+            echo "JETSCAN_BACKEND_URL=$BACKEND_URL" >> local.properties
+        
+        - name: Build Release APK
+          run: ./gradlew assembleRelease --parallel --build-cache --info --stacktrace > build-android.log 2>&1
+
+        - name: Upload Build Artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: APKs
+            path: |
+              app/build/outputs/apk/release/
+        
+        - name: Upload Build Log
+          if: ${{ failure() }}
+          uses: actions/upload-artifact@v4
+          with:
+            name: Build Log
+            path: |
+              build-android.log
+              app/build/reports/
+
+        - name: Upload Obfuscation Mapping
+          if: ${{ success()  }}
+          uses: actions/upload-artifact@v4
+          with:
+            name: Obfuscation Mapping
+            path: |
+              app/build/outputs/mapping/release/
+              app/build/outputs/logs/
+            
+
+        - name: Clean up config
+          if: ${{ always() }}
+          run: |
+           rm -f release-keystore.jks
+           rm -f app/google-services.json
+           rm -f app/key.properties
+           rm -f local.properties
