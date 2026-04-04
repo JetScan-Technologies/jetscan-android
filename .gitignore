@@ -14,3 +14,4 @@ java_pid11740.hprof
 /app/release
 .firebaserc
 firebase.json
+/src/main/cpp/third_party

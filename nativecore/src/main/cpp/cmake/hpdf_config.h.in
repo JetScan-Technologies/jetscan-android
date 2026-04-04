@@ -1,0 +1,7 @@
+/* Auto-generated for Android — do not edit manually */
+#ifndef _HPDF_CONFIG_H
+#define _HPDF_CONFIG_H
+#cmakedefine LIBHPDF_HAVE_ZLIB
+#cmakedefine LIBHPDF_HAVE_LIBPNG
+#cmakedefine LIBHPDF_HAVE_NOZLIB
+#endif /* _HPDF_CONFIG_H */
