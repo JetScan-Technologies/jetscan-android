@@ -1,0 +1,43 @@
+# Build outputs
+nativecore/build/
+nativecore/.cxx/
+nativecore/.externalNativeBuild/
+nativecore/obj/
+nativecore/libs/
+
+# CMake
+nativecore/CMakeFiles/
+nativecore/CMakeCache.txt
+nativecore/cmake-build-*/
+nativecore/compile_commands.json
+
+# NDK / Ninja
+nativecore/.ninja_log
+nativecore/.ninja_deps
+nativecore/build.ninja
+
+# Gradle (module-level)
+nativecore/.gradle/
+
+# Local config
+nativecore/local.properties
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+
+# Third-party (as you wanted)
+src/main/cpp/third_party/
