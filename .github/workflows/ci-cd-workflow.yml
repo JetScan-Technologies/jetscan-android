@@ -139,6 +139,9 @@ jobs:
   release:
     needs: [extract-version, build-android]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      models: read
     env:
       VERSION: ${{ needs.extract-version.outputs.version }}
       VERSION_CODE: ${{ needs.extract-version.outputs.version_code }}
@@ -225,7 +228,7 @@ jobs:
               ]
             }')
 
-          RESPONSE=$(curl -sf https://models.inference.ai.azure.com/chat/completions \
+          RESPONSE=$(curl -s https://models.inference.ai.azure.com/chat/completions \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
             -H "Content-Type: application/json" \
             -d "$PAYLOAD")
