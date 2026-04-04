@@ -20,9 +20,6 @@ dependencyResolutionManagement {
         maven {
             url = uri("https://jitpack.io")
         }
-        maven {
-            url = uri("https://repo.itextsupport.com/android")
-        }
     }
 }
 
@@ -30,5 +27,4 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 rootProject.name = "JetScan"
 include(":app")
-include(":opencv")
-include(":pdf")
+include(":nativecore")

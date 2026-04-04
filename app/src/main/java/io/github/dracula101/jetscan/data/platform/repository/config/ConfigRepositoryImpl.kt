@@ -5,8 +5,8 @@ import io.github.dracula101.jetscan.data.platform.datasource.disk.config.ConfigD
 import io.github.dracula101.jetscan.presentation.platform.feature.document.DocumentDatePattern
 import io.github.dracula101.jetscan.presentation.platform.feature.document.DocumentTimePattern
 import io.github.dracula101.jetscan.presentation.platform.feature.document.MaxDocumentSize
-import io.github.dracula101.pdf.models.PdfPageSize
-import io.github.dracula101.pdf.models.PdfQuality
+import io.github.dracula101.jetscan.data.document.pdf.models.PdfPageSize
+import io.github.dracula101.jetscan.data.document.pdf.models.PdfQuality
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted

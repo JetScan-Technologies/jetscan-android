@@ -122,8 +122,7 @@ android {
 dependencies {
 
     // ==================== SUB PROJECTS ====================
-    implementation(projects.opencv)
-    implementation(projects.pdf)
+    implementation(projects.nativecore)
 
     implementation(libs.about.libraries.core)
     implementation(libs.about.libraries.ui)

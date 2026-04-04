@@ -13,7 +13,7 @@ import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.data.document.repository.models.DocumentResult
 import io.github.dracula101.jetscan.data.platform.repository.config.ConfigRepository
 import io.github.dracula101.jetscan.data.platform.utils.bytesToReadableSize
-import io.github.dracula101.pdf.manager.PdfManager
+import io.github.dracula101.jetscan.data.document.pdf.PdfManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

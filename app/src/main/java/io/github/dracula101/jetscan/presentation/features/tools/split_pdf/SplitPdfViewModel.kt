@@ -7,18 +7,18 @@ import androidx.core.net.toFile
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.github.dracula101.jetscan.data.document.datasource.network.repository.PdfToolRepository
-import io.github.dracula101.jetscan.data.document.datasource.network.repository.models.PdfSplitResult
 import io.github.dracula101.jetscan.data.document.manager.DocumentManager
 import io.github.dracula101.jetscan.data.document.manager.models.DocManagerResult
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
+import io.github.dracula101.jetscan.data.document.pdf.PdfManager
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
+import timber.log.Timber
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -32,7 +32,7 @@ class SplitPdfViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val contentResolver: ContentResolver,
     private val documentRepository: DocumentRepository,
-    private val pdfToolRepository: PdfToolRepository,
+    private val pdfManager: PdfManager,
     private val documentManager: DocumentManager,
 ) : BaseViewModel<SplitPdfState, Unit, SplitPdfAction>(
     initialState = savedStateHandle[SPLIT_PDF_STATE] ?: SplitPdfState(),
@@ -113,47 +113,53 @@ class SplitPdfViewModel @Inject constructor(
         val document = state.selectedDocument ?: return
         val ranges = state.splitRanges
         val fileName = state.fileName
-        val outputFiles = ranges.map { range->
-            File.createTempFile("split-$range", ".pdf")
-        }
         setState {
             state.copy(isLoading = true, outputFiles = emptyList())
         }
         viewModelScope.launch {
-            val result = pdfToolRepository.splitPdfFile(
-                document.uri.toFile(),
-                outputFiles,
-                state.rangesString
-            )
-            when (result) {
-                is PdfSplitResult.Success -> {
-                    result.files.forEachIndexed { index, file ->
-                        val outputFileResponse = documentManager
-                            .addExtraDocument(
-                                file,
-                                "${fileName.replace("(Page)", " Page ${ ranges[index] }")}.pdf",
-                            )
-                        when (outputFileResponse) {
-                            is DocManagerResult.Error -> {}
-                            is DocManagerResult.Success -> {
-                                if (outputFileResponse.data != null){
-                                    setState { state.copy(outputFiles = state.outputFiles + outputFileResponse.data) }
-                                }
+            try {
+                val tempDir = File.createTempFile("split_dir", "").apply {
+                    delete()
+                    mkdirs()
+                }
+                val splitFiles = pdfManager.splitPdf(
+                    document.uri.toFile(),
+                    tempDir
+                )
+                if (splitFiles.isEmpty()) {
+                    Timber.e("Failed to split PDF file: no output files")
+                    return@launch
+                }
+                // Map split pages to the requested ranges
+                splitFiles.forEachIndexed { index, file ->
+                    val rangeName = if (index < ranges.size) ranges[index].toString() else "${index + 1}"
+                    val outputFileResponse = documentManager
+                        .addExtraDocument(
+                            file,
+                            "${fileName.replace("(Page)", " Page $rangeName")}.pdf",
+                        )
+                    when (outputFileResponse) {
+                        is DocManagerResult.Error -> {}
+                        is DocManagerResult.Success -> {
+                            if (outputFileResponse.data != null) {
+                                setState { state.copy(outputFiles = state.outputFiles + outputFileResponse.data) }
                             }
                         }
                     }
-                    setState {
-                        state.copy(view = SplitPdfView.COMPLETED)
-                    }
                 }
-                is PdfSplitResult.Error -> {
+                setState {
+                    state.copy(view = SplitPdfView.COMPLETED)
                 }
+                // Cleanup temp files
+                splitFiles.forEach { it.delete() }
+                tempDir.delete()
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to split PDF file")
             }
         }.invokeOnCompletion {
             setState {
                 state.copy(isLoading = false)
             }
-            outputFiles.forEach { it.delete() }
         }
     }
 

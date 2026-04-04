@@ -65,9 +65,9 @@ import io.github.dracula101.jetscan.presentation.platform.component.dialog.AppBa
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.JetScanScaffold
 import io.github.dracula101.jetscan.presentation.platform.component.textfield.AppTextField
 import io.github.dracula101.jetscan.presentation.platform.composition.LocalFileActionManager
-import io.github.dracula101.pdf.ui.PdfLoader
-import io.github.dracula101.pdf.ui.PdfReader
-import io.github.dracula101.pdf.ui.rememberPdfTransformState
+import io.github.dracula101.jetscan.presentation.pdf.PdfLoader
+import io.github.dracula101.jetscan.presentation.pdf.PdfReader
+import io.github.dracula101.jetscan.presentation.pdf.rememberPdfTransformState
 import timber.log.Timber
 import java.io.File
 

@@ -1,15 +1,18 @@
 [versions]
 
 # SDK VERSIONS
-compileSdk = "34"
+compileSdk = "36"
 minSdk = "23"
+opensslVersion = "1.1.1q-beta-1"
+ndk = "29.0.14206865"
+cmake = "3.28.0"
 targetSdk = "31"
 versionCode = "2"
 versionName = "1.1.0"
 kotlinCompilerVersion = "1.5.1"
 
 # DEPENDENCIES VERSIONS
-agp = "8.5.0"
+agp = "8.12.3"
 kotlin = "1.9.0"
 coreKtx = "1.13.1"
 navigation = "2.7.7"
@@ -150,6 +153,7 @@ google-mlkit-barcode = { group = "com.google.mlkit", name = "barcode-scanning", 
 google-mlkit-common = { group = "com.google.mlkit", name = "common", version.ref = "mlKitCommon" }
 
 # ======================= HTTP CLIENT =======================
+openssl = { module = "com.android.ndk.thirdparty:openssl", version.ref = "opensslVersion" }
 square-retrofit-bom = { module = "com.squareup.retrofit2:retrofit-bom", version.ref = "retrofitBom" }
 square-retrofit = { module = "com.squareup.retrofit2:retrofit" }
 square-retrofit-gson = { module = "com.squareup.retrofit2:converter-gson" }

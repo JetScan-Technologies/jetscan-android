@@ -21,7 +21,7 @@ import io.github.dracula101.jetscan.data.document.repository.models.DocumentErro
 import io.github.dracula101.jetscan.data.document.repository.models.DocumentResult
 import io.github.dracula101.jetscan.data.document.utils.Task
 import io.github.dracula101.jetscan.data.platform.repository.config.ConfigRepository
-import io.github.dracula101.pdf.models.PdfOptions
+import io.github.dracula101.jetscan.data.document.pdf.models.PdfOptions
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first

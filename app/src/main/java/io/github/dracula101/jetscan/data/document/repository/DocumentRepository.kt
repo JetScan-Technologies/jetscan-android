@@ -7,7 +7,7 @@ import io.github.dracula101.jetscan.data.document.models.doc.DocumentFolder
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import io.github.dracula101.jetscan.data.document.models.image.ScannedImage
 import io.github.dracula101.jetscan.data.document.repository.models.DocumentResult
-import io.github.dracula101.pdf.models.PdfOptions
+import io.github.dracula101.jetscan.data.document.pdf.models.PdfOptions
 import kotlinx.coroutines.flow.Flow
 import java.io.File
 

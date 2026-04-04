@@ -6,8 +6,8 @@ import io.github.dracula101.jetscan.data.platform.datasource.disk.BaseDiskSource
 import io.github.dracula101.jetscan.data.platform.repository.util.bufferedMutableSharedFlow
 import io.github.dracula101.jetscan.presentation.platform.feature.document.DocumentDatePattern
 import io.github.dracula101.jetscan.presentation.platform.feature.document.DocumentTimePattern
-import io.github.dracula101.pdf.models.PdfPageSize
-import io.github.dracula101.pdf.models.PdfQuality
+import io.github.dracula101.jetscan.data.document.pdf.models.PdfPageSize
+import io.github.dracula101.jetscan.data.document.pdf.models.PdfQuality
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onSubscription
 

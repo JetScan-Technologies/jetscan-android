@@ -63,8 +63,8 @@ import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.cust
 import io.github.dracula101.jetscan.presentation.platform.feature.document.DocumentDatePattern
 import io.github.dracula101.jetscan.presentation.platform.feature.document.DocumentTimePattern
 import io.github.dracula101.jetscan.presentation.platform.feature.document.MaxDocumentSize
-import io.github.dracula101.pdf.models.PdfPageSize
-import io.github.dracula101.pdf.models.PdfQuality
+import io.github.dracula101.jetscan.data.document.pdf.models.PdfPageSize
+import io.github.dracula101.jetscan.data.document.pdf.models.PdfQuality
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)

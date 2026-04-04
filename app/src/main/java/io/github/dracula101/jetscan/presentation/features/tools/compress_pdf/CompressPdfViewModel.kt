@@ -3,28 +3,24 @@ package io.github.dracula101.jetscan.presentation.features.tools.compress_pdf
 
 import android.content.ContentResolver
 import android.os.Parcelable
-import androidx.core.net.toFile
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.github.dracula101.jetscan.data.document.datasource.network.repository.PdfToolRepository
-import io.github.dracula101.jetscan.data.document.datasource.network.repository.models.PdfCompressResult
-import io.github.dracula101.jetscan.data.document.datasource.network.repository.models.PdfCompressSizesResult
 import io.github.dracula101.jetscan.data.document.manager.DocumentManager
-import io.github.dracula101.jetscan.data.document.manager.models.DocManagerResult
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.data.platform.repository.config.ConfigRepository
 import io.github.dracula101.jetscan.presentation.platform.base.ImportBaseViewModel
 import io.github.dracula101.jetscan.presentation.platform.base.ImportDocumentState
-import io.github.dracula101.pdf.manager.PdfManager
-import io.github.dracula101.pdf.models.PdfCompressionLevel
+import io.github.dracula101.jetscan.data.document.pdf.PdfManager
+import io.github.dracula101.jetscan.data.document.pdf.models.PdfCompressionLevel
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
+import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 
@@ -38,7 +34,6 @@ class CompressPdfViewModel @Inject constructor(
     private val documentRepository: DocumentRepository,
     private val configRepository: ConfigRepository,
     private val pdfManager: PdfManager,
-    private val pdfToolRepository: PdfToolRepository
 ) : ImportBaseViewModel<CompressPdfState, Unit, CompressPdfAction>(
     initialState = savedStateHandle[COMPRESS_PDF_STATE] ?: CompressPdfState(),
     documentRepository = documentRepository,
@@ -122,25 +117,8 @@ class CompressPdfViewModel @Inject constructor(
             state.copy(isLoadingCompressionSizes = true)
         }
         viewModelScope.launch {
-            val document = stateFlow.value.selectedDocument
-            if (document != null) {
-                val compressionSizes = pdfToolRepository.getPdfCompressionSizes(
-                    document.uri.toFile(),
-                    PdfCompressionLevel.entries.map { it.toQuality() }
-                )
-                when (compressionSizes) {
-                    is PdfCompressSizesResult.Success -> {
-                        mutableStateFlow.update { state ->
-                            state.copy(
-                                compressionSizes = compressionSizes.compressSizes
-                            )
-                        }
-                    }
-                    is PdfCompressSizesResult.Error -> {
-                        // Handle error
-                    }
-                }
-            }
+            // Compression size estimation is not available with local processing
+            Timber.w("PDF compression size estimation is not available locally")
         }.invokeOnCompletion {
             mutableStateFlow.update { state ->
                 state.copy(
@@ -154,47 +132,15 @@ class CompressPdfViewModel @Inject constructor(
         mutableStateFlow.update { state ->
             state.copy(isLoading = true)
         }
-        val tempFile = File.createTempFile("compressed", ".pdf")
         viewModelScope.launch {
-            val document = stateFlow.value.selectedDocument
-            val compressionLevel = stateFlow.value.compressionLevel
-            if (document != null && compressionLevel != null) {
-                val compressResult = pdfToolRepository.compressPdfFile(
-                    document.uri.toFile(),
-                    compressionLevel.toQuality(),
-                    outputFile = tempFile
-                )
-                when (compressResult) {
-                    is PdfCompressResult.Success -> {
-                        val extraDocumentResponse = documentManager.addExtraDocument(
-                            tempFile,
-                            "Compressed ${document.name}.pdf",
-                        )
-                        when (extraDocumentResponse) {
-                            is DocManagerResult.Error -> {}
-                            is DocManagerResult.Success -> {
-                                mutableStateFlow.update { state ->
-                                    state.copy(
-                                        outputFile = extraDocumentResponse.data,
-                                        pdfCompressView = PdfCompressView.COMPLETED
-                                    )
-                                }
-
-                            }
-                        }
-                    }
-                    is PdfCompressResult.Error -> {
-                        // Handle error
-                    }
-                }
-            }
+            // PDF compression is not yet available with local processing
+            Timber.w("PDF compression is not yet available locally")
         }.invokeOnCompletion {
             mutableStateFlow.update { state ->
                 state.copy(
                     isLoading = false,
                 )
             }
-            tempFile.delete()
         }
     }
 

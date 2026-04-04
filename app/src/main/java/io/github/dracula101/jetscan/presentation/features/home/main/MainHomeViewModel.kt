@@ -21,7 +21,7 @@ import io.github.dracula101.jetscan.presentation.features.home.main.components.P
 import io.github.dracula101.jetscan.presentation.platform.base.ImportBaseViewModel
 import io.github.dracula101.jetscan.presentation.platform.base.ImportDocumentState
 import io.github.dracula101.jetscan.presentation.platform.feature.app.model.SnackbarState
-import io.github.dracula101.pdf.manager.PdfManager
+import io.github.dracula101.jetscan.data.document.pdf.PdfManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

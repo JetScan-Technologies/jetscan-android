@@ -61,7 +61,7 @@ import io.github.dracula101.jetscan.presentation.platform.component.button.Gradi
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.JetScanScaffoldWithFlexAppBar
 import io.github.dracula101.jetscan.presentation.platform.composition.LocalFileActionManager
 import io.github.dracula101.jetscan.presentation.platform.feature.app.utils.customContainer
-import io.github.dracula101.pdf.models.PdfCompressionLevel
+import io.github.dracula101.jetscan.data.document.pdf.models.PdfCompressionLevel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

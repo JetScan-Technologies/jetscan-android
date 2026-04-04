@@ -12,8 +12,8 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.github.dracula101.jetscan.data.platform.manager.opencv.NativeOpenCvManagerAdapter
 import io.github.dracula101.jetscan.data.platform.manager.opencv.OpenCvManager
-import io.github.dracula101.jetscan.data.platform.manager.opencv.OpenCvManagerImpl
 import java.io.File
 import java.nio.file.spi.FileSystemProvider
 import java.util.concurrent.Executor
@@ -81,7 +81,7 @@ object AppModule {
     @Provides
     @Singleton
     fun provideOpenCvManager(): OpenCvManager {
-        return OpenCvManagerImpl()
+        return NativeOpenCvManagerAdapter()
     }
 
 }

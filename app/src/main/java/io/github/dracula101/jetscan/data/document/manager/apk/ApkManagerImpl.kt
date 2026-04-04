@@ -21,7 +21,7 @@ class ApkManagerImpl : ApkManager {
         val packageInfo =
             packageManager.getPackageArchiveInfo(apkFile.path, PackageManager.GET_ACTIVITIES)
         if (packageInfo != null) {
-            val applicationInfo = packageInfo.applicationInfo
+            val applicationInfo = packageInfo.applicationInfo ?: return null
             applicationInfo.sourceDir = apkFile.path
             applicationInfo.publicSourceDir = apkFile.path
             return applicationInfo.loadIcon(packageManager)
@@ -67,7 +67,7 @@ class ApkManagerImpl : ApkManager {
         val packageInfo =
             packageManager.getPackageArchiveInfo(file.path, PackageManager.GET_ACTIVITIES)
         if (packageInfo != null) {
-            val applicationInfo = packageInfo.applicationInfo
+            val applicationInfo = packageInfo.applicationInfo ?: return null
             applicationInfo.sourceDir = file.path
             applicationInfo.publicSourceDir = file.path
             return applicationInfo.loadIcon(packageManager).run {

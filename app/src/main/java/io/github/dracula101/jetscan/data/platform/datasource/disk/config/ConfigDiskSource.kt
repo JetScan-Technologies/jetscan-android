@@ -3,8 +3,8 @@ package io.github.dracula101.jetscan.data.platform.datasource.disk.config
 import io.github.dracula101.jetscan.data.document.models.image.ImageQuality
 import io.github.dracula101.jetscan.presentation.platform.feature.document.DocumentDatePattern
 import io.github.dracula101.jetscan.presentation.platform.feature.document.DocumentTimePattern
-import io.github.dracula101.pdf.models.PdfPageSize
-import io.github.dracula101.pdf.models.PdfQuality
+import io.github.dracula101.jetscan.data.document.pdf.models.PdfPageSize
+import io.github.dracula101.jetscan.data.document.pdf.models.PdfQuality
 import kotlinx.coroutines.flow.Flow
 
 interface ConfigDiskSource {

@@ -41,8 +41,8 @@ import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.camera.FlashMode
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.camera.GridMode
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.model.document.DocumentType
-import io.github.dracula101.pdf.models.PdfOptions
-import io.github.dracula101.pdf.models.PdfQuality
+import io.github.dracula101.jetscan.data.document.pdf.models.PdfOptions
+import io.github.dracula101.jetscan.data.document.pdf.models.PdfQuality
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay

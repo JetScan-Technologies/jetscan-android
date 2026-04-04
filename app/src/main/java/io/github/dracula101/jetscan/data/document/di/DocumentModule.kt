@@ -21,8 +21,8 @@ import io.github.dracula101.jetscan.data.document.manager.mime.MimeTypeManagerIm
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepositoryImpl
 import io.github.dracula101.jetscan.data.document.utils.DBConstants
-import io.github.dracula101.pdf.manager.PdfManager
-import io.github.dracula101.pdf.manager.PdfManagerImpl
+import io.github.dracula101.jetscan.data.document.manager.native.NativePdfManagerAdapter
+import io.github.dracula101.jetscan.data.document.pdf.PdfManager
 import javax.inject.Singleton
 
 @Module
@@ -43,7 +43,7 @@ object DocumentModule {
 
     @Provides
     @Singleton
-    fun providePdfManager(): PdfManager = PdfManagerImpl()
+    fun providePdfManager(): PdfManager = NativePdfManagerAdapter()
 
 
     @Provides

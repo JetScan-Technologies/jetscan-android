@@ -12,7 +12,7 @@ import io.github.dracula101.jetscan.data.document.manager.models.DocManagerResul
 import io.github.dracula101.jetscan.data.document.models.doc.Document
 import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
-import io.github.dracula101.pdf.manager.PdfManager
+import io.github.dracula101.jetscan.data.document.pdf.PdfManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn

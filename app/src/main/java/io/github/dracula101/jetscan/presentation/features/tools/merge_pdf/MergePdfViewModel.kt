@@ -7,8 +7,6 @@ import androidx.core.net.toFile
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.github.dracula101.jetscan.data.document.datasource.network.repository.PdfToolRepository
-import io.github.dracula101.jetscan.data.document.datasource.network.repository.models.PdfMergeResult
 import io.github.dracula101.jetscan.data.document.manager.DocumentManager
 import io.github.dracula101.jetscan.data.document.manager.models.DocManagerResult
 import io.github.dracula101.jetscan.data.document.models.doc.Document
@@ -16,7 +14,7 @@ import io.github.dracula101.jetscan.data.document.repository.DocumentRepository
 import io.github.dracula101.jetscan.data.platform.repository.config.ConfigRepository
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
 import io.github.dracula101.jetscan.presentation.platform.feature.app.model.SnackbarState
-import io.github.dracula101.pdf.manager.PdfManager
+import io.github.dracula101.jetscan.data.document.pdf.PdfManager
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -40,7 +38,6 @@ class MergePdfViewModel @Inject constructor(
     private val documentManager: DocumentManager,
     private val pdfManager: PdfManager,
     private val configRepository: ConfigRepository,
-    private val pdfToolRepository: PdfToolRepository,
 ) : BaseViewModel<MergePdfState, Unit, MergePdfAction>(
     initialState = savedStateHandle[MERGE_PDF_STATE] ?: MergePdfState(),
 ) {
@@ -116,39 +113,48 @@ class MergePdfViewModel @Inject constructor(
             it.copy(isLoading = true)
         }
         viewModelScope.launch {
-            val mergeResult = pdfToolRepository.mergePdfFiles(
-                files = state.selectedDocuments.map { it.uri.toFile() },
-                fileName = state.fileName,
-                outputFile = outputFile
-            )
-            if (mergeResult is PdfMergeResult.Error) {
-                Timber.e(mergeResult.cause, "Failed to merge PDF files")
+            try {
+                val success = pdfManager.mergePdfs(
+                    files = state.selectedDocuments.map { it.uri.toFile() },
+                    outputFile = outputFile
+                )
+                if (!success) {
+                    Timber.e("Failed to merge PDF files")
+                    mutableStateFlow.update {
+                        it.copy(
+                            snackbarState = SnackbarState.ShowError("Merge Failed", "Failed to merge PDF files")
+                        )
+                    }
+                    return@launch
+                }
+                val docResultFile = documentManager.addExtraDocument(
+                    file = outputFile,
+                    fileName = "${state.fileName}.pdf",
+                )
+                when (docResultFile) {
+                    is DocManagerResult.Success -> {
+                        mutableStateFlow.update {
+                            it.copy(
+                                mergedDocument = docResultFile.data,
+                                view = MergePdfView.MERGED
+                            )
+                        }
+                    }
+                    is DocManagerResult.Error -> {
+                        Timber.e(docResultFile.error, "Failed to add merged document")
+                        mutableStateFlow.update {
+                            it.copy(
+                                snackbarState = SnackbarState.ShowError("Merge Failed", docResultFile.message)
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to merge PDF files")
                 mutableStateFlow.update {
                     it.copy(
-                        snackbarState = SnackbarState.ShowError("Merge Failed",mergeResult.message)
+                        snackbarState = SnackbarState.ShowError("Merge Failed", e.message ?: "Unknown error")
                     )
-                }
-            }
-            val docResultFile = documentManager.addExtraDocument(
-                file = outputFile,
-                fileName = "${state.fileName}.pdf",
-            )
-            when (docResultFile) {
-                is DocManagerResult.Success -> {
-                    mutableStateFlow.update {
-                        it.copy(
-                            mergedDocument = docResultFile.data,
-                            view = MergePdfView.MERGED
-                        )
-                    }
-                }
-                is DocManagerResult.Error -> {
-                    Timber.e(docResultFile.error, "Failed to add merged document")
-                    mutableStateFlow.update {
-                        it.copy(
-                            snackbarState = SnackbarState.ShowError("Merge Failed",docResultFile.message)
-                        )
-                    }
                 }
             }
         }.invokeOnCompletion {

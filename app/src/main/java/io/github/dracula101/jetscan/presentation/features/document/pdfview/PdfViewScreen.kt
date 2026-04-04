@@ -73,8 +73,8 @@ import io.github.dracula101.jetscan.presentation.platform.component.appbar.JetSc
 import io.github.dracula101.jetscan.presentation.platform.component.scaffold.JetScanScaffold
 import io.github.dracula101.jetscan.presentation.platform.component.text.FittedText
 import io.github.dracula101.jetscan.presentation.platform.composition.LocalFileActionManager
-import io.github.dracula101.pdf.ui.PdfReader
-import io.github.dracula101.pdf.ui.rememberPdfTransformState
+import io.github.dracula101.jetscan.presentation.pdf.PdfReader
+import io.github.dracula101.jetscan.presentation.pdf.rememberPdfTransformState
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

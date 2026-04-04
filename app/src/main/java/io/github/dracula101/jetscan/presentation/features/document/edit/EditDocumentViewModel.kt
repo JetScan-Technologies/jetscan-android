@@ -18,9 +18,9 @@ import io.github.dracula101.jetscan.data.platform.manager.opencv.OpenCvManager
 import io.github.dracula101.jetscan.data.platform.utils.rotate
 import io.github.dracula101.jetscan.presentation.platform.base.BaseViewModel
 import io.github.dracula101.jetscan.presentation.platform.feature.scanner.extensions.image.ImageCropCoords
-import io.github.dracula101.pdf.manager.PdfManager
-import io.github.dracula101.pdf.models.PdfOptions
-import io.github.dracula101.pdf.models.PdfQuality
+import io.github.dracula101.jetscan.data.document.pdf.PdfManager
+import io.github.dracula101.jetscan.data.document.pdf.models.PdfOptions
+import io.github.dracula101.jetscan.data.document.pdf.models.PdfQuality
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
